@@ -1,0 +1,36 @@
+* {
+	-webkit-box-sizing: border-box;
+	-moz-box-sizing: border-box;
+	box-sizing: border-box;
+}
+
+body {
+	font-size: 16px;
+	font-family: sans-serif;
+}
+
+h1, p {
+	width: 32%;
+	min-width: 300px;
+	display: inline-block;
+}
+
+span {
+	display: inline-block;
+	width: 15%;
+	border-left: 1px solid black;
+	padding: 2%;
+}
+
+input[type=number] {
+	width: 18%;
+}
+
+input[type=range] {
+	width: 63%;
+}
+
+canvas {
+	margin: auto;
+	display: block;
+}
