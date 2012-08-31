@@ -1,0 +1,32 @@
+{
+  "author": "Joe Dytrych",
+  "name": "code-cards",
+  "description": "CodeCards interprets the placement of physical objects to create (java|coffee)script programs.",
+  "version": "0.0.1",
+  "homepage": "http://somehats.github.com/CodeCards/",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/SomeHats/CodeCards.git"
+  },
+  "engines": {
+    "node": "~0.6.10 || 0.8 || 0.9"
+  },
+  "scripts": {
+    "start": "brunch watch --server",
+    "test": "brunch test"
+  },
+  "dependencies": {
+    "javascript-brunch": ">= 1.0 < 1.4",
+    "coffee-script-brunch": ">= 1.0 < 1.4",
+
+    "css-brunch": ">= 1.0 < 1.4",
+    "stylus-brunch": ">= 1.0 < 1.4",
+
+    "handlebars-brunch": ">= 1.0 < 1.4",
+
+    "uglify-js-brunch": ">= 1.0 < 1.4",
+    "clean-css-brunch": ">= 1.0 < 1.4",
+
+    "auto-reload-brunch": ">= 1.0 < 1.4"
+  }
+}
