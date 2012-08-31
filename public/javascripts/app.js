@@ -105,11 +105,13 @@ window.require.define({"initialize": function(exports, require, module) {
 }});
 
 window.require.define({"interpreter": function(exports, require, module) {
-  var Interpreter, UserMedia,
+  var HighLighter, Interpreter, UserMedia,
     __hasProp = {}.hasOwnProperty,
     __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
 
   UserMedia = require('interpreter/usermedia');
+
+  HighLighter = require('interpreter/highlighter');
 
   module.exports = Interpreter = (function(_super) {
 
@@ -124,6 +126,7 @@ window.require.define({"interpreter": function(exports, require, module) {
         el: this.el
       });
       this.UserMedia.p = this;
+      HighLighter.context = this.el.getContext('2d');
       return this.UserMedia.on('imageData', this.detect);
     };
 
@@ -133,7 +136,10 @@ window.require.define({"interpreter": function(exports, require, module) {
       return this.p.interpret.apply(this.p);
     };
 
-    Interpreter.prototype.highlight = function() {};
+    Interpreter.prototype.highlight = function() {
+      HighLighter.drawCorners(this.markers);
+      return HighLighter.drawIDs(this.markers);
+    };
 
     Interpreter.prototype.interpret = function() {};
 
@@ -142,6 +148,73 @@ window.require.define({"interpreter": function(exports, require, module) {
     return Interpreter;
 
   })(Backbone.View);
+  
+}});
+
+window.require.define({"interpreter/highlighter": function(exports, require, module) {
+  var Highlighter;
+
+  Highlighter = (function() {
+
+    function Highlighter() {}
+
+    Highlighter.prototype.drawCorners = function(markers) {
+      var corners, ctx, marker, _i, _len, _results;
+      ctx = this.context;
+      ctx.lineWidth = 3;
+      _results = [];
+      for (_i = 0, _len = markers.length; _i < _len; _i++) {
+        marker = markers[_i];
+        corners = marker.corners;
+        ctx.strokeStyle = 'red';
+        ctx.beginPath();
+        this.trace(corners);
+        ctx.stroke();
+        ctx.closePath();
+        ctx.strokeStyle = 'cyan';
+        _results.push(ctx.strokeRect(corners[0].x - 2, corners[0].y - 2, 4, 4));
+      }
+      return _results;
+    };
+
+    Highlighter.prototype.drawIDs = function(markers) {
+      var corner, ctx, marker, x, y, _i, _j, _len, _len1, _ref, _results;
+      ctx = this.context;
+      ctx.strokeStyle = "green";
+      ctx.lineWidth = 1;
+      _results = [];
+      for (_i = 0, _len = markers.length; _i < _len; _i++) {
+        marker = markers[_i];
+        x = Infinity;
+        y = Infinity;
+        _ref = marker.corners;
+        for (_j = 0, _len1 = _ref.length; _j < _len1; _j++) {
+          corner = _ref[_j];
+          x = Math.min(x, corner.x);
+          y = Math.min(y, corner.y);
+        }
+        _results.push(ctx.strokeText(marker.id, x, y));
+      }
+      return _results;
+    };
+
+    Highlighter.prototype.trace = function(points) {
+      var ctx, i, l, _i, _results;
+      l = points.length;
+      ctx = this.context;
+      ctx.moveTo(points[0].x, points[0].y);
+      _results = [];
+      for (i = _i = 1; 1 <= l ? _i <= l : _i >= l; i = 1 <= l ? ++_i : --_i) {
+        _results.push(ctx.lineTo(points[i % l].x, points[i % l].y));
+      }
+      return _results;
+    };
+
+    return Highlighter;
+
+  })();
+
+  module.exports = new Highlighter;
   
 }});
 
