@@ -3,8 +3,6 @@ module.exports = class UserMedia extends Backbone.View
     self = @
 
     success = (stream) ->
-      console.log 'hello'
-
       video = document.createElement 'video'
       video.autoplay = on
 

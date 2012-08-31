@@ -2,12 +2,16 @@ class Highlighter
   drawCorners: (markers) ->
     ctx = @context
 
-    ctx.lineWidth = 3
-
     for marker in markers
       corners = marker.corners
 
-      ctx.strokeStyle = 'red'
+      if marker.highlightExtra
+        @drawLookahead marker
+
+      ctx.strokeStyle = marker.colour
+
+      ctx.lineWidth = 3
+
       ctx.beginPath()
 
       @trace corners
@@ -34,6 +38,32 @@ class Highlighter
 
       ctx.strokeText marker.id, x, y
 
+  drawLookahead: (marker) ->
+    ctx = @context
+    ctx.strokeStyle = 'blue'
+    ctx.lineWidth = 1
+
+    ctx.beginPath()
+
+    if marker.lookAheadPoints
+      @trace marker.lookAheadPoints
+    else
+      @graphLine marker.geom[0].m, marker.geom[0].c, marker.corners[0].x
+      @graphLine marker.geom[2].m, marker.geom[2].c, marker.corners[2].x
+      @graphLine marker.geom[3].m, marker.geom[3].c, marker.corners[3].x
+
+    ctx.stroke()
+    ctx.closePath()
+
+  graphLine: (m, c, x) ->
+    ctx = @context
+    if m is Infinity or m is -Infinity
+      ctx.moveTo x, 0
+      ctx.lineTo x, @height
+    else
+      ctx.moveTo 0, c
+      ctx.lineTo @width, m * @width + c
+
   trace: (points) ->
     l = points.length
     ctx = @context
@@ -41,5 +71,8 @@ class Highlighter
     ctx.moveTo points[0].x, points[0].y
 
     ctx.lineTo points[i % l].x, points[i % l].y for i in [1..l]
+
+  width: 640
+  height: 480
 
 module.exports = new Highlighter

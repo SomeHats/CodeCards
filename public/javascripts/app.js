@@ -93,8 +93,14 @@ window.require.define({"initialize": function(exports, require, module) {
 
     App.prototype.initialize = function() {
       window.Util.animationFrame();
-      return this.interpreter = new Interpreter({
+      this.interpreter = new Interpreter({
         el: $('canvas')
+      });
+      this.interpreter.on('error', function(error) {
+        return $('#alert').html('Error: ' + error);
+      });
+      return this.interpreter.on('success', function(result) {
+        return $('#alert').html('Success: ' + result.toString());
       });
     };
 
@@ -105,13 +111,15 @@ window.require.define({"initialize": function(exports, require, module) {
 }});
 
 window.require.define({"interpreter": function(exports, require, module) {
-  var HighLighter, Interpreter, UserMedia,
+  var HighLighter, Interpreter, Marker, UserMedia,
     __hasProp = {}.hasOwnProperty,
     __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
 
   UserMedia = require('interpreter/usermedia');
 
   HighLighter = require('interpreter/highlighter');
+
+  Marker = require('interpreter/marker');
 
   module.exports = Interpreter = (function(_super) {
 
@@ -132,8 +140,11 @@ window.require.define({"interpreter": function(exports, require, module) {
 
     Interpreter.prototype.detect = function() {
       this.p.markers = this.p.detector.detect(this.imageData);
-      this.p.highlight.apply(this.p);
-      return this.p.interpret.apply(this.p);
+      this.p.markers = this.p.markers.map(function(marker, index) {
+        return new Marker(marker.id, marker.corners, index);
+      });
+      this.p.interpret.apply(this.p);
+      return this.p.highlight.apply(this.p);
     };
 
     Interpreter.prototype.highlight = function() {
@@ -141,7 +152,53 @@ window.require.define({"interpreter": function(exports, require, module) {
       return HighLighter.drawIDs(this.markers);
     };
 
-    Interpreter.prototype.interpret = function() {};
+    Interpreter.prototype.interpret = function() {
+      var candidate, candidates, current, markers, result, success, _i, _len;
+      result = [];
+      markers = this.markers;
+      current = markers.filter(function(marker) {
+        return marker.id === 0;
+      });
+      if (current.length === 0) {
+        return this.trigger('error', 'No start marker found!');
+      } else if (current.length > 1) {
+        return this.trigger('error', 'Too many start markers visible');
+      } else {
+        current = current[0];
+        current.colour = 'magenta';
+        success = true;
+        while (success) {
+          success = false;
+          if (current.contains(Util.mouse.x, Util.mouse.y)) {
+            current.colour = 'cyan';
+            current.highlightExtra = true;
+          }
+          candidates = markers.filter(function(marker) {
+            return marker.index !== current.index && current.lookAhead(marker.x, marker.y);
+          });
+          if (candidates.length !== 0) {
+            for (_i = 0, _len = candidates.length; _i < _len; _i++) {
+              candidate = candidates[_i];
+              candidate.distanceFromCurrent = candidate.distanceFrom(current.x, current.y);
+            }
+            candidates.sort(function(a, b) {
+              if (a.distanceFromCurrent < b.distanceFromCurrent) {
+                return -1;
+              } else if (a.distanceFromCurrent > b.distanceFromCurrent) {
+                return 1;
+              } else {
+                return 0;
+              }
+            });
+            result.push(candidates[0].id);
+            current = candidates[0];
+            current.colour = 'lime';
+            success = true;
+          }
+        }
+        return this.trigger('success', [result]);
+      }
+    };
 
     Interpreter.prototype.detector = new AR.Detector(15);
 
@@ -161,12 +218,15 @@ window.require.define({"interpreter/highlighter": function(exports, require, mod
     Highlighter.prototype.drawCorners = function(markers) {
       var corners, ctx, marker, _i, _len, _results;
       ctx = this.context;
-      ctx.lineWidth = 3;
       _results = [];
       for (_i = 0, _len = markers.length; _i < _len; _i++) {
         marker = markers[_i];
         corners = marker.corners;
-        ctx.strokeStyle = 'red';
+        if (marker.highlightExtra) {
+          this.drawLookahead(marker);
+        }
+        ctx.strokeStyle = marker.colour;
+        ctx.lineWidth = 3;
         ctx.beginPath();
         this.trace(corners);
         ctx.stroke();
@@ -198,6 +258,35 @@ window.require.define({"interpreter/highlighter": function(exports, require, mod
       return _results;
     };
 
+    Highlighter.prototype.drawLookahead = function(marker) {
+      var ctx;
+      ctx = this.context;
+      ctx.strokeStyle = 'blue';
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      if (marker.lookAheadPoints) {
+        this.trace(marker.lookAheadPoints);
+      } else {
+        this.graphLine(marker.geom[0].m, marker.geom[0].c, marker.corners[0].x);
+        this.graphLine(marker.geom[2].m, marker.geom[2].c, marker.corners[2].x);
+        this.graphLine(marker.geom[3].m, marker.geom[3].c, marker.corners[3].x);
+      }
+      ctx.stroke();
+      return ctx.closePath();
+    };
+
+    Highlighter.prototype.graphLine = function(m, c, x) {
+      var ctx;
+      ctx = this.context;
+      if (m === Infinity || m === -Infinity) {
+        ctx.moveTo(x, 0);
+        return ctx.lineTo(x, this.height);
+      } else {
+        ctx.moveTo(0, c);
+        return ctx.lineTo(this.width, m * this.width + c);
+      }
+    };
+
     Highlighter.prototype.trace = function(points) {
       var ctx, i, l, _i, _results;
       l = points.length;
@@ -210,11 +299,103 @@ window.require.define({"interpreter/highlighter": function(exports, require, mod
       return _results;
     };
 
+    Highlighter.prototype.width = 640;
+
+    Highlighter.prototype.height = 480;
+
     return Highlighter;
 
   })();
 
   module.exports = new Highlighter;
+  
+}});
+
+window.require.define({"interpreter/marker": function(exports, require, module) {
+  var Marker,
+    __hasProp = {}.hasOwnProperty,
+    __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
+
+  module.exports = Marker = (function(_super) {
+
+    __extends(Marker, _super);
+
+    function Marker(id, corners, index) {
+      var i, _i;
+      this.id = id;
+      this.corners = corners;
+      this.index = index != null ? index : 1024;
+      this.geom = [];
+      for (i = _i = 0; _i <= 3; i = ++_i) {
+        this.x += this.corners[i].x;
+        this.y += this.corners[i].y;
+        this.geom[i] = {};
+        this.geom[i].m = (this.corners[i].y - this.corners[(i + 1) % 4].y) / (this.corners[i].x - this.corners[(i + 1) % 4].x);
+        this.geom[i].c = this.corners[i].y - this.geom[i].m * this.corners[i].x;
+      }
+      this.x /= 4;
+      this.y /= 4;
+      this.size = Math.sqrt(Math.pow(this.corners[0].x - this.corners[2].x, 2) + Math.pow(this.corners[0].y - this.corners[2].y, 2));
+      this.size += Math.sqrt(Math.pow(this.corners[1].x - this.corners[3].x, 2) + Math.pow(this.corners[1].y - this.corners[3].y, 2));
+      this.size /= 2;
+      this.colour = 'red';
+    }
+
+    Marker.prototype.distanceFrom = function(x, y) {
+      return Math.sqrt(Math.pow(x - this.x, 2) + Math.pow(y - this.y, 2));
+    };
+
+    Marker.prototype.contains = function(x, y) {
+      return this.pointInPolygon(this.corners, x, y);
+    };
+
+    Marker.prototype.lookAhead = function(x, y) {
+      var g, p;
+      if (!this.lookAheadPoints) {
+        p = Util.clone(this.corners);
+        g = this.geom;
+        if (g[0].m === Infinity || g[0].m === -Infinity) {
+          p[1] = p[0].y < p[1].y ? 480 : 0;
+        } else if (p[0].x < p[1].x) {
+          p[1].x = 640;
+          p[1].y = g[0].m * 640 + g[0].c;
+        } else {
+          p[1].x = 0;
+          p[1].y = g[0].c;
+        }
+        if (g[2].m === Infinity || g[2].m === -Infinity) {
+          p[2] = p[3].y < p[2].y ? 480 : 0;
+        } else if (p[3].x < p[2].x) {
+          p[2].x = 640;
+          p[2].y = g[2].m * 640 + g[2].c;
+        } else {
+          p[2].x = 0;
+          p[2].y = g[2].c;
+        }
+        this.lookAheadPoints = p;
+      }
+      return this.pointInPolygon(this.lookAheadPoints, x, y);
+    };
+
+    Marker.prototype.pointInPolygon = function(p, x, y) {
+      var c, i, j, _i, _ref;
+      c = false;
+      for (i = _i = _ref = p.length - 1; _ref <= 0 ? _i <= 0 : _i >= 0; i = _ref <= 0 ? ++_i : --_i) {
+        j = (i + 1) % p.length;
+        if ((((p[i].y <= y) && (y < p[j].y)) || ((p[j].y <= y) && (y < p[i].y))) && (x < (p[j].x - p[i].x) * (y - p[i].y) / (p[j].y - p[i].y) + p[i].x)) {
+          c = !c;
+        }
+      }
+      return c;
+    };
+
+    Marker.prototype.x = 0;
+
+    Marker.prototype.y = 0;
+
+    return Marker;
+
+  })(AR.Marker);
   
 }});
 
@@ -236,7 +417,6 @@ window.require.define({"interpreter/usermedia": function(exports, require, modul
       self = this;
       success = function(stream) {
         var ctx, video;
-        console.log('hello');
         video = document.createElement('video');
         video.autoplay = true;
         if (window.webkitURL && window.webkitURL.createObjectURL) {
@@ -372,14 +552,55 @@ window.require.define({"lib/util": function(exports, require, module) {
 
     __extends(util, _super);
 
+    util.prototype.mouse = {
+      x: 0,
+      y: 0
+    };
+
     function util() {
+      var self;
       window.requestAnimationFrame = window.requestAnimationFrame || window.mozRequestAnimationFrame || window.webkitRequestAnimationFrame;
+      self = this;
+      $(document).on('mousemove', function(e) {
+        self.mouse.x = e.clientX;
+        return self.mouse.y = e.clientY;
+      });
     }
 
     util.prototype.animationFrame = function() {
       window.Util.trigger('animationFrame');
       window.requestAnimationFrame(Util.animationFrame);
       return null;
+    };
+
+    util.prototype.clone = function(obj) {
+      var attr, copy, item;
+      if (null === obj || "object" !== typeof obj) {
+        return obj;
+      }
+      if (obj instanceof Array) {
+        copy = [];
+        copy = (function() {
+          var _i, _len, _results;
+          _results = [];
+          for (_i = 0, _len = obj.length; _i < _len; _i++) {
+            item = obj[_i];
+            _results.push(this.clone(item));
+          }
+          return _results;
+        }).call(this);
+        return copy;
+      }
+      if (obj instanceof Object) {
+        copy = {};
+        for (attr in obj) {
+          if (obj.hasOwnProperty(attr)) {
+            copy[attr] = this.clone(obj[attr]);
+          }
+        }
+        return copy;
+      }
+      throw new Error("Unable to copy obj! Its type isn't supported.");
     };
 
     return util;
