@@ -27,7 +27,7 @@ module.exports = class Interpreter extends Backbone.View
     #HighLighter.drawGuides @markers
 
   interpret: ->
-    result = []
+    results = []
     markers = @markers
     current = markers.filter (marker) ->
       marker.id is 0
@@ -39,6 +39,9 @@ module.exports = class Interpreter extends Backbone.View
     else
       current = current[0]
       current.colour = 'magenta'
+      current.available = no
+
+      lineStarter = current
 
       success = yes
       while success
@@ -49,7 +52,13 @@ module.exports = class Interpreter extends Backbone.View
 
         # Get markers following current
         candidates = markers.filter (marker) ->
-          marker.index isnt current.index and current.lookAhead marker.x, marker.y
+          marker.available and marker.index isnt current.index and current.lookAhead marker.x, marker.y
+
+        if candidates.length is 0
+          current = lineStarter
+          results.push 0
+          candidates = markers.filter (marker) ->
+            marker.available and marker.index isnt current.index and current.isAbove marker.x, marker.y
 
         if candidates.length isnt 0
           for candidate in candidates
@@ -63,12 +72,13 @@ module.exports = class Interpreter extends Backbone.View
             else
               return 0
 
-          result.push candidates[0].id
+          results.push candidates[0].id
           current = candidates[0]
           current.colour = 'lime'
+          current.available = no
           success = yes
 
-      @trigger 'success', [result]
+      @trigger 'success', results
 
 
   detector: new AR.Detector 15

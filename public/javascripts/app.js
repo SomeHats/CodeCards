@@ -74,14 +74,22 @@
   globals.require.brunch = true;
 })();
 
+window.require.define({"data/test": function(exports, require, module) {
+  
+  module.exports = ["\n", "}", ") {", ")", "while (", "robot", ".turn(", ".look(", ".move(", " forward ", " left ", " right "];
+  
+}});
+
 window.require.define({"initialize": function(exports, require, module) {
-  var App, Interpreter,
+  var App, Interpreter, data,
     __hasProp = {}.hasOwnProperty,
     __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
 
   Interpreter = require('interpreter');
 
   require('lib/util');
+
+  data = require('data/test');
 
   module.exports = App = (function(_super) {
 
@@ -92,15 +100,26 @@ window.require.define({"initialize": function(exports, require, module) {
     }
 
     App.prototype.initialize = function() {
+      var $code;
       window.Util.animationFrame();
       this.interpreter = new Interpreter({
         el: $('canvas')
       });
+      $code = $('code');
       this.interpreter.on('error', function(error) {
         return $('#alert').html('Error: ' + error);
       });
-      return this.interpreter.on('success', function(result) {
-        return $('#alert').html('Success: ' + result.toString());
+      return this.interpreter.on('success', function(results) {
+        var code, result, _i, _len;
+        code = "";
+        for (_i = 0, _len = results.length; _i < _len; _i++) {
+          result = results[_i];
+          code += data[result];
+        }
+        code = js_beautify(code);
+        $('#alert').html('Success!');
+        $code.html(code);
+        return Prism.highlightElement($code[0], false);
       });
     };
 
@@ -153,8 +172,8 @@ window.require.define({"interpreter": function(exports, require, module) {
     };
 
     Interpreter.prototype.interpret = function() {
-      var candidate, candidates, current, markers, result, success, _i, _len;
-      result = [];
+      var candidate, candidates, current, lineStarter, markers, results, success, _i, _len;
+      results = [];
       markers = this.markers;
       current = markers.filter(function(marker) {
         return marker.id === 0;
@@ -166,6 +185,8 @@ window.require.define({"interpreter": function(exports, require, module) {
       } else {
         current = current[0];
         current.colour = 'magenta';
+        current.available = false;
+        lineStarter = current;
         success = true;
         while (success) {
           success = false;
@@ -174,8 +195,15 @@ window.require.define({"interpreter": function(exports, require, module) {
             current.highlightExtra = true;
           }
           candidates = markers.filter(function(marker) {
-            return marker.index !== current.index && current.lookAhead(marker.x, marker.y);
+            return marker.available && marker.index !== current.index && current.lookAhead(marker.x, marker.y);
           });
+          if (candidates.length === 0) {
+            current = lineStarter;
+            results.push(0);
+            candidates = markers.filter(function(marker) {
+              return marker.available && marker.index !== current.index && current.isAbove(marker.x, marker.y);
+            });
+          }
           if (candidates.length !== 0) {
             for (_i = 0, _len = candidates.length; _i < _len; _i++) {
               candidate = candidates[_i];
@@ -190,13 +218,14 @@ window.require.define({"interpreter": function(exports, require, module) {
                 return 0;
               }
             });
-            result.push(candidates[0].id);
+            results.push(candidates[0].id);
             current = candidates[0];
             current.colour = 'lime';
+            current.available = false;
             success = true;
           }
         }
-        return this.trigger('success', [result]);
+        return this.trigger('success', results);
       }
     };
 
@@ -339,6 +368,7 @@ window.require.define({"interpreter/marker": function(exports, require, module) 
       this.size += Math.sqrt(Math.pow(this.corners[1].x - this.corners[3].x, 2) + Math.pow(this.corners[1].y - this.corners[3].y, 2));
       this.size /= 2;
       this.colour = 'red';
+      this.available = true;
     }
 
     Marker.prototype.distanceFrom = function(x, y) {
@@ -375,6 +405,38 @@ window.require.define({"interpreter/marker": function(exports, require, module) 
         this.lookAheadPoints = p;
       }
       return this.pointInPolygon(this.lookAheadPoints, x, y);
+    };
+
+    Marker.prototype.isAbove = function(x, y) {
+      var g, p;
+      if (!this.isAbovePoints) {
+        p = Util.clone(this.corners);
+        g = this.geom;
+        if (g[0].m === Infinity || g[0].m === -Infinity) {
+          if (p[0].y < p[1].y) {
+            p[0].y = p[3].y = 0;
+            p[1].y = p[2].y = 480;
+            p[2].x = p[3].x = 640;
+          } else {
+            p[0].y = p[3].y = 480;
+            p[1].y = p[2].y = p[2].x = p[3].x = 0;
+          }
+        } else if (p[0].x < p[1].x) {
+          p[0].x = p[3].x = p[3].y = p[2].y = 0;
+          p[0].y = g[0].c;
+          p[1].x = p[2].x = 640;
+          p[1].y = g[0].m * 640 + g[0].c;
+        } else {
+          p[0].x = p[3].x = 640;
+          p[0].y = g[0].m * 640 + g[0].c;
+          p[3].y = 480;
+          p[1].x = p[2].x = 0;
+          p[1].y = g[0].c;
+          p[2].y = 480;
+        }
+        this.isAbovePoints = p;
+      }
+      return this.pointInPolygon(this.isAbovePoints, x, y);
     };
 
     Marker.prototype.pointInPolygon = function(p, x, y) {
