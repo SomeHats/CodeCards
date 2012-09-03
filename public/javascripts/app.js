@@ -100,7 +100,7 @@ window.require.define({"initialize": function(exports, require, module) {
     }
 
     App.prototype.initialize = function() {
-      var $code;
+      var $code, gui;
       window.Util.animationFrame();
       this.interpreter = new Interpreter({
         el: $('canvas')
@@ -109,7 +109,7 @@ window.require.define({"initialize": function(exports, require, module) {
       this.interpreter.on('error', function(error) {
         return $('#alert').html('Error: ' + error);
       });
-      return this.interpreter.on('success', function(results) {
+      this.interpreter.on('success', function(results) {
         var code, result, _i, _len;
         code = "";
         for (_i = 0, _len = results.length; _i < _len; _i++) {
@@ -118,9 +118,12 @@ window.require.define({"initialize": function(exports, require, module) {
         }
         code = js_beautify(code);
         $('#alert').html('Success!');
-        $code.html(code);
-        return Prism.highlightElement($code[0], false);
+        return $code.html(code);
       });
+      gui = new dat.GUI;
+      gui.add(this.interpreter, 'blend', 1, 30).step(1);
+      gui.add(this.interpreter, 'brightness', -100, 100);
+      return gui.add(this.interpreter, 'contrast', -100, 100);
     };
 
     return App;
@@ -150,23 +153,31 @@ window.require.define({"interpreter": function(exports, require, module) {
 
     Interpreter.prototype.imageData = [];
 
+    Interpreter.prototype.blend = 3;
+
+    Interpreter.prototype.contrast = 0;
+
+    Interpreter.prototype.brightness = 0;
+
     Interpreter.prototype.initialize = function() {
       this.UserMedia = new UserMedia({
         el: $('<canvas>')
       });
       this.UserMedia.p = this;
       HighLighter.context = this.ctx = this.el.getContext('2d');
-      this.UserMedia.on('imageData', this.detect);
-      return this.blend = 10;
+      return this.UserMedia.on('imageData', this.detect);
     };
 
     Interpreter.prototype.detect = function() {
       var data;
+      if (this.p.imageData.length > this.p.blend) {
+        this.p.imageData = [];
+      }
       this.p.imageData.push(this.imageData);
       if (this.p.imageData.length === this.p.blend) {
         data = this.p.averageImageData();
-        console.log(data);
-        this.p.imageData = [];
+        this.p.imageData.shift();
+        data = ImageFilters.BrightnessContrastGimp(data, this.p.brightness, this.p.contrast);
         this.p.ctx.putImageData(data, 0, 0);
         this.p.markers = this.p.detector.detect(data);
         this.p.markers = this.p.markers.map(function(marker, index) {

@@ -20,4 +20,9 @@ module.exports = class App extends Backbone.View
       $('#alert').html 'Success!'
       $code.html code
 
-      Prism.highlightElement $code[0], false
+      #Prism.highlightElement $code[0], false
+
+    gui = new dat.GUI
+    gui.add(@interpreter, 'blend', 1, 30).step 1
+    gui.add @interpreter, 'brightness', -100, 100
+    gui.add @interpreter, 'contrast', -100, 100

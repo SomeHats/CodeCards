@@ -33,7 +33,6 @@ module.exports = class UserMedia extends Backbone.View
       console.log @
       console.log self
     
-
     if navigator.getUserMedia
       navigator.getUserMedia {video: true}, success, error
     else if navigator.mozGetUserMedia

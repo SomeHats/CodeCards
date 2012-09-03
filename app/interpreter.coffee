@@ -5,6 +5,9 @@ Marker = require 'interpreter/marker'
 
 module.exports = class Interpreter extends Backbone.View
   imageData: []
+  blend: 3
+  contrast: 0
+  brightness: 0
 
   initialize: ->
     @UserMedia = new UserMedia {el: $ '<canvas>'}
@@ -14,15 +17,20 @@ module.exports = class Interpreter extends Backbone.View
 
     @UserMedia.on 'imageData', @detect
 
-    @blend = 10
-
   detect: ->
+    if @p.imageData.length > @p.blend
+      @p.imageData = []
+
     @p.imageData.push @imageData
+
     if @p.imageData.length is @p.blend
       data = @p.averageImageData()
-      console.log data
-      @p.imageData = []
+      @p.imageData.shift()
+
+      data = ImageFilters.BrightnessContrastGimp data, @p.brightness, @p.contrast
+
       @p.ctx.putImageData data, 0, 0
+
 
       @p.markers = @p.detector.detect data
 
