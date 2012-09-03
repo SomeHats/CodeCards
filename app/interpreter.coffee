@@ -4,22 +4,33 @@ HighLighter = require 'interpreter/highlighter'
 Marker = require 'interpreter/marker'
 
 module.exports = class Interpreter extends Backbone.View
+  imageData: []
+
   initialize: ->
-    @UserMedia = new UserMedia {el: @el}
+    @UserMedia = new UserMedia {el: $ '<canvas>'}
     @UserMedia.p = @
 
-    HighLighter.context = @el.getContext '2d'
+    HighLighter.context = @ctx = @el.getContext '2d'
 
     @UserMedia.on 'imageData', @detect
 
+    @blend = 10
+
   detect: ->
-    @p.markers = @p.detector.detect @imageData
+    @p.imageData.push @imageData
+    if @p.imageData.length is @p.blend
+      data = @p.averageImageData()
+      console.log data
+      @p.imageData = []
+      @p.ctx.putImageData data, 0, 0
 
-    @p.markers = @p.markers.map (marker, index) ->
-      new Marker marker.id, marker.corners, index
+      @p.markers = @p.detector.detect data
 
-    @p.interpret.apply @p
-    @p.highlight.apply @p
+      @p.markers = @p.markers.map (marker, index) ->
+        new Marker marker.id, marker.corners, index
+
+      @p.interpret.apply @p
+      @p.highlight.apply @p
 
   highlight: ->
     HighLighter.drawCorners @markers
@@ -80,5 +91,15 @@ module.exports = class Interpreter extends Backbone.View
 
       @trigger 'success', results
 
+  averageImageData: ->
+    data = @imageData
+    for i in [0...data[0].data.length]
+      v = 0
+      for j in [0...data.length]
+        v += data[j].data[i]
+      v /= data.length
+      data[0].data[i] = Math.round v
+
+    return data[0]
 
   detector: new AR.Detector 15

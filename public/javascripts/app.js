@@ -148,22 +148,33 @@ window.require.define({"interpreter": function(exports, require, module) {
       return Interpreter.__super__.constructor.apply(this, arguments);
     }
 
+    Interpreter.prototype.imageData = [];
+
     Interpreter.prototype.initialize = function() {
       this.UserMedia = new UserMedia({
-        el: this.el
+        el: $('<canvas>')
       });
       this.UserMedia.p = this;
-      HighLighter.context = this.el.getContext('2d');
-      return this.UserMedia.on('imageData', this.detect);
+      HighLighter.context = this.ctx = this.el.getContext('2d');
+      this.UserMedia.on('imageData', this.detect);
+      return this.blend = 10;
     };
 
     Interpreter.prototype.detect = function() {
-      this.p.markers = this.p.detector.detect(this.imageData);
-      this.p.markers = this.p.markers.map(function(marker, index) {
-        return new Marker(marker.id, marker.corners, index);
-      });
-      this.p.interpret.apply(this.p);
-      return this.p.highlight.apply(this.p);
+      var data;
+      this.p.imageData.push(this.imageData);
+      if (this.p.imageData.length === this.p.blend) {
+        data = this.p.averageImageData();
+        console.log(data);
+        this.p.imageData = [];
+        this.p.ctx.putImageData(data, 0, 0);
+        this.p.markers = this.p.detector.detect(data);
+        this.p.markers = this.p.markers.map(function(marker, index) {
+          return new Marker(marker.id, marker.corners, index);
+        });
+        this.p.interpret.apply(this.p);
+        return this.p.highlight.apply(this.p);
+      }
     };
 
     Interpreter.prototype.highlight = function() {
@@ -227,6 +238,20 @@ window.require.define({"interpreter": function(exports, require, module) {
         }
         return this.trigger('success', results);
       }
+    };
+
+    Interpreter.prototype.averageImageData = function() {
+      var data, i, j, v, _i, _j, _ref, _ref1;
+      data = this.imageData;
+      for (i = _i = 0, _ref = data[0].data.length; 0 <= _ref ? _i < _ref : _i > _ref; i = 0 <= _ref ? ++_i : --_i) {
+        v = 0;
+        for (j = _j = 0, _ref1 = data.length; 0 <= _ref1 ? _j < _ref1 : _j > _ref1; j = 0 <= _ref1 ? ++_j : --_j) {
+          v += data[j].data[i];
+        }
+        v /= data.length;
+        data[0].data[i] = Math.round(v);
+      }
+      return data[0];
     };
 
     Interpreter.prototype.detector = new AR.Detector(15);
