@@ -100,17 +100,24 @@ window.require.define({"initialize": function(exports, require, module) {
     }
 
     App.prototype.initialize = function() {
-      var $code, gui;
+      var $code, gui, stats;
       window.Util.animationFrame();
       this.interpreter = new Interpreter({
         el: $('canvas')
       });
       $code = $('code');
+      stats = new Stats;
+      stats.setMode(0);
+      document.body.appendChild(stats.domElement);
       this.interpreter.on('error', function(error) {
+        stats.end();
+        stats.begin();
         return $('#alert').html('Error: ' + error);
       });
       this.interpreter.on('success', function(results) {
         var code, result, _i, _len;
+        stats.end();
+        stats.begin();
         code = "";
         for (_i = 0, _len = results.length; _i < _len; _i++) {
           result = results[_i];

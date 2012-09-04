@@ -10,10 +10,18 @@ module.exports = class App extends Backbone.View
 
     $code = $ 'code'
 
+    stats = new Stats
+    stats.setMode 0
+    document.body.appendChild stats.domElement
+
     @interpreter.on 'error', (error) ->
+      stats.end()
+      stats.begin()
       $('#alert').html 'Error: ' + error
 
     @interpreter.on 'success', (results)->
+      stats.end()
+      stats.begin()
       code = ""
       code += data[result] for result in results
       $('#alert').html 'Success! ' + code
