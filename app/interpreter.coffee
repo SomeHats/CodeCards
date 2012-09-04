@@ -46,7 +46,6 @@ module.exports = class Interpreter extends Backbone.View
   highlight: ->
     HighLighter.drawCorners @markers
     HighLighter.drawIDs @markers
-    #HighLighter.drawGuides @markers
 
   interpret: ->
     results = []
@@ -94,16 +93,37 @@ module.exports = class Interpreter extends Backbone.View
         if success is no
           results.push 0
           candidates = markers.filter (marker) ->
-            marker.available and marker.index isnt current.index and current.isAbove marker.x, marker.y
+            marker.available and marker.index isnt current.index and lineStarter.isAbove marker.x, marker.y
 
           if candidates.length isnt 0
             for candidate in candidates
-              candidate.distanceFromCurrent = candidate.distanceFrom lineStarter.x, lineStarter.y
+              candidate.distanceFromCurrent = lineStarter.distanceAbove candidate.x, candidate.y
 
             candidates.sort @sortByDistance
-            
+
             if candidates[0].distanceFromCurrent <= current.radius
-              current = lineStarter = candidates[0]
+              lsSuccess = true
+              current = candidates[0]
+
+              while lsSuccess
+                lsSuccess = false
+                current.radius = current.size * @distanceLimit
+
+                candidates = markers.filter (marker) ->
+                  marker.available and marker.index isnt current.index and current.lookBehind marker.x, marker.y
+
+                if candidates.length isnt 0
+                  for candidate in candidates
+                    candidate.distanceFromCurrent = candidate.distanceFrom current.x, current.y
+
+                  candidates.sort @sortByDistance
+
+                  if candidates[0].distanceFromCurrent <= current.radius
+                    lsSuccess = true
+                    current = candidates[0]
+                else
+                  lineStarter = current
+
               results.push current.id
               current.colour = 'yellow'
               current.available = no

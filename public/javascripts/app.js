@@ -203,7 +203,7 @@ window.require.define({"interpreter": function(exports, require, module) {
     };
 
     Interpreter.prototype.interpret = function() {
-      var candidate, candidates, current, lineStarter, markers, results, success, _i, _j, _len, _len1;
+      var candidate, candidates, current, lineStarter, lsSuccess, markers, results, success, _i, _j, _k, _len, _len1, _len2;
       results = [];
       markers = this.markers;
       current = markers.filter(function(marker) {
@@ -246,16 +246,37 @@ window.require.define({"interpreter": function(exports, require, module) {
           if (success === false) {
             results.push(0);
             candidates = markers.filter(function(marker) {
-              return marker.available && marker.index !== current.index && current.isAbove(marker.x, marker.y);
+              return marker.available && marker.index !== current.index && lineStarter.isAbove(marker.x, marker.y);
             });
             if (candidates.length !== 0) {
               for (_j = 0, _len1 = candidates.length; _j < _len1; _j++) {
                 candidate = candidates[_j];
-                candidate.distanceFromCurrent = candidate.distanceFrom(lineStarter.x, lineStarter.y);
+                candidate.distanceFromCurrent = lineStarter.distanceAbove(candidate.x, candidate.y);
               }
               candidates.sort(this.sortByDistance);
               if (candidates[0].distanceFromCurrent <= current.radius) {
-                current = lineStarter = candidates[0];
+                lsSuccess = true;
+                current = candidates[0];
+                while (lsSuccess) {
+                  lsSuccess = false;
+                  current.radius = current.size * this.distanceLimit;
+                  candidates = markers.filter(function(marker) {
+                    return marker.available && marker.index !== current.index && current.lookBehind(marker.x, marker.y);
+                  });
+                  if (candidates.length !== 0) {
+                    for (_k = 0, _len2 = candidates.length; _k < _len2; _k++) {
+                      candidate = candidates[_k];
+                      candidate.distanceFromCurrent = candidate.distanceFrom(current.x, current.y);
+                    }
+                    candidates.sort(this.sortByDistance);
+                    if (candidates[0].distanceFromCurrent <= current.radius) {
+                      lsSuccess = true;
+                      current = candidates[0];
+                    }
+                  } else {
+                    lineStarter = current;
+                  }
+                }
                 results.push(current.id);
                 current.colour = 'yellow';
                 current.available = false;
@@ -485,10 +506,31 @@ window.require.define({"interpreter/marker": function(exports, require, module) 
     };
 
     Marker.prototype.lookBehind = function(x, y) {
-      var p;
+      var g, p;
       if (!this.lookBehindPoints) {
-        return p = Util.clone(this.corners);
+        p = Util.clone(this.corners);
+        g = this.geom;
+        if (g[0].m === Infinity || g[0].m === -Infinity) {
+          p[1] = p[0].y > p[1].y ? 480 : 0;
+        } else if (p[0].x > p[1].x) {
+          p[1].x = 640;
+          p[1].y = g[0].m * 640 + g[0].c;
+        } else {
+          p[1].x = 0;
+          p[1].y = g[0].c;
+        }
+        if (g[2].m === Infinity || g[2].m === -Infinity) {
+          p[2] = p[3].y > p[2].y ? 480 : 0;
+        } else if (p[3].x > p[2].x) {
+          p[2].x = 640;
+          p[2].y = g[2].m * 640 + g[2].c;
+        } else {
+          p[2].x = 0;
+          p[2].y = g[2].c;
+        }
+        this.lookBehindPoints = p;
       }
+      return this.pointInPolygon(this.lookBehindPoints, x, y);
     };
 
     Marker.prototype.isAbove = function(x, y) {
@@ -521,6 +563,14 @@ window.require.define({"interpreter/marker": function(exports, require, module) 
         this.isAbovePoints = p;
       }
       return this.pointInPolygon(this.isAbovePoints, x, y);
+    };
+
+    Marker.prototype.distanceAbove = function(x, y) {
+      var d, g;
+      g = this.geom;
+      d = Math.abs((g[0].m * x) - y + g[0].c);
+      d /= Math.sqrt(g[0].m * g[0].m + 1);
+      return d;
     };
 
     Marker.prototype.pointInPolygon = function(p, x, y) {
