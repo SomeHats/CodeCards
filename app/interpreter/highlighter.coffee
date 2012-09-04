@@ -7,6 +7,7 @@ class Highlighter
 
       if marker.highlightExtra
         @drawLookahead marker
+        @drawRadius marker
 
       ctx.strokeStyle = marker.colour
 
@@ -37,6 +38,19 @@ class Highlighter
         y = Math.min y, corner.y
 
       ctx.strokeText marker.id, x, y
+
+  drawRadius: (marker) ->
+    ctx = @context
+    ctx.strokeStyle = 'blue'
+    ctx.lineWidth = 1
+
+    ctx.beginPath()
+
+    if marker.radius
+      ctx.arc marker.x, marker.y, marker.radius, 0, Math.PI * 2, false
+
+    ctx.stroke()
+    ctx.closePath()
 
   drawLookahead: (marker) ->
     ctx = @context

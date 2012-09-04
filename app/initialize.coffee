@@ -16,8 +16,8 @@ module.exports = class App extends Backbone.View
     @interpreter.on 'success', (results)->
       code = ""
       code += data[result] for result in results
+      $('#alert').html 'Success! ' + code
       code = js_beautify code
-      $('#alert').html 'Success!'
       $code.html code
 
       #Prism.highlightElement $code[0], false
@@ -26,3 +26,5 @@ module.exports = class App extends Backbone.View
     gui.add(@interpreter, 'blend', 1, 30).step 1
     gui.add @interpreter, 'brightness', -100, 100
     gui.add @interpreter, 'contrast', -100, 100
+    gui.add(@interpreter, 'sharpen', 0, 10).setValue 0
+    gui.add @interpreter, 'distanceLimit', 1, 30

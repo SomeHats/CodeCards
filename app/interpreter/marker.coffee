@@ -54,6 +54,10 @@ module.exports = class Marker extends AR.Marker
 
     @pointInPolygon @lookAheadPoints, x, y
 
+  lookBehind: (x, y) ->
+    if ! @lookBehindPoints
+      p = Util.clone @corners
+
   isAbove: (x, y) ->
     if ! @isAbovePoints
       p = Util.clone @corners

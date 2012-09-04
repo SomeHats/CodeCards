@@ -8,6 +8,8 @@ module.exports = class Interpreter extends Backbone.View
   blend: 3
   contrast: 0
   brightness: 0
+  sharpen: 1.5
+  distanceLimit: 4.5
 
   initialize: ->
     @UserMedia = new UserMedia {el: $ '<canvas>'}
@@ -28,9 +30,10 @@ module.exports = class Interpreter extends Backbone.View
       @p.imageData.shift()
 
       data = ImageFilters.BrightnessContrastGimp data, @p.brightness, @p.contrast
+      if @p.sharpen isnt 0
+        data = ImageFilters.Sharpen data, @p.sharpen
 
       @p.ctx.putImageData data, 0, 0
-
 
       @p.markers = @p.detector.detect data
 
@@ -69,33 +72,42 @@ module.exports = class Interpreter extends Backbone.View
           current.colour = 'cyan'
           current.highlightExtra = on
 
+        current.radius = current.size * @distanceLimit
+
         # Get markers following current
         candidates = markers.filter (marker) ->
           marker.available and marker.index isnt current.index and current.lookAhead marker.x, marker.y
-
-        if candidates.length is 0
-          current = lineStarter
-          results.push 0
-          candidates = markers.filter (marker) ->
-            marker.available and marker.index isnt current.index and current.isAbove marker.x, marker.y
 
         if candidates.length isnt 0
           for candidate in candidates
             candidate.distanceFromCurrent = candidate.distanceFrom current.x, current.y
 
-          candidates.sort (a, b) ->
-            if a.distanceFromCurrent < b.distanceFromCurrent
-              return -1
-            else if a.distanceFromCurrent > b.distanceFromCurrent
-              return 1
-            else
-              return 0
+          candidates.sort @sortByDistance
 
-          results.push candidates[0].id
-          current = candidates[0]
-          current.colour = 'lime'
-          current.available = no
-          success = yes
+          if candidates[0].distanceFromCurrent <= current.radius
+            results.push candidates[0].id
+            current = candidates[0]
+            current.colour = 'lime'
+            current.available = no
+            success = yes
+
+        if success is no
+          results.push 0
+          candidates = markers.filter (marker) ->
+            marker.available and marker.index isnt current.index and current.isAbove marker.x, marker.y
+
+          if candidates.length isnt 0
+            for candidate in candidates
+              candidate.distanceFromCurrent = candidate.distanceFrom lineStarter.x, lineStarter.y
+
+            candidates.sort @sortByDistance
+            
+            if candidates[0].distanceFromCurrent <= current.radius
+              current = lineStarter = candidates[0]
+              results.push current.id
+              current.colour = 'yellow'
+              current.available = no
+              success = yes
 
       @trigger 'success', results
 
@@ -109,5 +121,13 @@ module.exports = class Interpreter extends Backbone.View
       data[0].data[i] = Math.round v
 
     return data[0]
+
+  sortByDistance: (a, b) ->
+    if a.distanceFromCurrent < b.distanceFromCurrent
+      return -1
+    else if a.distanceFromCurrent > b.distanceFromCurrent
+      return 1
+    else
+      return 0
 
   detector: new AR.Detector 15

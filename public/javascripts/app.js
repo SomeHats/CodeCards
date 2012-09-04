@@ -116,14 +116,16 @@ window.require.define({"initialize": function(exports, require, module) {
           result = results[_i];
           code += data[result];
         }
+        $('#alert').html('Success! ' + code);
         code = js_beautify(code);
-        $('#alert').html('Success!');
         return $code.html(code);
       });
       gui = new dat.GUI;
       gui.add(this.interpreter, 'blend', 1, 30).step(1);
       gui.add(this.interpreter, 'brightness', -100, 100);
-      return gui.add(this.interpreter, 'contrast', -100, 100);
+      gui.add(this.interpreter, 'contrast', -100, 100);
+      gui.add(this.interpreter, 'sharpen', 0, 10).setValue(0);
+      return gui.add(this.interpreter, 'distanceLimit', 1, 30);
     };
 
     return App;
@@ -159,6 +161,10 @@ window.require.define({"interpreter": function(exports, require, module) {
 
     Interpreter.prototype.brightness = 0;
 
+    Interpreter.prototype.sharpen = 1.5;
+
+    Interpreter.prototype.distanceLimit = 4.5;
+
     Interpreter.prototype.initialize = function() {
       this.UserMedia = new UserMedia({
         el: $('<canvas>')
@@ -178,6 +184,9 @@ window.require.define({"interpreter": function(exports, require, module) {
         data = this.p.averageImageData();
         this.p.imageData.shift();
         data = ImageFilters.BrightnessContrastGimp(data, this.p.brightness, this.p.contrast);
+        if (this.p.sharpen !== 0) {
+          data = ImageFilters.Sharpen(data, this.p.sharpen);
+        }
         this.p.ctx.putImageData(data, 0, 0);
         this.p.markers = this.p.detector.detect(data);
         this.p.markers = this.p.markers.map(function(marker, index) {
@@ -194,7 +203,7 @@ window.require.define({"interpreter": function(exports, require, module) {
     };
 
     Interpreter.prototype.interpret = function() {
-      var candidate, candidates, current, lineStarter, markers, results, success, _i, _len;
+      var candidate, candidates, current, lineStarter, markers, results, success, _i, _j, _len, _len1;
       results = [];
       markers = this.markers;
       current = markers.filter(function(marker) {
@@ -216,35 +225,43 @@ window.require.define({"interpreter": function(exports, require, module) {
             current.colour = 'cyan';
             current.highlightExtra = true;
           }
+          current.radius = current.size * this.distanceLimit;
           candidates = markers.filter(function(marker) {
             return marker.available && marker.index !== current.index && current.lookAhead(marker.x, marker.y);
           });
-          if (candidates.length === 0) {
-            current = lineStarter;
-            results.push(0);
-            candidates = markers.filter(function(marker) {
-              return marker.available && marker.index !== current.index && current.isAbove(marker.x, marker.y);
-            });
-          }
           if (candidates.length !== 0) {
             for (_i = 0, _len = candidates.length; _i < _len; _i++) {
               candidate = candidates[_i];
               candidate.distanceFromCurrent = candidate.distanceFrom(current.x, current.y);
             }
-            candidates.sort(function(a, b) {
-              if (a.distanceFromCurrent < b.distanceFromCurrent) {
-                return -1;
-              } else if (a.distanceFromCurrent > b.distanceFromCurrent) {
-                return 1;
-              } else {
-                return 0;
-              }
+            candidates.sort(this.sortByDistance);
+            if (candidates[0].distanceFromCurrent <= current.radius) {
+              results.push(candidates[0].id);
+              current = candidates[0];
+              current.colour = 'lime';
+              current.available = false;
+              success = true;
+            }
+          }
+          if (success === false) {
+            results.push(0);
+            candidates = markers.filter(function(marker) {
+              return marker.available && marker.index !== current.index && current.isAbove(marker.x, marker.y);
             });
-            results.push(candidates[0].id);
-            current = candidates[0];
-            current.colour = 'lime';
-            current.available = false;
-            success = true;
+            if (candidates.length !== 0) {
+              for (_j = 0, _len1 = candidates.length; _j < _len1; _j++) {
+                candidate = candidates[_j];
+                candidate.distanceFromCurrent = candidate.distanceFrom(lineStarter.x, lineStarter.y);
+              }
+              candidates.sort(this.sortByDistance);
+              if (candidates[0].distanceFromCurrent <= current.radius) {
+                current = lineStarter = candidates[0];
+                results.push(current.id);
+                current.colour = 'yellow';
+                current.available = false;
+                success = true;
+              }
+            }
           }
         }
         return this.trigger('success', results);
@@ -263,6 +280,16 @@ window.require.define({"interpreter": function(exports, require, module) {
         data[0].data[i] = Math.round(v);
       }
       return data[0];
+    };
+
+    Interpreter.prototype.sortByDistance = function(a, b) {
+      if (a.distanceFromCurrent < b.distanceFromCurrent) {
+        return -1;
+      } else if (a.distanceFromCurrent > b.distanceFromCurrent) {
+        return 1;
+      } else {
+        return 0;
+      }
     };
 
     Interpreter.prototype.detector = new AR.Detector(15);
@@ -289,6 +316,7 @@ window.require.define({"interpreter/highlighter": function(exports, require, mod
         corners = marker.corners;
         if (marker.highlightExtra) {
           this.drawLookahead(marker);
+          this.drawRadius(marker);
         }
         ctx.strokeStyle = marker.colour;
         ctx.lineWidth = 3;
@@ -321,6 +349,19 @@ window.require.define({"interpreter/highlighter": function(exports, require, mod
         _results.push(ctx.strokeText(marker.id, x, y));
       }
       return _results;
+    };
+
+    Highlighter.prototype.drawRadius = function(marker) {
+      var ctx;
+      ctx = this.context;
+      ctx.strokeStyle = 'blue';
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      if (marker.radius) {
+        ctx.arc(marker.x, marker.y, marker.radius, 0, Math.PI * 2, false);
+      }
+      ctx.stroke();
+      return ctx.closePath();
     };
 
     Highlighter.prototype.drawLookahead = function(marker) {
@@ -441,6 +482,13 @@ window.require.define({"interpreter/marker": function(exports, require, module) 
         this.lookAheadPoints = p;
       }
       return this.pointInPolygon(this.lookAheadPoints, x, y);
+    };
+
+    Marker.prototype.lookBehind = function(x, y) {
+      var p;
+      if (!this.lookBehindPoints) {
+        return p = Util.clone(this.corners);
+      }
     };
 
     Marker.prototype.isAbove = function(x, y) {
