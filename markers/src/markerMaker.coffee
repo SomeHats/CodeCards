@@ -88,6 +88,4 @@ withContext = (handler, context) ->
 	(e) ->
 		handler e, context
 
-d = {}
-
 document.addEventListener 'DOMContentLoaded', init, false

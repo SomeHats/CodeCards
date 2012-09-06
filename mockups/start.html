@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<script type="text/javascript" src="js/zepto.min.js"></script>
+		<script type="text/javascript">
+			function main() {
+				$(document.body).removeClass('pre');
+
+				$('.icon').on('click', function() {
+					$(this).addClass('clicked');
+					$(document.body).addClass('pre');
+				});
+			}
+			$(document).on('load', main);
+		</script>
+		<title>CodeCards - Decoded</title>
+		<link rel="stylesheet" href="css/style.css">
+	</head>
+	<body class="pre">
+		<div id="container" class="start">
+			<header>
+				<h3>Decoded</h3>
+				<h1>CodeCards</h1>
+			</header>
+
+			<div class="icon source">
+				<img src="svg/source-code.svg">
+				<h3>CodeCards</h3>
+			</div>
+
+			<div class="icon remote">
+				<img src="svg/remote.svg">
+				<h3>Remote Control</h3>
+			</div>
+
+			<div class="icon design">
+				<img src="svg/design.svg">
+				<h3>Scenario Designer</h3>
+			</div>
+		</div>
+		<script>
+		// DOM ready event not firing. Hacky solution.
+		setTimeout(main, 250);
+		</script>
+	</body>
+</html>
