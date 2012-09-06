@@ -54,6 +54,33 @@ module.exports = class Marker extends AR.Marker
 
     @pointInPolygon @lookAheadPoints, x, y
 
+  lookBehind: (x, y) ->
+    if ! @lookBehindPoints
+      p = Util.clone @corners
+      g = @geom
+
+      if g[0].m is Infinity or g[0].m is -Infinity
+        p[1] = if p[0].y > p[1].y then 480 else 0
+      else if p[0].x > p[1].x
+        p[1].x = 640
+        p[1].y = g[0].m * 640 + g[0].c
+      else
+        p[1].x = 0
+        p[1].y = g[0].c
+
+      if g[2].m is Infinity or g[2].m is -Infinity
+        p[2] = if p[3].y > p[2].y then 480 else 0
+      else if p[3].x > p[2].x
+        p[2].x = 640
+        p[2].y = g[2].m * 640 + g[2].c
+      else
+        p[2].x = 0
+        p[2].y = g[2].c
+
+      @lookBehindPoints = p
+
+    @pointInPolygon @lookBehindPoints, x, y
+
   isAbove: (x, y) ->
     if ! @isAbovePoints
       p = Util.clone @corners
@@ -84,6 +111,12 @@ module.exports = class Marker extends AR.Marker
       @isAbovePoints = p
 
     @pointInPolygon @isAbovePoints, x, y
+
+  distanceAbove: (x, y) ->
+    g = @geom
+    d = Math.abs (g[0].m * x) - y + g[0].c
+    d /= Math.sqrt g[0].m * g[0].m + 1
+    d
 
   pointInPolygon: (p, x, y) ->
     # Point in polygon by ray-casting.
