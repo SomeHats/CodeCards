@@ -15,7 +15,7 @@ module.exports = class App extends Backbone.View
 
     stats = new Stats
     stats.setMode 0
-    document.body.appendChild stats.domElement
+    @$el.append stats.domElement
 
     @interpreter.on 'error', (error) ->
       stats.end()
@@ -35,12 +35,18 @@ module.exports = class App extends Backbone.View
 
     window.inte = @interpreter
 
-    gui = new dat.GUI
+    gui = new dat.GUI autoPlace: false
     gui.add(@interpreter, 'blend', 1, 30).step 1
     gui.add @interpreter, 'brightness', -100, 100
     gui.add @interpreter, 'contrast', -100, 100
     gui.add(@interpreter, 'sharpen', 0, 10).setValue 0
     gui.add @interpreter, 'distanceLimit', 1, 30
+    @$el.append gui.domElement
 
-  render: ->
+  render: (callback= (-> null), ctx = @) ->
     @$el.html template()
+    callback.apply ctx
+
+  unrender: (callback= (-> null), ctx = @) ->
+    @$el.html ''
+    callback.apply ctx

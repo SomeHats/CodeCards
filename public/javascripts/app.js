@@ -108,24 +108,71 @@ window.require.define({"initialize": function(exports, require, module) {
       this.router = new Router;
       _this = this;
       this.router.on('route:root', function() {
-        return _this.startLoader();
+        return _this.start(Loader);
       });
       this.router.on('route:main', function() {
-        return _this.startMain();
+        return _this.start(Main);
       });
       return Backbone.history.start();
     };
 
-    App.prototype.startLoader = function() {
-      return this.loader = new Loader({
-        el: this.cont
+    App.prototype.start = function(page) {
+      return this.unrenderCurrent(function() {
+        this.current = new page({
+          el: this.cont
+        });
+        return this.renderCurrent();
       });
+    };
+
+    App.prototype.renderCurrent = function() {
+      this.cont.addClass(this.current.name);
+      return this.current.render();
+    };
+
+    App.prototype.unrenderCurrent = function(callback) {
+      if (callback == null) {
+        callback = function() {
+          return null;
+        };
+      }
+      return this.current.unrender(function() {
+        this.cont.removeClass(this.current.name);
+        this.cont.html('');
+        return callback.apply(this);
+      }, this);
     };
 
     App.prototype.startMain = function() {
       return this.main = new Main({
         el: this.cont
       });
+    };
+
+    App.prototype.current = {
+      unrender: function(callback, ctx) {
+        if (callback == null) {
+          callback = (function() {
+            return null;
+          });
+        }
+        if (ctx == null) {
+          ctx = this;
+        }
+        return callback.apply(ctx);
+      },
+      render: function(callback, ctx) {
+        if (callback == null) {
+          callback = (function() {
+            return null;
+          });
+        }
+        if (ctx == null) {
+          ctx = this;
+        }
+        return callback.apply(ctx);
+      },
+      name: ''
     };
 
     return App;
@@ -840,13 +887,18 @@ window.require.define({"loader": function(exports, require, module) {
       return Loader.__super__.constructor.apply(this, arguments);
     }
 
-    Loader.prototype.initialize = function() {
-      return this.render();
-    };
+    Loader.prototype.initialize = function() {};
 
-    Loader.prototype.render = function() {
+    Loader.prototype.render = function(callback, ctx) {
       var header, icons;
-      this.$el.addClass('loader');
+      if (callback == null) {
+        callback = (function() {
+          return null;
+        });
+      }
+      if (ctx == null) {
+        ctx = this;
+      }
       this.$el.html(template());
       header = this.$('header');
       icons = this.$('.icon');
@@ -858,20 +910,76 @@ window.require.define({"loader": function(exports, require, module) {
           easing: 'ease'
         });
         return icons.each(function(index) {
-          return $(this).animate({
-            opacity: 1,
-            translateY: '0px'
-          }, {
-            easing: 'ease',
-            delay: index * 150 + 100
-          });
+          if (index === 2) {
+            return $(this).animate({
+              opacity: 1,
+              translateY: '0px'
+            }, {
+              easing: 'ease',
+              delay: index * 150 + 100,
+              complete: function() {
+                return callback.apply(ctx);
+              }
+            });
+          } else {
+            return $(this).animate({
+              opacity: 1,
+              translateY: '0px'
+            }, {
+              easing: 'ease',
+              delay: index * 150 + 100
+            });
+          }
         });
       }, 25);
     };
 
-    Loader.prototype.unrender = function() {
-      return this.$el.removeClass('loader');
+    Loader.prototype.unrender = function(callback, ctx) {
+      var header, icons;
+      if (callback == null) {
+        callback = (function() {
+          return null;
+        });
+      }
+      if (ctx == null) {
+        ctx = this;
+      }
+      header = this.$('header');
+      icons = this.$('.icon');
+      header.animate({
+        opacity: 0,
+        translateY: '-200px'
+      }, {
+        duration: 300,
+        easing: 'ease-in'
+      });
+      return icons.each(function(index) {
+        if (index === 2) {
+          return $(this).animate({
+            opacity: 0,
+            translateY: '150px'
+          }, {
+            easing: 'ease-in',
+            delay: index * 150,
+            duration: 300,
+            complete: function() {
+              return callback.apply(ctx);
+            }
+          });
+        } else {
+          return $(this).animate({
+            opacity: 0,
+            translateY: '150px'
+          }, {
+            easing: 'ease-in',
+            delay: index * 150,
+            duration: 300
+          });
+        }
+      });
     };
+
+    Loader.prototype.name = 'loader';
 
     return Loader;
 
@@ -908,7 +1016,7 @@ window.require.define({"main": function(exports, require, module) {
       $code = $('code');
       stats = new Stats;
       stats.setMode(0);
-      document.body.appendChild(stats.domElement);
+      this.$el.append(stats.domElement);
       this.interpreter.on('error', function(error) {
         stats.end();
         stats.begin();
@@ -928,16 +1036,41 @@ window.require.define({"main": function(exports, require, module) {
         return $code.html(code);
       });
       window.inte = this.interpreter;
-      gui = new dat.GUI;
+      gui = new dat.GUI({
+        autoPlace: false
+      });
       gui.add(this.interpreter, 'blend', 1, 30).step(1);
       gui.add(this.interpreter, 'brightness', -100, 100);
       gui.add(this.interpreter, 'contrast', -100, 100);
       gui.add(this.interpreter, 'sharpen', 0, 10).setValue(0);
-      return gui.add(this.interpreter, 'distanceLimit', 1, 30);
+      gui.add(this.interpreter, 'distanceLimit', 1, 30);
+      return this.$el.append(gui.domElement);
     };
 
-    App.prototype.render = function() {
-      return this.$el.html(template());
+    App.prototype.render = function(callback, ctx) {
+      if (callback == null) {
+        callback = (function() {
+          return null;
+        });
+      }
+      if (ctx == null) {
+        ctx = this;
+      }
+      this.$el.html(template());
+      return callback.apply(ctx);
+    };
+
+    App.prototype.unrender = function(callback, ctx) {
+      if (callback == null) {
+        callback = (function() {
+          return null;
+        });
+      }
+      if (ctx == null) {
+        ctx = this;
+      }
+      this.$el.html('');
+      return callback.apply(ctx);
     };
 
     return App;
