@@ -105,6 +105,7 @@ window.require.define({"initialize": function(exports, require, module) {
       var _this;
       window.Util.animationFrame();
       this.cont = $('#container');
+      this.$body = $(document.body);
       this.router = new Router;
       _this = this;
       this.router.on('route:root', function() {
@@ -117,6 +118,8 @@ window.require.define({"initialize": function(exports, require, module) {
     };
 
     App.prototype.start = function(page) {
+      this.$body.addClass('transitioning');
+      window.scrollTo(0, 0);
       return this.unrenderCurrent(function() {
         this.current = new page({
           el: this.cont
@@ -126,8 +129,12 @@ window.require.define({"initialize": function(exports, require, module) {
     };
 
     App.prototype.renderCurrent = function() {
+      var _this;
       this.cont.addClass(this.current.name);
-      return this.current.render();
+      _this = this;
+      return this.current.render(function() {
+        return _this.$body.removeClass('transitioning');
+      });
     };
 
     App.prototype.unrenderCurrent = function(callback) {
@@ -141,12 +148,6 @@ window.require.define({"initialize": function(exports, require, module) {
         this.cont.html('');
         return callback.apply(this);
       }, this);
-    };
-
-    App.prototype.startMain = function() {
-      return this.main = new Main({
-        el: this.cont
-      });
     };
 
     App.prototype.current = {
@@ -656,6 +657,78 @@ window.require.define({"interpreter/marker": function(exports, require, module) 
   
 }});
 
+window.require.define({"interpreter/remote": function(exports, require, module) {
+  var Remote, template,
+    __hasProp = {}.hasOwnProperty,
+    __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
+
+  template = require('interpreter/templates/remote');
+
+  module.exports = Remote = (function(_super) {
+
+    __extends(Remote, _super);
+
+    function Remote() {
+      return Remote.__super__.constructor.apply(this, arguments);
+    }
+
+    Remote.prototype.initialize = function() {
+      return this.render();
+    };
+
+    Remote.prototype.render = function() {
+      var cancel, connect, open, pin, submit, _ths;
+      this.$el.html(template());
+      _ths = this;
+      open = this.$('.remote');
+      connect = this.$('.go');
+      cancel = this.$('.cancel');
+      pin = this.$('input');
+      open.on('click', function() {
+        _ths.$el.removeClass('hide');
+        return pin.focus();
+      });
+      cancel.on('click', function() {
+        return _ths.$el.addClass('hide');
+      });
+      submit = function() {
+        var val;
+        val = pin.val();
+        if (val.length === 4 && !isNaN(parseFloat(val)) && isFinite(val)) {
+          return _ths.connect(val);
+        } else {
+          return Util.alert('Sorry, that\s not valid. Please enter the pin shown on the remote.');
+        }
+      };
+      connect.on('click', function() {
+        return submit();
+      });
+      return pin.on('keypress', function(e) {
+        if (e.which === 13) {
+          return submit();
+        }
+      });
+    };
+
+    Remote.prototype.connect = function(pin) {
+      return console.log(pin);
+    };
+
+    return Remote;
+
+  })(Backbone.View);
+  
+}});
+
+window.require.define({"interpreter/templates/remote": function(exports, require, module) {
+  module.exports = Handlebars.template(function (Handlebars,depth0,helpers,partials,data) {
+    helpers = helpers || Handlebars.helpers;
+    var foundHelper, self=this;
+
+
+    return "<div>\n  <h3>Enter your pin:</h3>\n  <input type=\"tel\" name=\"pin-number\" maxlength=\"4\" placeholder=\"****\">\n  <button class=\"go\">Connect</button>\n  <button class=\"cancel\">Cancel</button>\n</div>\n<a class=\"remote\">\n  <img src=\"/svg/remote-yellow.svg\" width=\"46\">\n</a>";});
+}});
+
 window.require.define({"interpreter/usermedia": function(exports, require, module) {
   var UserMedia,
     __hasProp = {}.hasOwnProperty,
@@ -820,11 +893,13 @@ window.require.define({"lib/util": function(exports, require, module) {
 
     function util() {
       var self;
-      window.requestAnimationFrame = window.requestAnimationFrame || window.mozRequestAnimationFrame || window.webkitRequestAnimationFrame;
+      window.requestAnimationFrame = window.requestAnimationFrame || window.mozRequestAnimationFrame || window.webkitRequestAnimationFrame || function(callback) {
+        return setTimeout(callback, 20);
+      };
       self = this;
       $(document).on('mousemove', function(e) {
-        self.mouse.x = e.clientX;
-        return self.mouse.y = e.clientY;
+        self.mouse.x = e.pageX;
+        return self.mouse.y = e.pageY;
       });
     }
 
@@ -862,6 +937,10 @@ window.require.define({"lib/util": function(exports, require, module) {
         return copy;
       }
       throw new Error("Unable to copy obj! Its type isn't supported.");
+    };
+
+    util.prototype.alert = function(msg) {
+      return alert(msg);
     };
 
     return util;
@@ -988,13 +1067,15 @@ window.require.define({"loader": function(exports, require, module) {
 }});
 
 window.require.define({"main": function(exports, require, module) {
-  var App, Interpreter, data, template,
+  var App, Interpreter, Remote, data, template,
     __hasProp = {}.hasOwnProperty,
     __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
 
   Interpreter = require('interpreter');
 
   data = require('data/test');
+
+  Remote = require('interpreter/remote');
 
   template = require('templates/main');
 
@@ -1007,16 +1088,18 @@ window.require.define({"main": function(exports, require, module) {
     }
 
     App.prototype.initialize = function() {
-      var $code, gui, stats;
-      this.render();
-      this.$('canvas');
+      var stats;
+      stats = new Stats;
+      stats.setMode(0);
+      return this.$el.append(stats.domElement);
+    };
+
+    App.prototype.start = function() {
+      var $code, gui;
       this.interpreter = new Interpreter({
         el: this.$('#canvas')
       });
       $code = $('code');
-      stats = new Stats;
-      stats.setMode(0);
-      this.$el.append(stats.domElement);
       this.interpreter.on('error', function(error) {
         stats.end();
         stats.begin();
@@ -1039,7 +1122,7 @@ window.require.define({"main": function(exports, require, module) {
       gui = new dat.GUI({
         autoPlace: false
       });
-      gui.add(this.interpreter, 'blend', 1, 30).step(1);
+      gui.add(this.interpreter, 'blend', 1, 30).step(16);
       gui.add(this.interpreter, 'brightness', -100, 100);
       gui.add(this.interpreter, 'contrast', -100, 100);
       gui.add(this.interpreter, 'sharpen', 0, 10).setValue(0);
@@ -1048,6 +1131,7 @@ window.require.define({"main": function(exports, require, module) {
     };
 
     App.prototype.render = function(callback, ctx) {
+      var nav, remote, _this;
       if (callback == null) {
         callback = (function() {
           return null;
@@ -1056,11 +1140,27 @@ window.require.define({"main": function(exports, require, module) {
       if (ctx == null) {
         ctx = this;
       }
+      _this = this;
       this.$el.html(template());
-      return callback.apply(ctx);
+      remote = new Remote({
+        el: this.$('.pin-entry')
+      });
+      nav = this.$('nav');
+      nav.animate({
+        opacity: 1,
+        translateY: '0px'
+      }, {
+        easing: 'ease-out',
+        duration: 250,
+        complete: function() {
+          return callback.apply(ctx);
+        }
+      });
+      return this.start();
     };
 
     App.prototype.unrender = function(callback, ctx) {
+      var nav;
       if (callback == null) {
         callback = (function() {
           return null;
@@ -1069,9 +1169,20 @@ window.require.define({"main": function(exports, require, module) {
       if (ctx == null) {
         ctx = this;
       }
-      this.$el.html('');
-      return callback.apply(ctx);
+      nav = this.$('nav');
+      return nav.animate({
+        opacity: 0,
+        translateY: '70px'
+      }, {
+        easing: 'ease-in',
+        duration: 250,
+        complete: function() {
+          return callback.apply(ctx);
+        }
+      });
     };
+
+    App.prototype.name = 'main';
 
     return App;
 
@@ -1110,7 +1221,7 @@ window.require.define({"templates/loader": function(exports, require, module) {
     var foundHelper, self=this;
 
 
-    return "<header>\n  <h3 class=\"decoded\">Decoded</h3>\n  <h1><span>{</span>code<span>}</span>cards</h1>\n</header>\n\n<a class=\"icon source\" href=\"#CodeCards\">\n  <img src=\"/svg/source-code.svg\">\n  <h3>CodeCards</h3>\n</a>\n\n<a class=\"icon remote\" href=\"#remote\">\n  <img src=\"/svg/remote.svg\">\n  <h3>Remote Control</h3>\n</a>\n\n<a class=\"icon design\" href=\"#designer\">\n  <img src=\"/svg/design.svg\">\n  <h3>Scenario Designer</h3>\n</a>";});
+    return "<header class=\"logo\">\n  <h3 class=\"decoded\">Decoded</h3>\n  <h1><span>{</span>code<span>}</span>cards</h1>\n</header>\n\n<a class=\"icon source\" href=\"#CodeCards\">\n  <img src=\"/svg/source-code.svg\">\n  <h3>CodeCards</h3>\n</a>\n\n<a class=\"icon remote\" href=\"#remote\">\n  <img src=\"/svg/remote.svg\">\n  <h3>Remote Control</h3>\n</a>\n\n<a class=\"icon design\" href=\"#designer\">\n  <img src=\"/svg/design.svg\">\n  <h3>Scenario Designer</h3>\n</a>";});
 }});
 
 window.require.define({"templates/main": function(exports, require, module) {
@@ -1119,6 +1230,6 @@ window.require.define({"templates/main": function(exports, require, module) {
     var foundHelper, self=this;
 
 
-    return "<canvas id=\"canvas\" width=\"640\" height=\"480\"></canvas>\n<div style=\"position: absolute; top: 0; left: 660px\">\n  <h3 id=\"alert\"></h3>\n  <pre><code class=\"language-js\"></code></pre>\n</div>";});
+    return "<nav>\n  <a class=\"logo\" href=\"#\">\n    <h3 class=\"decoded\">Decoded</h3>\n    <h1><span>{</span>code<span>}</span>cards</h1>\n  </a>\n  <section class=\"pin-entry hide\"></section>\n</nav>\n<canvas id=\"canvas\" width=\"640\" height=\"480\" style=\"max-width: 100%\"></canvas>\n<div style=\"position: absolute; top: 0; left: 660px\">\n  <h3 id=\"alert\"></h3>\n  <pre><code class=\"language-js\"></code></pre>\n</div>";});
 }});
 

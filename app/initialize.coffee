@@ -9,6 +9,7 @@ module.exports = class App extends Backbone.View
     window.Util.animationFrame()
 
     @cont = $ '#container'
+    @$body = $ document.body
     
     @router = new Router
     _this = @
@@ -20,13 +21,17 @@ module.exports = class App extends Backbone.View
     Backbone.history.start()
 
   start: (page) ->
+    @$body.addClass 'transitioning'
+    window.scrollTo 0, 0
     @unrenderCurrent ->
       @current = new page el: @cont
       @renderCurrent()
 
   renderCurrent: ->
     @cont.addClass @current.name
-    @current.render()
+    _this = @
+    @current.render ->
+      _this.$body.removeClass 'transitioning'
 
   unrenderCurrent: (callback= -> null) ->
     @current.unrender ->
@@ -34,9 +39,6 @@ module.exports = class App extends Backbone.View
       @cont.html ''
       callback.apply @
     , @
-
-  startMain: ->
-    @main = new Main el: @cont
 
   current:
     unrender: (callback= (-> null), ctx=@) -> callback.apply ctx

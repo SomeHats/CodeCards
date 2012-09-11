@@ -6,13 +6,13 @@ class util extends Backbone.View
 
   constructor: ->
     window.requestAnimationFrame = window.requestAnimationFrame or window.mozRequestAnimationFrame or 
-                              window.webkitRequestAnimationFrame
+                              window.webkitRequestAnimationFrame or (callback) -> setTimeout callback, 20
 
     self = @
 
     $(document).on 'mousemove', (e) ->
-      self.mouse.x = e.clientX
-      self.mouse.y = e.clientY
+      self.mouse.x = e.pageX
+      self.mouse.y = e.pageY
 
   animationFrame: ->
     window.Util.trigger 'animationFrame'
@@ -43,5 +43,9 @@ class util extends Backbone.View
       return copy;
 
     throw new Error("Unable to copy obj! Its type isn't supported.");
+
+  alert: (msg) ->
+    # Temporary solution
+    alert msg
 
 window.Util = new util

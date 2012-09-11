@@ -1,0 +1,9 @@
+{
+  "name": "CodeCards-remote-server",
+  "version": "0.0.1",
+  "author": "Joe Dytrych <me@jdytrych.co.uk>",
+  "dependencies": {
+    "socket.io": "0.9.10",
+    "coloured-log": "0.9.7"
+  }
+}
