@@ -1,0 +1,96 @@
+@import 'nib'
+
+.loader
+  text-align center
+  width 320px
+  height 430px
+  position absolute
+  top 50%
+  left 50%
+  margin-top -215px
+  margin-left -160px
+
+  header
+    font-size 60px
+
+    // Hidden
+    transform translateY(-200px)
+    opacity 0
+
+    h1
+      font-size 1em
+      font-family 'Open Sans'
+      font-weight 300
+      margin 0
+      padding 0
+
+      span
+        font-size 0.75em
+        font-weight 400
+        position relative
+        top -0.08em
+
+    h3
+      font-size 0.46em
+      margin 0
+      padding 0
+      margin-bottom -1.3em
+      margin-left -6.9em
+
+  .icon
+    display inline-block
+    width 30%
+    min-width 150px
+    white-space nowrap
+    color black
+    text-decoration none
+
+    // Hidden
+    transform translateY(150px)
+    opacity 0
+
+    img
+      width 80%
+
+    h3
+      height 52px
+      margin 0
+
+    &.remote img
+      position: relative
+      top: -20px
+
+  &.hidden
+    header
+
+  @media (max-height: 430px) and (max-width: 480px),
+         (max-height: 300px) and (min-width: 480px),
+         (max-height: 380px) and (min-width: 640px),
+         (max-height: 460px) and (min-width: 800px)
+    margin auto !important
+    position static
+
+  @media (min-width: 480px)
+    width 480px
+    height 300px
+    margin-top -150px
+    margin-left -240px
+    header
+      font-size 85px
+
+  @media (min-width: 640px)
+    width 640px
+    height 380px
+    margin-top -190px
+    margin-left -320px
+    header
+      font-size 120px
+
+  @media (min-width: 800px)
+    width 800px
+    height 460px
+    margin-top -230px
+    margin-left -400px
+    header
+      font-size 150px
+

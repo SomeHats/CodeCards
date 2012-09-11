@@ -81,15 +81,17 @@ window.require.define({"data/test": function(exports, require, module) {
 }});
 
 window.require.define({"initialize": function(exports, require, module) {
-  var App, Interpreter, data,
+  var App, Loader, Main, Router,
     __hasProp = {}.hasOwnProperty,
     __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
 
-  Interpreter = require('interpreter');
-
   require('lib/util');
 
-  data = require('data/test');
+  Router = require('router');
+
+  Loader = require('loader');
+
+  Main = require('main');
 
   module.exports = App = (function(_super) {
 
@@ -100,39 +102,30 @@ window.require.define({"initialize": function(exports, require, module) {
     }
 
     App.prototype.initialize = function() {
-      var $code, gui, stats;
+      var _this;
       window.Util.animationFrame();
-      this.interpreter = new Interpreter({
-        el: $('canvas')
+      this.cont = $('#container');
+      this.router = new Router;
+      _this = this;
+      this.router.on('route:root', function() {
+        return _this.startLoader();
       });
-      $code = $('code');
-      stats = new Stats;
-      stats.setMode(0);
-      document.body.appendChild(stats.domElement);
-      this.interpreter.on('error', function(error) {
-        stats.end();
-        stats.begin();
-        return $('#alert').html('Error: ' + error);
+      this.router.on('route:main', function() {
+        return _this.startMain();
       });
-      this.interpreter.on('success', function(results) {
-        var code, result, _i, _len;
-        stats.end();
-        stats.begin();
-        code = "";
-        for (_i = 0, _len = results.length; _i < _len; _i++) {
-          result = results[_i];
-          code += data[result];
-        }
-        $('#alert').html('Success! ' + code);
-        code = js_beautify(code);
-        return $code.html(code);
+      return Backbone.history.start();
+    };
+
+    App.prototype.startLoader = function() {
+      return this.loader = new Loader({
+        el: this.cont
       });
-      gui = new dat.GUI;
-      gui.add(this.interpreter, 'blend', 1, 30).step(1);
-      gui.add(this.interpreter, 'brightness', -100, 100);
-      gui.add(this.interpreter, 'contrast', -100, 100);
-      gui.add(this.interpreter, 'sharpen', 0, 10).setValue(0);
-      return gui.add(this.interpreter, 'distanceLimit', 1, 30);
+    };
+
+    App.prototype.startMain = function() {
+      return this.main = new Main({
+        el: this.cont
+      });
     };
 
     return App;
@@ -173,12 +166,24 @@ window.require.define({"interpreter": function(exports, require, module) {
     Interpreter.prototype.distanceLimit = 4.5;
 
     Interpreter.prototype.initialize = function() {
+      this.render();
       this.UserMedia = new UserMedia({
         el: $('<canvas>')
       });
       this.UserMedia.p = this;
-      HighLighter.context = this.ctx = this.el.getContext('2d');
       return this.UserMedia.on('imageData', this.detect);
+    };
+
+    Interpreter.prototype.render = function() {
+      return HighLighter.context = this.ctx = this.el.getContext('2d');
+    };
+
+    Interpreter.prototype.pause = function() {
+      return this.UserMedia.paused = true;
+    };
+
+    Interpreter.prototype.unpause = function() {
+      return this.UserMedia.paused = false;
     };
 
     Interpreter.prototype.detect = function() {
@@ -188,9 +193,11 @@ window.require.define({"interpreter": function(exports, require, module) {
       }
       this.p.imageData.push(this.imageData);
       if (this.p.imageData.length === this.p.blend) {
-        data = this.p.averageImageData();
+        data = this.p.blend === 1 ? this.p.imageData[0] : this.p.averageImageData();
         this.p.imageData.shift();
-        data = ImageFilters.BrightnessContrastGimp(data, this.p.brightness, this.p.contrast);
+        if (this.p.brightness !== 0 || this.p.contrast !== 0) {
+          data = ImageFilters.BrightnessContrastGimp(data, this.p.brightness, this.p.contrast);
+        }
         if (this.p.sharpen !== 0) {
           data = ImageFilters.Sharpen(data, this.p.sharpen);
         }
@@ -199,8 +206,8 @@ window.require.define({"interpreter": function(exports, require, module) {
         this.p.markers = this.p.markers.map(function(marker, index) {
           return new Marker(marker.id, marker.corners, index);
         });
-        this.p.interpret.apply(this.p);
-        return this.p.highlight.apply(this.p);
+        this.p.interpret();
+        return this.p.highlight();
       }
     };
 
@@ -629,18 +636,20 @@ window.require.define({"interpreter/usermedia": function(exports, require, modul
         }
         self.ctx = ctx = self.el.getContext('2d');
         return Util.on('animationFrame', function() {
-          if (video.readyState === video.HAVE_ENOUGH_DATA) {
-            ctx.drawImage(video, 0, 0, video.videoWidth, video.videoHeight);
-            if (self.el.isSetUp) {
-              self.ctx.drawImage(video, 0, 0, video.videoWidth, video.videoHeight);
-              self.imageData = self.ctx.getImageData(0, 0, self.el.width, self.el.height);
-              return self.trigger('imageData');
-            } else if (video.videoWidth) {
-              self.el.setAttribute('width', video.videoWidth);
-              self.el.setAttribute('height', video.videoHeight);
-              self.el.width = video.videoWidth;
-              self.el.height = video.videoHeight;
-              return self.el.isSetUp = true;
+          if (!self.paused) {
+            if (video.readyState === video.HAVE_ENOUGH_DATA) {
+              ctx.drawImage(video, 0, 0, video.videoWidth, video.videoHeight);
+              if (self.el.isSetUp) {
+                self.ctx.drawImage(video, 0, 0, video.videoWidth, video.videoHeight);
+                self.imageData = self.ctx.getImageData(0, 0, self.el.width, self.el.height);
+                return self.trigger('imageData');
+              } else if (video.videoWidth) {
+                self.el.setAttribute('width', video.videoWidth);
+                self.el.setAttribute('height', video.videoHeight);
+                self.el.width = video.videoWidth;
+                self.el.height = video.videoHeight;
+                return self.el.isSetUp = true;
+              }
             }
           }
         });
@@ -665,6 +674,8 @@ window.require.define({"interpreter/usermedia": function(exports, require, modul
         return error();
       }
     };
+
+    UserMedia.prototype.paused = false;
 
     return UserMedia;
 
@@ -812,5 +823,169 @@ window.require.define({"lib/util": function(exports, require, module) {
 
   window.Util = new util;
   
+}});
+
+window.require.define({"loader": function(exports, require, module) {
+  var Loader, template,
+    __hasProp = {}.hasOwnProperty,
+    __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
+
+  template = require('templates/loader');
+
+  module.exports = Loader = (function(_super) {
+
+    __extends(Loader, _super);
+
+    function Loader() {
+      return Loader.__super__.constructor.apply(this, arguments);
+    }
+
+    Loader.prototype.initialize = function() {
+      return this.render();
+    };
+
+    Loader.prototype.render = function() {
+      var header, icons;
+      this.$el.addClass('loader');
+      this.$el.html(template());
+      header = this.$('header');
+      icons = this.$('.icon');
+      return setTimeout(function() {
+        header.animate({
+          opacity: 1,
+          translateY: '0px'
+        }, {
+          easing: 'ease'
+        });
+        return icons.each(function(index) {
+          return $(this).animate({
+            opacity: 1,
+            translateY: '0px'
+          }, {
+            easing: 'ease',
+            delay: index * 150 + 100
+          });
+        });
+      }, 25);
+    };
+
+    Loader.prototype.unrender = function() {
+      return this.$el.removeClass('loader');
+    };
+
+    return Loader;
+
+  })(Backbone.View);
+  
+}});
+
+window.require.define({"main": function(exports, require, module) {
+  var App, Interpreter, data, template,
+    __hasProp = {}.hasOwnProperty,
+    __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
+
+  Interpreter = require('interpreter');
+
+  data = require('data/test');
+
+  template = require('templates/main');
+
+  module.exports = App = (function(_super) {
+
+    __extends(App, _super);
+
+    function App() {
+      return App.__super__.constructor.apply(this, arguments);
+    }
+
+    App.prototype.initialize = function() {
+      var $code, gui, stats;
+      this.render();
+      this.$('canvas');
+      this.interpreter = new Interpreter({
+        el: this.$('#canvas')
+      });
+      $code = $('code');
+      stats = new Stats;
+      stats.setMode(0);
+      document.body.appendChild(stats.domElement);
+      this.interpreter.on('error', function(error) {
+        stats.end();
+        stats.begin();
+        return $('#alert').html('Error: ' + error);
+      });
+      this.interpreter.on('success', function(results) {
+        var code, result, _i, _len;
+        stats.end();
+        stats.begin();
+        code = "";
+        for (_i = 0, _len = results.length; _i < _len; _i++) {
+          result = results[_i];
+          code += data[result];
+        }
+        $('#alert').html('Success! ' + code);
+        code = js_beautify(code);
+        return $code.html(code);
+      });
+      window.inte = this.interpreter;
+      gui = new dat.GUI;
+      gui.add(this.interpreter, 'blend', 1, 30).step(1);
+      gui.add(this.interpreter, 'brightness', -100, 100);
+      gui.add(this.interpreter, 'contrast', -100, 100);
+      gui.add(this.interpreter, 'sharpen', 0, 10).setValue(0);
+      return gui.add(this.interpreter, 'distanceLimit', 1, 30);
+    };
+
+    App.prototype.render = function() {
+      return this.$el.html(template());
+    };
+
+    return App;
+
+  })(Backbone.View);
+  
+}});
+
+window.require.define({"router": function(exports, require, module) {
+  var Router,
+    __hasProp = {}.hasOwnProperty,
+    __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
+
+  module.exports = Router = (function(_super) {
+
+    __extends(Router, _super);
+
+    function Router() {
+      return Router.__super__.constructor.apply(this, arguments);
+    }
+
+    Router.prototype.routes = {
+      "": "root",
+      "CodeCards": "main",
+      ":404": "root"
+    };
+
+    return Router;
+
+  })(Backbone.Router);
+  
+}});
+
+window.require.define({"templates/loader": function(exports, require, module) {
+  module.exports = Handlebars.template(function (Handlebars,depth0,helpers,partials,data) {
+    helpers = helpers || Handlebars.helpers;
+    var foundHelper, self=this;
+
+
+    return "<header>\n  <h3 class=\"decoded\">Decoded</h3>\n  <h1><span>{</span>code<span>}</span>cards</h1>\n</header>\n\n<a class=\"icon source\" href=\"#CodeCards\">\n  <img src=\"/svg/source-code.svg\">\n  <h3>CodeCards</h3>\n</a>\n\n<a class=\"icon remote\" href=\"#remote\">\n  <img src=\"/svg/remote.svg\">\n  <h3>Remote Control</h3>\n</a>\n\n<a class=\"icon design\" href=\"#designer\">\n  <img src=\"/svg/design.svg\">\n  <h3>Scenario Designer</h3>\n</a>";});
+}});
+
+window.require.define({"templates/main": function(exports, require, module) {
+  module.exports = Handlebars.template(function (Handlebars,depth0,helpers,partials,data) {
+    helpers = helpers || Handlebars.helpers;
+    var foundHelper, self=this;
+
+
+    return "<canvas id=\"canvas\" width=\"640\" height=\"480\"></canvas>\n<div style=\"position: absolute; top: 0; left: 660px\">\n  <h3 id=\"alert\"></h3>\n  <pre><code class=\"language-js\"></code></pre>\n</div>";});
 }});
 

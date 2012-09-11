@@ -12,12 +12,21 @@ module.exports = class Interpreter extends Backbone.View
   distanceLimit: 4.5
 
   initialize: ->
+    @render()
+
     @UserMedia = new UserMedia {el: $ '<canvas>'}
     @UserMedia.p = @
 
+    @UserMedia.on 'imageData', @detect
+
+  render: ->
     HighLighter.context = @ctx = @el.getContext '2d'
 
-    @UserMedia.on 'imageData', @detect
+  pause: ->
+    @UserMedia.paused = yes
+
+  unpause: ->
+    @UserMedia.paused = no
 
   detect: ->
     if @p.imageData.length > @p.blend
@@ -26,10 +35,11 @@ module.exports = class Interpreter extends Backbone.View
     @p.imageData.push @imageData
 
     if @p.imageData.length is @p.blend
-      data = @p.averageImageData()
+      data = if @p.blend is 1 then @p.imageData[0] else @p.averageImageData()
       @p.imageData.shift()
 
-      data = ImageFilters.BrightnessContrastGimp data, @p.brightness, @p.contrast
+      if @p.brightness isnt 0 or @p.contrast isnt 0
+        data = ImageFilters.BrightnessContrastGimp data, @p.brightness, @p.contrast
       if @p.sharpen isnt 0
         data = ImageFilters.Sharpen data, @p.sharpen
 
@@ -40,8 +50,8 @@ module.exports = class Interpreter extends Backbone.View
       @p.markers = @p.markers.map (marker, index) ->
         new Marker marker.id, marker.corners, index
 
-      @p.interpret.apply @p
-      @p.highlight.apply @p
+      @p.interpret()#.apply @p
+      @p.highlight()#.apply @p
 
   highlight: ->
     HighLighter.drawCorners @markers

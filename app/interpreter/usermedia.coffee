@@ -14,20 +14,21 @@ module.exports = class UserMedia extends Backbone.View
       self.ctx = ctx = self.el.getContext '2d'
 
       Util.on 'animationFrame', ->
-        if video.readyState is video.HAVE_ENOUGH_DATA
-          ctx.drawImage video, 0, 0, video.videoWidth, video.videoHeight
-          if self.el.isSetUp
-            self.ctx.drawImage video, 0, 0, video.videoWidth, video.videoHeight
-            self.imageData = self.ctx.getImageData 0, 0, self.el.width, self.el.height
+        if !self.paused
+          if video.readyState is video.HAVE_ENOUGH_DATA
+            ctx.drawImage video, 0, 0, video.videoWidth, video.videoHeight
+            if self.el.isSetUp
+              self.ctx.drawImage video, 0, 0, video.videoWidth, video.videoHeight
+              self.imageData = self.ctx.getImageData 0, 0, self.el.width, self.el.height
 
-            self.trigger 'imageData'
+              self.trigger 'imageData'
 
-          else if video.videoWidth
-            self.el.setAttribute 'width', video.videoWidth
-            self.el.setAttribute 'height', video.videoHeight
-            self.el.width = video.videoWidth
-            self.el.height = video.videoHeight
-            self.el.isSetUp = true
+            else if video.videoWidth
+              self.el.setAttribute 'width', video.videoWidth
+              self.el.setAttribute 'height', video.videoHeight
+              self.el.width = video.videoWidth
+              self.el.height = video.videoHeight
+              self.el.isSetUp = true
 
     error = ->
       console.log @
@@ -41,3 +42,5 @@ module.exports = class UserMedia extends Backbone.View
       navigator.webkitGetUserMedia {video: true}, success, error
     else
       error()
+
+  paused: false

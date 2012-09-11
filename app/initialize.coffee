@@ -1,38 +1,26 @@
-Interpreter = require 'interpreter'
 require 'lib/util'
+Router = require 'router'
 
-data = require 'data/test'
+Loader = require 'loader'
+Main = require 'main'
 
 module.exports = class App extends Backbone.View
   initialize: ->
     window.Util.animationFrame()
-    @interpreter = new Interpreter el: $ 'canvas'
 
-    $code = $ 'code'
+    @cont = $ '#container'
+    
+    @router = new Router
+    _this = @
 
-    stats = new Stats
-    stats.setMode 0
-    document.body.appendChild stats.domElement
+    @router.on 'route:root', -> _this.startLoader()
 
-    @interpreter.on 'error', (error) ->
-      stats.end()
-      stats.begin()
-      $('#alert').html 'Error: ' + error
+    @router.on 'route:main', -> _this.startMain()
 
-    @interpreter.on 'success', (results)->
-      stats.end()
-      stats.begin()
-      code = ""
-      code += data[result] for result in results
-      $('#alert').html 'Success! ' + code
-      code = js_beautify code
-      $code.html code
+    Backbone.history.start()
 
-      #Prism.highlightElement $code[0], false
+  startLoader: ->
+    @loader = new Loader el: @cont
 
-    gui = new dat.GUI
-    gui.add(@interpreter, 'blend', 1, 30).step 1
-    gui.add @interpreter, 'brightness', -100, 100
-    gui.add @interpreter, 'contrast', -100, 100
-    gui.add(@interpreter, 'sharpen', 0, 10).setValue 0
-    gui.add @interpreter, 'distanceLimit', 1, 30
+  startMain: ->
+    @main = new Main el: @cont

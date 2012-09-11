@@ -63,6 +63,148 @@ table { border-collapse: collapse; border-spacing: 0; }
 td { vertical-align: top; }
 
 .chromeframe { margin: 0.2em 0; background: #ccc; color: black; padding: 0.2em 0; }
+.loader {
+  text-align: center;
+  width: 320px;
+  height: 430px;
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  margin-top: -215px;
+  margin-left: -160px;
+}
+.loader header {
+  font-size: 60px;
+  -webkit-transform: translateY(-200px);
+  -moz-transform: translateY(-200px);
+  -o-transform: translateY(-200px);
+  -ms-transform: translateY(-200px);
+  transform: translateY(-200px);
+  opacity: 0;
+  -ms-filter: progid:DXImageTransform.Microsoft.Alpha(Opacity=0);
+  filter: alpha(opacity=0);
+}
+.loader header h1 {
+  font-size: 1em;
+  font-family: 'Open Sans';
+  font-weight: 300;
+  margin: 0;
+  padding: 0;
+}
+.loader header h1 span {
+  font-size: 0.75em;
+  font-weight: 400;
+  position: relative;
+  top: -0.08em;
+}
+.loader header h3 {
+  font-size: 0.46em;
+  margin: 0;
+  padding: 0;
+  margin-bottom: -1.3em;
+  margin-left: -6.9em;
+}
+.loader .icon {
+  display: inline-block;
+  width: 30%;
+  min-width: 150px;
+  white-space: nowrap;
+  color: #000;
+  text-decoration: none;
+  -webkit-transform: translateY(150px);
+  -moz-transform: translateY(150px);
+  -o-transform: translateY(150px);
+  -ms-transform: translateY(150px);
+  transform: translateY(150px);
+  opacity: 0;
+  -ms-filter: progid:DXImageTransform.Microsoft.Alpha(Opacity=0);
+  filter: alpha(opacity=0);
+}
+.loader .icon img {
+  width: 80%;
+}
+.loader .icon h3 {
+  height: 52px;
+  margin: 0;
+}
+.loader .icon.remote img {
+  position: relative;
+  top: -20px;
+}
+@media (max-height: 430px) and (max-width: 480px),(max-height: 300px) and (min-width: 480px),(max-height: 380px) and (min-width: 640px),(max-height: 460px) and (min-width: 800px) {
+  .loader {
+    margin: auto !important;
+    position: static;
+  }
+}
+@media (min-width: 480px) {
+  .loader {
+    width: 480px;
+    height: 300px;
+    margin-top: -150px;
+    margin-left: -240px;
+  }
+  .loader header {
+    font-size: 85px;
+  }
+}
+@media (min-width: 640px) {
+  .loader {
+    width: 640px;
+    height: 380px;
+    margin-top: -190px;
+    margin-left: -320px;
+  }
+  .loader header {
+    font-size: 120px;
+  }
+}
+@media (min-width: 800px) {
+  .loader {
+    width: 800px;
+    height: 460px;
+    margin-top: -230px;
+    margin-left: -400px;
+  }
+  .loader header {
+    font-size: 150px;
+  }
+}
+@font-face {
+  font-family: 'Bebas';
+  src: url("BebasNeue-webfont.eot");
+  src: url("BebasNeue-webfont.eot?#iefix") format('embedded-opentype'), url("BebasNeue-webfont.woff") format('woff'), url("BebasNeue-webfont.ttf") format('truetype'), url("BebasNeue-webfont.svg#BebasNeueRegular") format('svg');
+  font-weight: normal;
+  font-style: normal;
+}
+* {
+  -webkit-box-sizing: border-box;
+  -moz-box-sizing: border-box;
+  box-sizing: border-box;
+}
+html,
+body {
+  width: 100%;
+  height: 100%;
+}
+body {
+  background-color: #fcf700;
+  font-family: 'Open Sans', sans-serif;
+  font-weight: 400;
+  overflow-x: hidden;
+}
+h1,
+h2,
+h3,
+code,
+pre {
+  font-family: 'Inconsolata';
+  font-weight: normal;
+}
+.decoded {
+  font-family: 'Bebas';
+  font-weight: normal;
+}
 .ir { display: block; border: 0; text-indent: -999em; overflow: hidden; background-color: transparent; background-repeat: no-repeat; text-align: left; direction: ltr; *line-height: 0; }
 .ir br { display: none; }
 .hidden { display: none !important; visibility: hidden; }
