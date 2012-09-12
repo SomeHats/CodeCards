@@ -13,9 +13,33 @@ module.exports = class Remote extends Backbone.View
       router.navigate '/', trigger: on
 
     socket.on 'client', (data) ->
-      alert data
+      _ths.trigger data.event, data.data
 
-    window.socket = @socket = socket
+    @on 'join', @connectionEstablished
+
+    @socket = socket
+
+  connectionEstablished: ->
+    pin = @$ '.pin'
+
+    pin.animate {
+      opacity: 0
+      translateY: '200px'
+    }, {
+      easing: 'ease-in',
+      duration: 300
+      complete: ->
+        pin.css 'display', 'none'
+    }
+
+    @$('.hide').removeClass 'hide'
+
+    navItems = @$ 'nav li'
+    navItems.on 'click', ->
+      el = $ @
+      if ! el.hasClass 'active'
+        navItems.filter('.active').removeClass 'active'
+        el.addClass 'active'
 
   render: (callback= (-> null), ctx = @) ->
     socket = @socket

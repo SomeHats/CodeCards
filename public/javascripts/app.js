@@ -738,6 +738,10 @@ window.require.define({"interpreter/remote": function(exports, require, module) 
       });
       socket.on('accept', function() {
         status.html('Connected: ' + pin);
+        socket.emit('client', {
+          event: 'join',
+          data: pin
+        });
         return socket.on('remote', function(data) {
           return alert(data);
         });
@@ -1122,24 +1126,26 @@ window.require.define({"main": function(exports, require, module) {
       var stats;
       stats = new Stats;
       stats.setMode(0);
-      return this.$el.append(stats.domElement);
+      this.$el.append(stats.domElement);
+      return this.stats = stats;
     };
 
     App.prototype.start = function() {
-      var $code, gui;
+      var $code, gui, _ths;
       this.interpreter = new Interpreter({
         el: this.$('#canvas')
       });
       $code = $('code');
+      _ths = this;
       this.interpreter.on('error', function(error) {
-        stats.end();
-        stats.begin();
+        _ths.stats.end();
+        _ths.stats.begin();
         return $('#alert').html('Error: ' + error);
       });
       this.interpreter.on('success', function(results) {
         var code, result, _i, _len;
-        stats.end();
-        stats.begin();
+        _ths.stats.end();
+        _ths.stats.begin();
         code = "";
         for (_i = 0, _len = results.length; _i < _len; _i++) {
           result = results[_i];
@@ -1149,7 +1155,6 @@ window.require.define({"main": function(exports, require, module) {
         code = js_beautify(code);
         return $code.html(code);
       });
-      window.inte = this.interpreter;
       gui = new dat.GUI({
         autoPlace: false
       });
@@ -1162,7 +1167,7 @@ window.require.define({"main": function(exports, require, module) {
     };
 
     App.prototype.render = function(callback, ctx) {
-      var nav, remote, _this;
+      var nav, _this;
       if (callback == null) {
         callback = (function() {
           return null;
@@ -1173,7 +1178,7 @@ window.require.define({"main": function(exports, require, module) {
       }
       _this = this;
       this.$el.html(template());
-      remote = new Remote({
+      this.remote = new Remote({
         el: this.$('.pin-entry')
       });
       nav = this.$('nav');
@@ -1255,9 +1260,35 @@ window.require.define({"remote/remote": function(exports, require, module) {
         });
       });
       socket.on('client', function(data) {
-        return alert(data);
+        return _ths.trigger(data.event, data.data);
       });
-      return window.socket = this.socket = socket;
+      this.on('join', this.connectionEstablished);
+      return this.socket = socket;
+    };
+
+    Remote.prototype.connectionEstablished = function() {
+      var navItems, pin;
+      pin = this.$('.pin');
+      pin.animate({
+        opacity: 0,
+        translateY: '200px'
+      }, {
+        easing: 'ease-in',
+        duration: 300,
+        complete: function() {
+          return pin.css('display', 'none');
+        }
+      });
+      this.$('.hide').removeClass('hide');
+      navItems = this.$('nav li');
+      return navItems.on('click', function() {
+        var el;
+        el = $(this);
+        if (!el.hasClass('active')) {
+          navItems.filter('.active').removeClass('active');
+          return el.addClass('active');
+        }
+      });
     };
 
     Remote.prototype.render = function(callback, ctx) {
@@ -1332,7 +1363,7 @@ window.require.define({"remote/templates/remote": function(exports, require, mod
     stack1 = foundHelper || depth0.pin;
     if(typeof stack1 === functionType) { stack1 = stack1.call(depth0, { hash: {} }); }
     else if(stack1=== undef) { stack1 = helperMissing.call(depth0, "pin", { hash: {} }); }
-    buffer += escapeExpression(stack1) + "</h3>\n  <span>Enter it on the device you wish to control.</span>\n</div>";
+    buffer += escapeExpression(stack1) + "</h3>\n  <span>Enter it on the device you wish to control.</span>\n  <p class=\"minor\">Waiting for connection...</p>\n</div>\n<nav class=\"hide\">\n  <ul>\n    <li class=\"active\">General</li>\n    <li>Camera</li>\n    <li>Another Item</li>\n    <li>Another Item</li>\n    <li>Another Item</li>\n    <li>Another Item</li>\n    <li>Another Item</li>\n</nav>";
     return buffer;});
 }});
 

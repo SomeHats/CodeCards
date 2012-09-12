@@ -12,28 +12,27 @@ module.exports = class App extends Backbone.View
 
     @$el.append stats.domElement
 
+    @stats = stats
+
   start: ->
     @interpreter = new Interpreter el: @$ '#canvas'
 
     $code = $ 'code'
+    _ths = @
 
     @interpreter.on 'error', (error) ->
-      stats.end()
-      stats.begin()
+      _ths.stats.end()
+      _ths.stats.begin()
       $('#alert').html 'Error: ' + error
 
     @interpreter.on 'success', (results)->
-      stats.end()
-      stats.begin()
+      _ths.stats.end()
+      _ths.stats.begin()
       code = ""
       code += data[result] for result in results
       $('#alert').html 'Success! ' + code
       code = js_beautify code
       $code.html code
-
-      #Prism.highlightElement $code[0], false
-
-    window.inte = @interpreter
 
     gui = new dat.GUI autoPlace: false
     gui.add(@interpreter, 'blend', 1, 30).step 16
@@ -47,7 +46,7 @@ module.exports = class App extends Backbone.View
     _this = @
     @$el.html template()
 
-    remote = new Remote el: @$ '.pin-entry'
+    @remote = new Remote el: @$ '.pin-entry'
 
     nav = @$ 'nav'
     setTimeout ->

@@ -343,11 +343,11 @@ pre {
   font-size: 30px;
   text-align: center;
   width: 320px;
-  height: 200px;
+  height: 250px;
   position: absolute;
   top: 50%;
   left: 50%;
-  margin-top: -100px;
+  margin-top: -125px;
   margin-left: -160px;
   opacity: 0;
   -ms-filter: progid:DXImageTransform.Microsoft.Alpha(Opacity=0);
@@ -362,6 +362,10 @@ pre {
   font-weight: 300;
   margin: 0;
 }
+.remote .pin .minor {
+  font-size: 24px;
+  margin-top: 30px;
+}
 .remote .pin h3 {
   margin: 0;
   font-family: 'Bebas';
@@ -370,6 +374,99 @@ pre {
 }
 .remote .pin span {
   font-size: 16px;
+}
+.remote nav {
+  position: fixed;
+  bottom: 0;
+  width: 100%;
+  height: 50px;
+  color: #fcf700;
+  background-color: #000;
+  white-space: nowrap;
+  -webkit-transition: all 0.4s ease;
+  -moz-transition: all 0.4s ease;
+  -o-transition: all 0.4s ease;
+  -ms-transition: all 0.4s ease;
+  transition: all 0.4s ease;
+}
+.remote nav.hide {
+  opacity: 0;
+  -ms-filter: progid:DXImageTransform.Microsoft.Alpha(Opacity=0);
+  filter: alpha(opacity=0);
+  -webkit-transform: translateY(50px);
+  -moz-transform: translateY(50px);
+  -o-transform: translateY(50px);
+  -ms-transform: translateY(50px);
+  transform: translateY(50px);
+}
+.remote nav ul,
+.remote nav li {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  white-space: nowrap;
+  text-align: center;
+}
+.remote nav ul {
+  width: 100%;
+  height: 50px;
+  overflow-x: auto;
+  overflow-y: hidden;
+}
+.remote nav ul:before,
+.remote nav ul:after {
+  content: ' ';
+  display: block;
+  width: 50px;
+  height: 50px;
+  position: absolute;
+  background: -webkit-gradient(linear, left top, right top, color-stop(0, #000), color-stop(1, rgba(0,0,0,0)));
+  background: -webkit-linear-gradient(left, #000 0%, rgba(0,0,0,0) 100%);
+  background: -moz-linear-gradient(left, #000 0%, rgba(0,0,0,0) 100%);
+  background: -o-linear-gradient(left, #000 0%, rgba(0,0,0,0) 100%);
+  background: -ms-linear-gradient(left, #000 0%, rgba(0,0,0,0) 100%);
+  background: linear-gradient(left, #000 0%, rgba(0,0,0,0) 100%);
+}
+.remote nav ul:before {
+  left: 0;
+  bottom: 0;
+}
+.remote nav ul:after {
+  right: 0;
+  bottom: 0;
+  background: -webkit-gradient(linear, left top, right top, color-stop(0, rgba(0,0,0,0)), color-stop(1, #000));
+  background: -webkit-linear-gradient(left, rgba(0,0,0,0) 0%, #000 100%);
+  background: -moz-linear-gradient(left, rgba(0,0,0,0) 0%, #000 100%);
+  background: -o-linear-gradient(left, rgba(0,0,0,0) 0%, #000 100%);
+  background: -ms-linear-gradient(left, rgba(0,0,0,0) 0%, #000 100%);
+  background: linear-gradient(left, rgba(0,0,0,0) 0%, #000 100%);
+}
+.remote nav li {
+  display: inline-block;
+  line-height: 50px;
+  margin-left: 40px;
+  margin-right: 40px;
+  cursor: pointer;
+}
+.remote nav li:first-child {
+  margin-left: 100px;
+}
+.remote nav li:last-child {
+  margin-right: 100px;
+}
+.remote nav li.active:before {
+  content: ' ';
+  float: left;
+  margin-right: -20px;
+  width: 0;
+  height: 0;
+  overflow: hidden;
+  border: 10px solid #000;
+  border-top-color: #fcf700;
+  border-bottom-width: 0;
+  position: relative;
+  left: 50%;
+  margin-left: -10px;
 }
 .ir { display: block; border: 0; text-indent: -999em; overflow: hidden; background-color: transparent; background-repeat: no-repeat; text-align: left; direction: ltr; *line-height: 0; }
 .ir br { display: none; }

@@ -51,6 +51,10 @@ module.exports = class Remote extends Backbone.View
 
     socket.on 'accept', ->
       status.html 'Connected: ' + pin
+
+      socket.emit 'client', 
+        event: 'join'
+        data: pin
       socket.on 'remote', (data) ->
         alert data
 
