@@ -318,6 +318,59 @@ pre {
   font-size: 20px;
   font-weight: 300;
 }
+.main nav .pin-entry .status {
+  position: absolute;
+  text-align: right;
+  right: 60px;
+  bottom: 0px;
+  line-height: 50px;
+  margin: 0;
+  -webkit-transition: all 0.4s ease;
+  -moz-transition: all 0.4s ease;
+  -o-transition: all 0.4s ease;
+  -ms-transition: all 0.4s ease;
+  transition: all 0.4s ease;
+  opacity: 0;
+  -ms-filter: progid:DXImageTransform.Microsoft.Alpha(Opacity=0);
+  filter: alpha(opacity=0);
+}
+.main nav .pin-entry.hide .status {
+  opacity: 1;
+  -ms-filter: none;
+  filter: none;
+}
+.remote .pin {
+  font-size: 30px;
+  text-align: center;
+  width: 320px;
+  height: 200px;
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  margin-top: -100px;
+  margin-left: -160px;
+  opacity: 0;
+  -ms-filter: progid:DXImageTransform.Microsoft.Alpha(Opacity=0);
+  filter: alpha(opacity=0);
+  -webkit-transform: translateY(-200px);
+  -moz-transform: translateY(-200px);
+  -o-transform: translateY(-200px);
+  -ms-transform: translateY(-200px);
+  transform: translateY(-200px);
+}
+.remote .pin p {
+  font-weight: 300;
+  margin: 0;
+}
+.remote .pin h3 {
+  margin: 0;
+  font-family: 'Bebas';
+  font-size: 90px;
+  margin-bottom: -30px;
+}
+.remote .pin span {
+  font-size: 16px;
+}
 .ir { display: block; border: 0; text-indent: -999em; overflow: hidden; background-color: transparent; background-repeat: no-repeat; text-align: left; direction: ltr; *line-height: 0; }
 .ir br { display: none; }
 .hidden { display: none !important; visibility: hidden; }

@@ -3,6 +3,7 @@ Router = require 'router'
 
 Loader = require 'loader'
 Main = require 'main'
+Remote = require 'remote/remote'
 
 module.exports = class App extends Backbone.View
   initialize: ->
@@ -11,14 +12,16 @@ module.exports = class App extends Backbone.View
     @cont = $ '#container'
     @$body = $ document.body
     
-    @router = new Router
+    router = new Router
     _this = @
 
-    @router.on 'route:root', -> _this.start(Loader)
-
-    @router.on 'route:main', -> _this.start(Main)
+    router.on 'route:root', -> _this.start(Loader)
+    router.on 'route:main', -> _this.start(Main)
+    router.on 'route:remote', -> _this.start(Remote)
 
     Backbone.history.start()
+
+    window.router = router
 
   start: (page) ->
     @$body.addClass 'transitioning'

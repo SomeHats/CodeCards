@@ -81,7 +81,7 @@ window.require.define({"data/test": function(exports, require, module) {
 }});
 
 window.require.define({"initialize": function(exports, require, module) {
-  var App, Loader, Main, Router,
+  var App, Loader, Main, Remote, Router,
     __hasProp = {}.hasOwnProperty,
     __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
 
@@ -93,6 +93,8 @@ window.require.define({"initialize": function(exports, require, module) {
 
   Main = require('main');
 
+  Remote = require('remote/remote');
+
   module.exports = App = (function(_super) {
 
     __extends(App, _super);
@@ -102,19 +104,23 @@ window.require.define({"initialize": function(exports, require, module) {
     }
 
     App.prototype.initialize = function() {
-      var _this;
+      var router, _this;
       window.Util.animationFrame();
       this.cont = $('#container');
       this.$body = $(document.body);
-      this.router = new Router;
+      router = new Router;
       _this = this;
-      this.router.on('route:root', function() {
+      router.on('route:root', function() {
         return _this.start(Loader);
       });
-      this.router.on('route:main', function() {
+      router.on('route:main', function() {
         return _this.start(Main);
       });
-      return Backbone.history.start();
+      router.on('route:remote', function() {
+        return _this.start(Remote);
+      });
+      Backbone.history.start();
+      return window.router = router;
     };
 
     App.prototype.start = function(page) {
@@ -695,6 +701,8 @@ window.require.define({"interpreter/remote": function(exports, require, module) 
         var val;
         val = pin.val();
         if (val.length === 4 && !isNaN(parseFloat(val)) && isFinite(val)) {
+          _ths.$el.addClass('hide');
+          pin.blur();
           return _ths.connect(val);
         } else {
           return Util.alert('Sorry, that\s not valid. Please enter the pin shown on the remote.');
@@ -711,7 +719,30 @@ window.require.define({"interpreter/remote": function(exports, require, module) 
     };
 
     Remote.prototype.connect = function(pin) {
-      return console.log(pin);
+      var socket, status, _ths;
+      _ths = this;
+      status = this.$('.status');
+      status.html('Connecting...');
+      socket = io.connect('http://' + window.location.host, {
+        'force new connection': true
+      });
+      socket.on('error', function(e) {
+        status.html('Could not connect.');
+        Util.alert('Could not establish connection :(');
+        return console.log(e);
+      });
+      socket.on('deny', function() {
+        status.html('Wrong pin.');
+        Util.alert('There wasn\'t a remote with that pin online. Are you sure it was correct?');
+        return _ths.$('.remote').trigger('click');
+      });
+      socket.on('accept', function() {
+        status.html('Connected: ' + pin);
+        return socket.on('remote', function(data) {
+          return alert(data);
+        });
+      });
+      return socket.emit('new client', pin);
     };
 
     return Remote;
@@ -726,7 +757,7 @@ window.require.define({"interpreter/templates/remote": function(exports, require
     var foundHelper, self=this;
 
 
-    return "<div>\n  <h3>Enter your pin:</h3>\n  <input type=\"tel\" name=\"pin-number\" maxlength=\"4\" placeholder=\"****\">\n  <button class=\"go\">Connect</button>\n  <button class=\"cancel\">Cancel</button>\n</div>\n<a class=\"remote\">\n  <img src=\"/svg/remote-yellow.svg\" width=\"46\">\n</a>";});
+    return "<div>\n  <h3>Enter your pin:</h3>\n  <input type=\"tel\" name=\"pin-number\" maxlength=\"4\" placeholder=\"****\">\n  <button class=\"go\">Connect</button>\n  <button class=\"cancel\">Cancel</button>\n</div>\n<a class=\"remote\">\n  <img src=\"/svg/remote-yellow.svg\" width=\"46\">\n</a>\n<p class=\"status\"></p>";});
 }});
 
 window.require.define({"interpreter/usermedia": function(exports, require, module) {
@@ -1146,17 +1177,19 @@ window.require.define({"main": function(exports, require, module) {
         el: this.$('.pin-entry')
       });
       nav = this.$('nav');
-      nav.animate({
-        opacity: 1,
-        translateY: '0px'
-      }, {
-        easing: 'ease-out',
-        duration: 250,
-        complete: function() {
-          return callback.apply(ctx);
-        }
-      });
-      return this.start();
+      return setTimeout(function() {
+        nav.animate({
+          opacity: 1,
+          translateY: '0px'
+        }, {
+          easing: 'ease-out',
+          duration: 250,
+          complete: function() {
+            return callback.apply(ctx);
+          }
+        });
+        return _this.start();
+      }, 25);
     };
 
     App.prototype.unrender = function(callback, ctx) {
@@ -1190,6 +1223,119 @@ window.require.define({"main": function(exports, require, module) {
   
 }});
 
+window.require.define({"remote/remote": function(exports, require, module) {
+  var Remote, template,
+    __hasProp = {}.hasOwnProperty,
+    __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
+
+  template = require('remote/templates/remote');
+
+  module.exports = Remote = (function(_super) {
+
+    __extends(Remote, _super);
+
+    function Remote() {
+      return Remote.__super__.constructor.apply(this, arguments);
+    }
+
+    Remote.prototype.initialize = function() {
+      var socket, _ths;
+      this.connected = false;
+      _ths = this;
+      socket = io.connect('http://' + window.location.host, {
+        'force new connection': true
+      });
+      socket.on('connect', function() {
+        return this.connected = true;
+      });
+      socket.on('error', function(e) {
+        Util.alert('Could not connect to remote server.');
+        return router.navigate('/', {
+          trigger: true
+        });
+      });
+      socket.on('client', function(data) {
+        return alert(data);
+      });
+      return window.socket = this.socket = socket;
+    };
+
+    Remote.prototype.render = function(callback, ctx) {
+      var socket, _ths;
+      if (callback == null) {
+        callback = (function() {
+          return null;
+        });
+      }
+      if (ctx == null) {
+        ctx = this;
+      }
+      socket = this.socket;
+      _ths = this;
+      socket.emit('new remote');
+      return socket.on('accept', function(pin) {
+        _ths.$el.html(template({
+          pin: pin
+        }));
+        return setTimeout(function() {
+          return _ths.$('.pin').animate({
+            opacity: 1,
+            translateY: '0px'
+          }, {
+            easing: 'ease',
+            complete: function() {
+              return callback.apply(ctx);
+            }
+          });
+        }, 25);
+      });
+    };
+
+    Remote.prototype.unrender = function(callback, ctx) {
+      if (callback == null) {
+        callback = (function() {
+          return null;
+        });
+      }
+      if (ctx == null) {
+        ctx = this;
+      }
+      this.socket.disconnect();
+      return this.$('.pin').animate({
+        opacity: 0,
+        translateY: '200px'
+      }, {
+        easing: 'ease-in',
+        duration: 300,
+        complete: function() {
+          return callback.apply(ctx);
+        }
+      });
+    };
+
+    Remote.prototype.name = 'remote';
+
+    return Remote;
+
+  })(Backbone.View);
+  
+}});
+
+window.require.define({"remote/templates/remote": function(exports, require, module) {
+  module.exports = Handlebars.template(function (Handlebars,depth0,helpers,partials,data) {
+    helpers = helpers || Handlebars.helpers;
+    var buffer = "", stack1, foundHelper, self=this, functionType="function", helperMissing=helpers.helperMissing, undef=void 0, escapeExpression=this.escapeExpression;
+
+
+    buffer += "<div class=\"pin\">\n  <p>Here's your pin!</p>\n  <h3>";
+    foundHelper = helpers.pin;
+    stack1 = foundHelper || depth0.pin;
+    if(typeof stack1 === functionType) { stack1 = stack1.call(depth0, { hash: {} }); }
+    else if(stack1=== undef) { stack1 = helperMissing.call(depth0, "pin", { hash: {} }); }
+    buffer += escapeExpression(stack1) + "</h3>\n  <span>Enter it on the device you wish to control.</span>\n</div>";
+    return buffer;});
+}});
+
 window.require.define({"router": function(exports, require, module) {
   var Router,
     __hasProp = {}.hasOwnProperty,
@@ -1206,6 +1352,7 @@ window.require.define({"router": function(exports, require, module) {
     Router.prototype.routes = {
       "": "root",
       "CodeCards": "main",
+      "remote": "remote",
       ":404": "root"
     };
 

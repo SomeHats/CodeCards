@@ -50,16 +50,18 @@ module.exports = class App extends Backbone.View
     remote = new Remote el: @$ '.pin-entry'
 
     nav = @$ 'nav'
-    nav.animate {
-      opacity: 1
-      translateY: '0px'
-    }, {
-      easing: 'ease-out'
-      duration: 250
-      complete: -> callback.apply ctx
-    }
+    setTimeout ->
+      nav.animate {
+        opacity: 1
+        translateY: '0px'
+      }, {
+        easing: 'ease-out'
+        duration: 250
+        complete: -> callback.apply ctx
+      }
 
-    @start()
+      _this.start()
+    , 25
 
   unrender: (callback= (-> null), ctx = @) ->
     nav = @$ 'nav'
