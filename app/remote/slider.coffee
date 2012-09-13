@@ -23,6 +23,7 @@ module.exports = class Slider extends Backbone.View
   render: ->
     model = @model.toJSON()
     @$el.html template model
+    @$el.addClass 'slider'
 
     track = @track = @$ '.track'
     input = @input = @$ 'input'

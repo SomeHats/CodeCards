@@ -1,21 +1,38 @@
 @import 'nib'
 
-.sample
-  width 300px
-  outline 1px solid magenta
-
 .slider
+  display inline-block
   width 100%
   padding 10px
+  margin-right -0.3em
+  border-bottom 1px solid rgba(0, 0, 0, 0.3)
+
+  @media (min-width: 780px) 
+    width 50%
+    border-left 1px solid rgba(0, 0, 0, 0.3)
+
+  @media (min-width: 1200px) 
+    width 33%
+
+  .label
+    font-size 22px
+    margin 0
+
+    @media (max-width: 420px)
+      float left
+      margin-bottom 7px
 
   .track
     height 40px
-    width 100%
     border 1px solid rgba(0, 0, 0, 0.4)
     background-color rgba(0, 0, 0, 0.1)
-    margin 10px 0
+    margin 0
+    margin-top 10px
     padding 0 18px
     overflow hidden
+
+    @media (max-width: 420px)
+      width 100%
 
   .thumb
     position relative
@@ -32,3 +49,21 @@
   &:hover .thumb
     box-shadow 0 0 15px rgba(0, 0, 0, 0.8)
     background-color rgba(0, 0, 0, 0.7)
+
+  input
+    border none
+    border-bottom 1px solid black
+    background none
+    text-align center
+    float right
+    margin-left 10px
+    height 40px
+    margin-top 10px
+    font-size 20px
+    width 60px
+
+    @media (max-width: 420px)
+      margin-top -3px
+      position absolute
+      right 10px
+      border none

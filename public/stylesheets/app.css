@@ -468,22 +468,47 @@ pre {
   left: 50%;
   margin-left: -10px;
 }
-.sample {
-  width: 300px;
-  outline: 1px solid #f0f;
-}
 .slider {
+  display: inline-block;
   width: 100%;
   padding: 10px;
+  margin-right: -0.3em;
+  border-bottom: 1px solid rgba(0,0,0,0.3);
+}
+@media (min-width: 780px) {
+  .slider {
+    width: 50%;
+    border-left: 1px solid rgba(0,0,0,0.3);
+  }
+}
+@media (min-width: 1200px) {
+  .slider {
+    width: 33%;
+  }
+}
+.slider .label {
+  font-size: 22px;
+  margin: 0;
+}
+@media (max-width: 420px) {
+  .slider .label {
+    float: left;
+    margin-bottom: 7px;
+  }
 }
 .slider .track {
   height: 40px;
-  width: 100%;
   border: 1px solid rgba(0,0,0,0.4);
   background-color: rgba(0,0,0,0.1);
-  margin: 10px 0;
+  margin: 0;
+  margin-top: 10px;
   padding: 0 18px;
   overflow: hidden;
+}
+@media (max-width: 420px) {
+  .slider .track {
+    width: 100%;
+  }
 }
 .slider .thumb {
   position: relative;
@@ -506,6 +531,26 @@ pre {
   -webkit-box-shadow: 0 0 15px rgba(0,0,0,0.8);
   box-shadow: 0 0 15px rgba(0,0,0,0.8);
   background-color: rgba(0,0,0,0.7);
+}
+.slider input {
+  border: none;
+  border-bottom: 1px solid #000;
+  background: none;
+  text-align: center;
+  float: right;
+  margin-left: 10px;
+  height: 40px;
+  margin-top: 10px;
+  font-size: 20px;
+  width: 60px;
+}
+@media (max-width: 420px) {
+  .slider input {
+    margin-top: -3px;
+    position: absolute;
+    right: 10px;
+    border: none;
+  }
 }
 .ir { display: block; border: 0; text-indent: -999em; overflow: hidden; background-color: transparent; background-repeat: no-repeat; text-align: left; direction: ltr; *line-height: 0; }
 .ir br { display: none; }

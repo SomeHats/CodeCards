@@ -1328,8 +1328,34 @@ window.require.define({"remote/remote": function(exports, require, module) {
           pin: pin
         }));
         new Slider({
-          el: _ths.$('.sample'),
-          label: 'Sample Slider'
+          el: _ths.$('.sample0')
+        });
+        new Slider({
+          el: _ths.$('.sample1')
+        });
+        new Slider({
+          el: _ths.$('.sample2')
+        });
+        new Slider({
+          el: _ths.$('.sample3')
+        });
+        new Slider({
+          el: _ths.$('.sample4')
+        });
+        new Slider({
+          el: _ths.$('.sample5')
+        });
+        new Slider({
+          el: _ths.$('.sample6')
+        });
+        new Slider({
+          el: _ths.$('.sample7')
+        });
+        new Slider({
+          el: _ths.$('.sample8')
+        });
+        new Slider({
+          el: _ths.$('.sample9')
         });
         return setTimeout(function() {
           return _ths.$('.pin').animate({
@@ -1414,6 +1440,7 @@ window.require.define({"remote/slider": function(exports, require, module) {
       var doc, input, model, track, _ths;
       model = this.model.toJSON();
       this.$el.html(template(model));
+      this.$el.addClass('slider');
       track = this.track = this.$('.track');
       input = this.input = this.$('input');
       this.thumb = this.$('.thumb');
@@ -1521,7 +1548,7 @@ window.require.define({"remote/templates/remote": function(exports, require, mod
     stack1 = foundHelper || depth0.pin;
     if(typeof stack1 === functionType) { stack1 = stack1.call(depth0, { hash: {} }); }
     else if(stack1=== undef) { stack1 = helperMissing.call(depth0, "pin", { hash: {} }); }
-    buffer += escapeExpression(stack1) + "</h3>\n  <span>Enter it on the device you wish to control.</span>\n  <p class=\"minor\">Waiting for connection...</p>\n</div>\n<nav class=\"hide\">\n  <ul>\n    <li class=\"active\">General</li>\n    <li>Camera</li>\n    <li>Another Item</li>\n    <li>Another Item</li>\n    <li>Another Item</li>\n    <li>Another Item</li>\n    <li>Another Item</li>\n  </ul>\n</nav>\n<div class=\"sample\"></div>";
+    buffer += escapeExpression(stack1) + "</h3>\n  <span>Enter it on the device you wish to control.</span>\n  <p class=\"minor\">Waiting for connection...</p>\n</div>\n<nav class=\"hide\">\n  <ul>\n    <li class=\"active\">General</li>\n    <li>Camera</li>\n    <li>Another Item</li>\n    <li>Another Item</li>\n    <li>Another Item</li>\n    <li>Another Item</li>\n    <li>Another Item</li>\n  </ul>\n</nav>\n<div class=\"sample0\"></div>\n<div class=\"sample1\"></div>\n<div class=\"sample2\"></div>\n<div class=\"sample3\"></div>\n<div class=\"sample4\"></div>\n<div class=\"sample5\"></div>\n<div class=\"sample6\"></div>\n<div class=\"sample7\"></div>\n<div class=\"sample8\"></div>\n<div class=\"sample9\"></div>";
     return buffer;});
 }});
 
@@ -1531,12 +1558,12 @@ window.require.define({"remote/templates/slider": function(exports, require, mod
     var buffer = "", stack1, foundHelper, self=this, functionType="function", helperMissing=helpers.helperMissing, undef=void 0, escapeExpression=this.escapeExpression;
 
 
-    buffer += "<div class=\"slider\">\n  <div class=\"label\">";
+    buffer += "  <div class=\"label\">";
     foundHelper = helpers.label;
     stack1 = foundHelper || depth0.label;
     if(typeof stack1 === functionType) { stack1 = stack1.call(depth0, { hash: {} }); }
     else if(stack1=== undef) { stack1 = helperMissing.call(depth0, "label", { hash: {} }); }
-    buffer += escapeExpression(stack1) + "</div>\n  <div class=\"track\">\n    <div class=\"thumb\"></div>\n  </div>\n  <input type=\"text\" value=\"";
+    buffer += escapeExpression(stack1) + "</div>\n  <input type=\"number\" value=\"";
     foundHelper = helpers.value;
     stack1 = foundHelper || depth0.value;
     if(typeof stack1 === functionType) { stack1 = stack1.call(depth0, { hash: {} }); }
@@ -1551,7 +1578,7 @@ window.require.define({"remote/templates/slider": function(exports, require, mod
     stack1 = foundHelper || depth0.min;
     if(typeof stack1 === functionType) { stack1 = stack1.call(depth0, { hash: {} }); }
     else if(stack1=== undef) { stack1 = helperMissing.call(depth0, "min", { hash: {} }); }
-    buffer += escapeExpression(stack1) + "\">\n</div>";
+    buffer += escapeExpression(stack1) + "\">\n  <div class=\"track\">\n    <div class=\"thumb\"></div>\n  </div>\n";
     return buffer;});
 }});
 
