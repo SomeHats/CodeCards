@@ -468,6 +468,56 @@ pre {
   left: 50%;
   margin-left: -10px;
 }
+.remote div.hide {
+  -webkit-transition: opacity 0.4s ease;
+  -moz-transition: opacity 0.4s ease;
+  -o-transition: opacity 0.4s ease;
+  -ms-transition: opacity 0.4s ease;
+  transition: opacity 0.4s ease;
+  opacity: 0;
+  -ms-filter: progid:DXImageTransform.Microsoft.Alpha(Opacity=0);
+  filter: alpha(opacity=0);
+}
+.remote section {
+  -webkit-transition: all 0.4s ease;
+  -moz-transition: all 0.4s ease;
+  -o-transition: all 0.4s ease;
+  -ms-transition: all 0.4s ease;
+  transition: all 0.4s ease;
+  opacity: 0;
+  -ms-filter: progid:DXImageTransform.Microsoft.Alpha(Opacity=0);
+  filter: alpha(opacity=0);
+  display: none;
+  padding: 10px;
+}
+.remote section.active {
+  opacity: 1;
+  -ms-filter: none;
+  filter: none;
+  display: block;
+}
+.remote section h2 {
+  font-family: 'Open Sans', sans-serif;
+  font-weight: 300;
+  font-size: 40px;
+  margin: 0;
+  padding: 10px 10px;
+  border-bottom: 2px solid #000;
+  background-color: #fcf700;
+  width: auto;
+}
+@media (min-height: 600px) {
+  .remote section {
+    padding-top: 80px;
+  }
+  .remote section h2 {
+    margin: 0 10px;
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+  }
+}
 .slider {
   display: inline-block;
   width: 100%;
@@ -543,6 +593,7 @@ pre {
   margin-top: 10px;
   font-size: 20px;
   width: 60px;
+  outline: none;
 }
 @media (max-width: 420px) {
   .slider input {

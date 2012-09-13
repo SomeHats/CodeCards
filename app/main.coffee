@@ -42,11 +42,19 @@ module.exports = class App extends Backbone.View
     gui.add @interpreter, 'distanceLimit', 1, 30
     @$el.append gui.domElement
 
+  setupRemote: ->
+    _ths = @
+    remote = @remote = new Remote el: @$ '.pin-entry'
+
+    # Settings
+    remote.on 'change-setting', (data) ->
+      _ths[data.concerns][data.setting] = data.value
+      
   render: (callback= (-> null), ctx = @) ->
-    _this = @
+    _ths = @
     @$el.html template()
 
-    @remote = new Remote el: @$ '.pin-entry'
+    @setupRemote()
 
     nav = @$ 'nav'
     setTimeout ->
@@ -59,7 +67,7 @@ module.exports = class App extends Backbone.View
         complete: -> callback.apply ctx
       }
 
-      _this.start()
+      _ths.start()
     , 25
 
   unrender: (callback= (-> null), ctx = @) ->

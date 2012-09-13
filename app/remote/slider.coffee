@@ -5,12 +5,14 @@ module.exports = class Slider extends Backbone.View
     _ths = @
 
     o = @options
+    el = @$el
 
     @model = new Backbone.Model
-      label: o.label or 'Label'
-      max: o.max or 100
-      min: o.min or 0
-      value: o.value or 50
+      label: o.label or el.data 'label' or 'Label'
+      max: o.max or parseFloat el.data 'max' or 100
+      min: o.min or parseFloat el.data 'min' or 0
+      value: o.value or parseFloat el.data 'value' or 50
+      float: o.float or el.data 'float' or no
 
     @o = @model.toJSON()
 
@@ -73,13 +75,15 @@ module.exports = class Slider extends Backbone.View
 
   update: ->
     o = @o
-    @thumb.css 'left', ((@model.get('value') - o.min) / (o.max - o.min)) * 100 + '%'
-    @input.val @model.get 'value'
+    v = @model.get 'value'
+    @thumb.css 'left', ((v - o.min) / (o.max - o.min)) * 100 + '%'
+    @input.val v
+    @trigger 'change', v
 
   setValue: (v) ->
     o = @o
     value = o.min + v * (o.max - o.min)
-    @model.set 'value', Math.round value
+    @model.set 'value', if o.float then value.toFixed 2 else Math.round value
 
   setFromCoord: (x) ->
     left = @track.offset().left

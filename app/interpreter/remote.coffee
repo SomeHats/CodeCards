@@ -56,6 +56,6 @@ module.exports = class Remote extends Backbone.View
         event: 'join'
         data: pin
       socket.on 'remote', (data) ->
-        alert data
+        _ths.trigger data.event, data.data
 
     socket.emit 'new client', pin

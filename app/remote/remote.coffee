@@ -37,11 +37,16 @@ module.exports = class Remote extends Backbone.View
     @$('.hide').removeClass 'hide'
 
     navItems = @$ 'nav li'
+    pages = @$ 'section'
     navItems.on 'click', ->
       el = $ @
       if ! el.hasClass 'active'
         navItems.filter('.active').removeClass 'active'
         el.addClass 'active'
+        pages.filter('.active').removeClass 'active'
+        pages.filter('#' + el.attr 'title').addClass 'active'
+
+
 
   render: (callback= (-> null), ctx = @) ->
     socket = @socket
@@ -50,16 +55,7 @@ module.exports = class Remote extends Backbone.View
     socket.on 'accept', (pin) ->
       _ths.$el.html template pin: pin
 
-      new Slider el: _ths.$ '.sample0'
-      new Slider el: _ths.$ '.sample1'
-      new Slider el: _ths.$ '.sample2'
-      new Slider el: _ths.$ '.sample3'
-      new Slider el: _ths.$ '.sample4'
-      new Slider el: _ths.$ '.sample5'
-      new Slider el: _ths.$ '.sample6'
-      new Slider el: _ths.$ '.sample7'
-      new Slider el: _ths.$ '.sample8'
-      new Slider el: _ths.$ '.sample9'
+      _ths.setupUI()
 
       setTimeout ->
         _ths.$('.pin').animate {
@@ -81,5 +77,21 @@ module.exports = class Remote extends Backbone.View
       duration: 300
       complete: -> callback.apply ctx
     }
+
+  setupUI: ->
+    socket = @socket
+
+    sliders = @$ '.slider'
+    sliders.each ->
+      el = $ @
+      slider = new Slider el: @
+      slider.on 'change', (value) ->
+        socket.emit 'remote', 
+          event: 'change-setting'
+          data:
+            concerns: el.data 'concerns'
+            setting: el.attr 'id'
+            value: parseFloat value
+
 
   name: 'remote'

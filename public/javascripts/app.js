@@ -743,7 +743,7 @@ window.require.define({"interpreter/remote": function(exports, require, module) 
           data: pin
         });
         return socket.on('remote', function(data) {
-          return alert(data);
+          return _ths.trigger(data.event, data.data);
         });
       });
       return socket.emit('new client', pin);
@@ -1183,8 +1183,19 @@ window.require.define({"main": function(exports, require, module) {
       return this.$el.append(gui.domElement);
     };
 
+    App.prototype.setupRemote = function() {
+      var remote, _ths;
+      _ths = this;
+      remote = this.remote = new Remote({
+        el: this.$('.pin-entry')
+      });
+      return remote.on('change-setting', function(data) {
+        return _ths[data.concerns][data.setting] = data.value;
+      });
+    };
+
     App.prototype.render = function(callback, ctx) {
-      var nav, _this;
+      var nav, _ths;
       if (callback == null) {
         callback = (function() {
           return null;
@@ -1193,11 +1204,9 @@ window.require.define({"main": function(exports, require, module) {
       if (ctx == null) {
         ctx = this;
       }
-      _this = this;
+      _ths = this;
       this.$el.html(template());
-      this.remote = new Remote({
-        el: this.$('.pin-entry')
-      });
+      this.setupRemote();
       nav = this.$('nav');
       return setTimeout(function() {
         nav.animate({
@@ -1210,7 +1219,7 @@ window.require.define({"main": function(exports, require, module) {
             return callback.apply(ctx);
           }
         });
-        return _this.start();
+        return _ths.start();
       }, 25);
     };
 
@@ -1286,7 +1295,7 @@ window.require.define({"remote/remote": function(exports, require, module) {
     };
 
     Remote.prototype.connectionEstablished = function() {
-      var navItems, pin;
+      var navItems, pages, pin;
       pin = this.$('.pin');
       pin.animate({
         opacity: 0,
@@ -1300,12 +1309,15 @@ window.require.define({"remote/remote": function(exports, require, module) {
       });
       this.$('.hide').removeClass('hide');
       navItems = this.$('nav li');
+      pages = this.$('section');
       return navItems.on('click', function() {
         var el;
         el = $(this);
         if (!el.hasClass('active')) {
           navItems.filter('.active').removeClass('active');
-          return el.addClass('active');
+          el.addClass('active');
+          pages.filter('.active').removeClass('active');
+          return pages.filter('#' + el.attr('title')).addClass('active');
         }
       });
     };
@@ -1327,36 +1339,7 @@ window.require.define({"remote/remote": function(exports, require, module) {
         _ths.$el.html(template({
           pin: pin
         }));
-        new Slider({
-          el: _ths.$('.sample0')
-        });
-        new Slider({
-          el: _ths.$('.sample1')
-        });
-        new Slider({
-          el: _ths.$('.sample2')
-        });
-        new Slider({
-          el: _ths.$('.sample3')
-        });
-        new Slider({
-          el: _ths.$('.sample4')
-        });
-        new Slider({
-          el: _ths.$('.sample5')
-        });
-        new Slider({
-          el: _ths.$('.sample6')
-        });
-        new Slider({
-          el: _ths.$('.sample7')
-        });
-        new Slider({
-          el: _ths.$('.sample8')
-        });
-        new Slider({
-          el: _ths.$('.sample9')
-        });
+        _ths.setupUI();
         return setTimeout(function() {
           return _ths.$('.pin').animate({
             opacity: 1,
@@ -1393,6 +1376,29 @@ window.require.define({"remote/remote": function(exports, require, module) {
       });
     };
 
+    Remote.prototype.setupUI = function() {
+      var sliders, socket;
+      socket = this.socket;
+      sliders = this.$('.slider');
+      return sliders.each(function() {
+        var el, slider;
+        el = $(this);
+        slider = new Slider({
+          el: this
+        });
+        return slider.on('change', function(value) {
+          return socket.emit('remote', {
+            event: 'change-setting',
+            data: {
+              concerns: el.data('concerns'),
+              setting: el.attr('id'),
+              value: parseFloat(value)
+            }
+          });
+        });
+      });
+    };
+
     Remote.prototype.name = 'remote';
 
     return Remote;
@@ -1417,14 +1423,16 @@ window.require.define({"remote/slider": function(exports, require, module) {
     }
 
     Slider.prototype.initialize = function() {
-      var o, _ths;
+      var el, o, _ths;
       _ths = this;
       o = this.options;
+      el = this.$el;
       this.model = new Backbone.Model({
-        label: o.label || 'Label',
-        max: o.max || 100,
-        min: o.min || 0,
-        value: o.value || 50
+        label: o.label || el.data('label' || 'Label'),
+        max: o.max || parseFloat(el.data('max' || 100)),
+        min: o.min || parseFloat(el.data('min' || 0)),
+        value: o.value || parseFloat(el.data('value' || 50)),
+        float: o.float || el.data('float' || false)
       });
       this.o = this.model.toJSON();
       this.model.on('change', function() {
@@ -1503,17 +1511,19 @@ window.require.define({"remote/slider": function(exports, require, module) {
     };
 
     Slider.prototype.update = function() {
-      var o;
+      var o, v;
       o = this.o;
-      this.thumb.css('left', ((this.model.get('value') - o.min) / (o.max - o.min)) * 100 + '%');
-      return this.input.val(this.model.get('value'));
+      v = this.model.get('value');
+      this.thumb.css('left', ((v - o.min) / (o.max - o.min)) * 100 + '%');
+      this.input.val(v);
+      return this.trigger('change', v);
     };
 
     Slider.prototype.setValue = function(v) {
       var o, value;
       o = this.o;
       value = o.min + v * (o.max - o.min);
-      return this.model.set('value', Math.round(value));
+      return this.model.set('value', o.float ? value.toFixed(2) : Math.round(value));
     };
 
     Slider.prototype.setFromCoord = function(x) {
@@ -1548,7 +1558,7 @@ window.require.define({"remote/templates/remote": function(exports, require, mod
     stack1 = foundHelper || depth0.pin;
     if(typeof stack1 === functionType) { stack1 = stack1.call(depth0, { hash: {} }); }
     else if(stack1=== undef) { stack1 = helperMissing.call(depth0, "pin", { hash: {} }); }
-    buffer += escapeExpression(stack1) + "</h3>\n  <span>Enter it on the device you wish to control.</span>\n  <p class=\"minor\">Waiting for connection...</p>\n</div>\n<nav class=\"hide\">\n  <ul>\n    <li class=\"active\">General</li>\n    <li>Camera</li>\n    <li>Another Item</li>\n    <li>Another Item</li>\n    <li>Another Item</li>\n    <li>Another Item</li>\n    <li>Another Item</li>\n  </ul>\n</nav>\n<div class=\"sample0\"></div>\n<div class=\"sample1\"></div>\n<div class=\"sample2\"></div>\n<div class=\"sample3\"></div>\n<div class=\"sample4\"></div>\n<div class=\"sample5\"></div>\n<div class=\"sample6\"></div>\n<div class=\"sample7\"></div>\n<div class=\"sample8\"></div>\n<div class=\"sample9\"></div>";
+    buffer += escapeExpression(stack1) + "</h3>\n  <span>Enter it on the device you wish to control.</span>\n  <p class=\"minor\">Waiting for connection...</p>\n</div>\n<nav class=\"hide\">\n  <ul>\n    <li class=\"active\" title=\"general\">General</li>\n    <li title=\"camera\">Camera</li>\n    <li>Another Item</li>\n    <li>Another Item</li>\n    <li>Another Item</li>\n  </ul>\n</nav>\n<div class=\"hide\">\n  <section class=\"active\" id=\"general\">\n    <h2>General</h2>\n    <div class=\"slider\" id=\"distanceLimit\" \n      data-label=\"Distance Limit\"\n      data-min=\"1\"\n      data-max=\"15\"\n      data-value=\"4.5\"\n      data-float=\"true\"\n      data-concerns=\"interpreter\"></div>\n  </section>\n  <section id=\"camera\">\n    <h2>Camera</h2>\n    <div class=\"slider\" id=\"brightness\" \n      data-label=\"Brightness\"\n      data-min=\"-100\"\n      data-max=\"100\"\n      data-value=\"0\"\n      data-concerns=\"interpreter\"></div>\n    <div class=\"slider\" id=\"contrast\" \n      data-label=\"Contrast\"\n      data-min=\"-100\"\n      data-max=\"100\"\n      data-value=\"0\"\n      data-concerns=\"interpreter\"></div>\n    <div class=\"slider\" id=\"blend\" \n      data-label=\"Blend Frames\"\n      data-min=\"0\"\n      data-max=\"32\"\n      data-value=\"3\"\n      data-concerns=\"interpreter\"></div>\n    <div class=\"slider\" id=\"sharpen\" \n      data-label=\"Sharpen\"\n      data-min=\"0\"\n      data-max=\"10\"\n      data-value=\"0\"\n      data-float=\"true\"\n      data-concerns=\"interpreter\"></div>\n  </section>\n</div>";
     return buffer;});
 }});
 

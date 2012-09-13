@@ -6,22 +6,50 @@
 </div>
 <nav class="hide">
   <ul>
-    <li class="active">General</li>
-    <li>Camera</li>
-    <li>Another Item</li>
-    <li>Another Item</li>
+    <li class="active" title="general">General</li>
+    <li title="camera">Camera</li>
     <li>Another Item</li>
     <li>Another Item</li>
     <li>Another Item</li>
   </ul>
 </nav>
-<div class="sample0"></div>
-<div class="sample1"></div>
-<div class="sample2"></div>
-<div class="sample3"></div>
-<div class="sample4"></div>
-<div class="sample5"></div>
-<div class="sample6"></div>
-<div class="sample7"></div>
-<div class="sample8"></div>
-<div class="sample9"></div>
+<div class="hide">
+  <section class="active" id="general">
+    <h2>General</h2>
+    <div class="slider" id="distanceLimit" 
+      data-label="Distance Limit"
+      data-min="1"
+      data-max="15"
+      data-value="4.5"
+      data-float="true"
+      data-concerns="interpreter"></div>
+  </section>
+  <section id="camera">
+    <h2>Camera</h2>
+    <div class="slider" id="brightness" 
+      data-label="Brightness"
+      data-min="-100"
+      data-max="100"
+      data-value="0"
+      data-concerns="interpreter"></div>
+    <div class="slider" id="contrast" 
+      data-label="Contrast"
+      data-min="-100"
+      data-max="100"
+      data-value="0"
+      data-concerns="interpreter"></div>
+    <div class="slider" id="blend" 
+      data-label="Blend Frames"
+      data-min="0"
+      data-max="32"
+      data-value="3"
+      data-concerns="interpreter"></div>
+    <div class="slider" id="sharpen" 
+      data-label="Sharpen"
+      data-min="0"
+      data-max="10"
+      data-value="0"
+      data-float="true"
+      data-concerns="interpreter"></div>
+  </section>
+</div>

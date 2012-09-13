@@ -101,3 +101,36 @@
         position relative
         left 50%
         margin-left -10px
+
+  div.hide
+    transition opacity 0.4s ease
+    opacity 0
+
+  section
+    transition all 0.4s ease
+    opacity 0
+    display none
+    padding 10px
+
+    &.active
+      opacity 1
+      display block
+
+    h2
+      font-family 'Open Sans', sans-serif
+      font-weight 300
+      font-size 40px
+      margin 0
+      padding 10px 10px
+      border-bottom 2px solid black
+      background-color #FCF700
+      width auto
+
+    @media (min-height: 600px)
+      padding-top 80px
+      h2
+        margin 0 10px
+        position fixed
+        top 0
+        left 0
+        right 0
