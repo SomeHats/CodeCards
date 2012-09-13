@@ -1,0 +1,34 @@
+@import 'nib'
+
+.sample
+  width 300px
+  outline 1px solid magenta
+
+.slider
+  width 100%
+  padding 10px
+
+  .track
+    height 40px
+    width 100%
+    border 1px solid rgba(0, 0, 0, 0.4)
+    background-color rgba(0, 0, 0, 0.1)
+    margin 10px 0
+    padding 0 18px
+    overflow hidden
+
+  .thumb
+    position relative
+    height 38px
+    width 38px
+    left 100%
+    margin-left -19px
+    background-color rgba(0, 0, 0, 0.7)
+    box-shadow 0 0 10px rgba(0, 0, 0, 0.5)
+    border-left 1px solid black
+    border-right 1px solid black
+    transition background-color 0.4s ease, box-shadow 0.4s ease
+
+  &:hover .thumb
+    box-shadow 0 0 15px rgba(0, 0, 0, 0.8)
+    background-color rgba(0, 0, 0, 0.7)

@@ -921,22 +921,27 @@ window.require.define({"lib/util": function(exports, require, module) {
 
     __extends(util, _super);
 
+    function util() {
+      return util.__super__.constructor.apply(this, arguments);
+    }
+
     util.prototype.mouse = {
       x: 0,
       y: 0
     };
 
-    function util() {
-      var self;
+    util.prototype.initialize = function() {
+      var doc, _ths;
       window.requestAnimationFrame = window.requestAnimationFrame || window.mozRequestAnimationFrame || window.webkitRequestAnimationFrame || function(callback) {
         return setTimeout(callback, 20);
       };
-      self = this;
-      $(document).on('mousemove', function(e) {
-        self.mouse.x = e.pageX;
-        return self.mouse.y = e.pageY;
+      _ths = this;
+      doc = $(document);
+      return doc.on('mousemove', function(e) {
+        _ths.mouse.x = e.pageX;
+        return _ths.mouse.y = e.pageY;
       });
-    }
+    };
 
     util.prototype.animationFrame = function() {
       window.Util.trigger('animationFrame');
@@ -976,6 +981,18 @@ window.require.define({"lib/util": function(exports, require, module) {
 
     util.prototype.alert = function(msg) {
       return alert(msg);
+    };
+
+    util.prototype.isDescendant = function(child, parent) {
+      var node;
+      node = child.parentNode;
+      while (node !== null) {
+        if (node === parent) {
+          return true;
+        }
+        node = node.parentNode;
+      }
+      return false;
     };
 
     return util;
@@ -1229,9 +1246,11 @@ window.require.define({"main": function(exports, require, module) {
 }});
 
 window.require.define({"remote/remote": function(exports, require, module) {
-  var Remote, template,
+  var Remote, Slider, template,
     __hasProp = {}.hasOwnProperty,
     __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
+
+  Slider = require('remote/slider');
 
   template = require('remote/templates/remote');
 
@@ -1308,6 +1327,10 @@ window.require.define({"remote/remote": function(exports, require, module) {
         _ths.$el.html(template({
           pin: pin
         }));
+        new Slider({
+          el: _ths.$('.sample'),
+          label: 'Sample Slider'
+        });
         return setTimeout(function() {
           return _ths.$('.pin').animate({
             opacity: 1,
@@ -1352,6 +1375,141 @@ window.require.define({"remote/remote": function(exports, require, module) {
   
 }});
 
+window.require.define({"remote/slider": function(exports, require, module) {
+  var Slider, template,
+    __hasProp = {}.hasOwnProperty,
+    __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
+
+  template = require('remote/templates/slider');
+
+  module.exports = Slider = (function(_super) {
+
+    __extends(Slider, _super);
+
+    function Slider() {
+      return Slider.__super__.constructor.apply(this, arguments);
+    }
+
+    Slider.prototype.initialize = function() {
+      var o, _ths;
+      _ths = this;
+      o = this.options;
+      this.model = new Backbone.Model({
+        label: o.label || 'Label',
+        max: o.max || 100,
+        min: o.min || 0,
+        value: o.value || 50
+      });
+      this.o = this.model.toJSON();
+      this.model.on('change', function() {
+        return _ths.o = this.toJSON();
+      });
+      this.model.on('change:value', function() {
+        return _ths.update();
+      });
+      return this.render();
+    };
+
+    Slider.prototype.render = function() {
+      var doc, input, model, track, _ths;
+      model = this.model.toJSON();
+      this.$el.html(template(model));
+      track = this.track = this.$('.track');
+      input = this.input = this.$('input');
+      this.thumb = this.$('.thumb');
+      doc = $(document);
+      this.update();
+      _ths = this;
+      track.on('mousedown', function(e) {
+        var start;
+        e.preventDefault();
+        start = Date.now();
+        _ths.setFromCoord(e.pageX);
+        doc.on('mousemove.slider' + start, function(e) {
+          e.preventDefault();
+          return _ths.setFromCoord(e.pageX);
+        });
+        return doc.one('mouseup', function(e) {
+          e.preventDefault();
+          doc.off('mousemove.slider' + start);
+          return _ths.setFromCoord(e.pageX);
+        });
+      });
+      return track.on('touchstart', function(e) {
+        var touch, tracking;
+        e.preventDefault();
+        touch = e.changedTouches[0];
+        tracking = touch.identifier;
+        _ths.setFromCoord(touch.pageX);
+        doc.on('touchmove.slider' + tracking, function(e) {
+          var touches, _i, _len, _ref, _results;
+          touches = e.changedTouches;
+          _ref = e.changedTouches;
+          _results = [];
+          for (_i = 0, _len = _ref.length; _i < _len; _i++) {
+            touch = _ref[_i];
+            if (touch.identifier === tracking) {
+              _results.push(_ths.setFromCoord(touch.pageX));
+            } else {
+              _results.push(void 0);
+            }
+          }
+          return _results;
+        });
+        return doc.one('touchend', function(e) {
+          var touches, _i, _len, _ref, _results;
+          touches = e.changedTouches;
+          _ref = e.changedTouches;
+          _results = [];
+          for (_i = 0, _len = _ref.length; _i < _len; _i++) {
+            touch = _ref[_i];
+            if (touch.identifier === tracking) {
+              _ths.setFromCoord(touch.pageX);
+              _results.push(doc.off('touchmove.slider' + tracking));
+            } else {
+              _results.push(void 0);
+            }
+          }
+          return _results;
+        });
+      });
+    };
+
+    Slider.prototype.update = function() {
+      var o;
+      o = this.o;
+      this.thumb.css('left', ((this.model.get('value') - o.min) / (o.max - o.min)) * 100 + '%');
+      return this.input.val(this.model.get('value'));
+    };
+
+    Slider.prototype.setValue = function(v) {
+      var o, value;
+      o = this.o;
+      value = o.min + v * (o.max - o.min);
+      return this.model.set('value', Math.round(value));
+    };
+
+    Slider.prototype.setFromCoord = function(x) {
+      var left, max, min, v;
+      left = this.track.offset().left;
+      min = left + 19;
+      max = this.track.width() - 10;
+      if (x < min) {
+        v = 0;
+      } else if (x > max) {
+        v = 1;
+      } else {
+        v = (x - min) / (max - min);
+      }
+      return this.setValue(v);
+    };
+
+    return Slider;
+
+  })(Backbone.View);
+  
+}});
+
 window.require.define({"remote/templates/remote": function(exports, require, module) {
   module.exports = Handlebars.template(function (Handlebars,depth0,helpers,partials,data) {
     helpers = helpers || Handlebars.helpers;
@@ -1363,7 +1521,37 @@ window.require.define({"remote/templates/remote": function(exports, require, mod
     stack1 = foundHelper || depth0.pin;
     if(typeof stack1 === functionType) { stack1 = stack1.call(depth0, { hash: {} }); }
     else if(stack1=== undef) { stack1 = helperMissing.call(depth0, "pin", { hash: {} }); }
-    buffer += escapeExpression(stack1) + "</h3>\n  <span>Enter it on the device you wish to control.</span>\n  <p class=\"minor\">Waiting for connection...</p>\n</div>\n<nav class=\"hide\">\n  <ul>\n    <li class=\"active\">General</li>\n    <li>Camera</li>\n    <li>Another Item</li>\n    <li>Another Item</li>\n    <li>Another Item</li>\n    <li>Another Item</li>\n    <li>Another Item</li>\n</nav>";
+    buffer += escapeExpression(stack1) + "</h3>\n  <span>Enter it on the device you wish to control.</span>\n  <p class=\"minor\">Waiting for connection...</p>\n</div>\n<nav class=\"hide\">\n  <ul>\n    <li class=\"active\">General</li>\n    <li>Camera</li>\n    <li>Another Item</li>\n    <li>Another Item</li>\n    <li>Another Item</li>\n    <li>Another Item</li>\n    <li>Another Item</li>\n  </ul>\n</nav>\n<div class=\"sample\"></div>";
+    return buffer;});
+}});
+
+window.require.define({"remote/templates/slider": function(exports, require, module) {
+  module.exports = Handlebars.template(function (Handlebars,depth0,helpers,partials,data) {
+    helpers = helpers || Handlebars.helpers;
+    var buffer = "", stack1, foundHelper, self=this, functionType="function", helperMissing=helpers.helperMissing, undef=void 0, escapeExpression=this.escapeExpression;
+
+
+    buffer += "<div class=\"slider\">\n  <div class=\"label\">";
+    foundHelper = helpers.label;
+    stack1 = foundHelper || depth0.label;
+    if(typeof stack1 === functionType) { stack1 = stack1.call(depth0, { hash: {} }); }
+    else if(stack1=== undef) { stack1 = helperMissing.call(depth0, "label", { hash: {} }); }
+    buffer += escapeExpression(stack1) + "</div>\n  <div class=\"track\">\n    <div class=\"thumb\"></div>\n  </div>\n  <input type=\"text\" value=\"";
+    foundHelper = helpers.value;
+    stack1 = foundHelper || depth0.value;
+    if(typeof stack1 === functionType) { stack1 = stack1.call(depth0, { hash: {} }); }
+    else if(stack1=== undef) { stack1 = helperMissing.call(depth0, "value", { hash: {} }); }
+    buffer += escapeExpression(stack1) + "\" max=\"";
+    foundHelper = helpers.max;
+    stack1 = foundHelper || depth0.max;
+    if(typeof stack1 === functionType) { stack1 = stack1.call(depth0, { hash: {} }); }
+    else if(stack1=== undef) { stack1 = helperMissing.call(depth0, "max", { hash: {} }); }
+    buffer += escapeExpression(stack1) + "\" min=\"";
+    foundHelper = helpers.min;
+    stack1 = foundHelper || depth0.min;
+    if(typeof stack1 === functionType) { stack1 = stack1.call(depth0, { hash: {} }); }
+    else if(stack1=== undef) { stack1 = helperMissing.call(depth0, "min", { hash: {} }); }
+    buffer += escapeExpression(stack1) + "\">\n</div>";
     return buffer;});
 }});
 

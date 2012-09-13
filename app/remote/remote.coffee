@@ -1,3 +1,5 @@
+Slider = require 'remote/slider'
+
 template = require 'remote/templates/remote'
 
 module.exports = class Remote extends Backbone.View
@@ -47,6 +49,10 @@ module.exports = class Remote extends Backbone.View
     socket.emit 'new remote'
     socket.on 'accept', (pin) ->
       _ths.$el.html template pin: pin
+
+      new Slider
+        el: _ths.$ '.sample'
+        label: 'Sample Slider'
 
       setTimeout ->
         _ths.$('.pin').animate {

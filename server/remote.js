@@ -7,7 +7,7 @@ var app = require('http').createServer(handler)
   , ids;
 
 // For production.
-app.listen(8081);
+app.listen(80);
 
 // Tell socket.io to shut up
 io.set('log level', 1);
