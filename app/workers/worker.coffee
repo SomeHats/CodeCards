@@ -4,7 +4,7 @@ module.exports = class Worker
   constructor: (slf) ->
     _ths = @
     slf.onmessage = (e) ->
-      _ths.trigger e.event, e.data
+      _ths.trigger e.data.event, e.data.data
 
     @send = (event, data) ->
       slf.postMessage
@@ -15,12 +15,18 @@ module.exports = class Worker
 
   initialize: -> null
 
+  ready: ->
+    @send 'WW_READY', yes
+
+  busy: ->
+    @send 'WW_READY', no
+
 # Backbone.Events converted into coffeescript
 
   # Bind one or more space separated events, `events`, to a `callback`
   # function. Passing `"all"` will bind the callback to all events fired.
   on: (events, callback, context) ->
-    return this  unless callback
+    return this unless callback
     events = events.split(eventSplitter)
     calls = @_callbacks or (@_callbacks = {})
     while event = events.shift()
@@ -74,10 +80,10 @@ module.exports = class Worker
     # Fill up `rest` with the callback arguments.  Since we're only copying
     # the tail of `arguments`, a loop is much faster than Array#slice.
     i = 1
-    length = arguments_.length
+    length = arguments.length
 
     while i < length
-      rest[i - 1] = arguments_[i]
+      rest[i - 1] = arguments[i]
       i++
     
     # For each event, walk through the list of callbacks twice, first to

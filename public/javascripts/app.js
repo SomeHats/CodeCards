@@ -200,55 +200,8 @@ module.exports = App = (function(_super) {
 
 }});
 
-window.require.define({"interpreter-new": function(exports, require, module) {
-  var Interpreter, UserMedia,
-  __hasProp = {}.hasOwnProperty,
-  __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
-
-UserMedia = require('interpreter/usermedia');
-
-module.exports = Interpreter = (function(_super) {
-
-  __extends(Interpreter, _super);
-
-  function Interpreter() {
-    return Interpreter.__super__.constructor.apply(this, arguments);
-  }
-
-  Interpreter.prototype.initialize = function() {
-    var worker, _ths;
-    _ths = this;
-    this.render();
-    this.UserMedia = new UserMedia({
-      el: $('canvas')
-    });
-    this.UserMedia.p = this;
-    worker = this.worker = new Worker('/javascripts/workers.js');
-    worker.onmessage = function(e) {
-      return _ths.trigger('worker-' + e.data.event, e.data.data);
-    };
-    worker.send = function(event, data) {
-      return this.postMessage({
-        event: event,
-        data: data
-      });
-    };
-    this.on('worker-log', function(data) {
-      return console.log(data);
-    });
-    return this.worker.send('start', 'workers/init');
-  };
-
-  Interpreter.prototype.render = function() {};
-
-  return Interpreter;
-
-})(Backbone.View);
-
-}});
-
 window.require.define({"interpreter": function(exports, require, module) {
-  var HighLighter, Interpreter, Marker, UserMedia,
+  var HighLighter, Interpreter, UserMedia, WebWorker,
   __hasProp = {}.hasOwnProperty,
   __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
 
@@ -256,7 +209,7 @@ UserMedia = require('interpreter/usermedia');
 
 HighLighter = require('interpreter/highlighter');
 
-Marker = require('interpreter/marker');
+WebWorker = require('lib/worker');
 
 module.exports = Interpreter = (function(_super) {
 
@@ -268,27 +221,79 @@ module.exports = Interpreter = (function(_super) {
 
   Interpreter.prototype.imageData = [];
 
-  Interpreter.prototype.blend = 3;
+  Interpreter.prototype.blend = 1;
 
   Interpreter.prototype.contrast = 0;
 
   Interpreter.prototype.brightness = 0;
 
-  Interpreter.prototype.sharpen = 1.5;
+  Interpreter.prototype.sharpen = 0;
 
   Interpreter.prototype.distanceLimit = 4.5;
 
   Interpreter.prototype.initialize = function() {
+    var worker, _ths;
+    _ths = this;
     this.render();
     this.UserMedia = new UserMedia({
       el: $('<canvas>')
     });
     this.UserMedia.p = this;
-    return this.UserMedia.on('imageData', this.detect);
+    worker = this.worker = new WebWorker({
+      name: 'init'
+    });
+    worker.on('log', function(data) {
+      return console.log(data);
+    });
+    worker.send('start', 'workers/init');
+    this.UserMedia.on('imageData', function() {
+      var data;
+      if (worker.ready) {
+        data = {
+          img: this.UserMedia.imageData,
+          blend: this.blend,
+          contrast: this.contrast,
+          brightness: this.brightness,
+          sharpen: this.sharpen,
+          distanceLimit: this.distanceLimit,
+          mousex: Util.mouse.x,
+          mousey: Util.mouse.y
+        };
+        return worker.send('raw-image', data);
+      }
+    }, this);
+    worker.on('filtered-image', function(img) {
+      return this.imgData = img;
+    }, this);
+    worker.on('error', function(data) {
+      this.trigger('error', data.msg);
+      return this.draw(data.markers);
+    }, this);
+    worker.on('success', function(data) {
+      this.trigger('success', data.results);
+      return this.draw(data.markers);
+    }, this);
+    return worker.on('pause', function() {
+      return this.UserMedia.paused = true;
+    }, this);
+  };
+
+  Interpreter.prototype.set = function(attribute, value) {
+    this[attribute] = value;
+    return this.worker.send('set', {
+      attribute: attribute,
+      value: value
+    });
   };
 
   Interpreter.prototype.render = function() {
     return HighLighter.context = this.ctx = this.el.getContext('2d');
+  };
+
+  Interpreter.prototype.draw = function(markers) {
+    this.ctx.putImageData(this.imgData, 0, 0);
+    HighLighter.drawCorners(markers);
+    return HighLighter.drawIDs(markers);
   };
 
   Interpreter.prototype.pause = function() {
@@ -298,150 +303,6 @@ module.exports = Interpreter = (function(_super) {
   Interpreter.prototype.unpause = function() {
     return this.UserMedia.paused = false;
   };
-
-  Interpreter.prototype.detect = function() {
-    var data;
-    if (this.p.imageData.length > this.p.blend) {
-      console.log('blend lower: ' + this.p.imageData.length + ', ' + this.p.blend);
-      this.p.imageData = [];
-    }
-    this.p.imageData.push(this.imageData);
-    if (this.p.imageData.length === this.p.blend) {
-      data = this.p.blend === 1 ? this.p.imageData[0] : this.p.averageImageData();
-      this.p.imageData.shift();
-      if (this.p.brightness !== 0 || this.p.contrast !== 0) {
-        data = ImageFilters.BrightnessContrastGimp(data, this.p.brightness, this.p.contrast);
-      }
-      if (this.p.sharpen !== 0) {
-        data = ImageFilters.Sharpen(data, this.p.sharpen);
-      }
-      this.p.ctx.putImageData(data, 0, 0);
-      this.p.markers = this.p.detector.detect(data);
-      this.p.markers = this.p.markers.map(function(marker, index) {
-        return new Marker(marker.id, marker.corners, index);
-      });
-      this.p.interpret();
-      return this.p.highlight();
-    }
-  };
-
-  Interpreter.prototype.highlight = function() {
-    HighLighter.drawCorners(this.markers);
-    return HighLighter.drawIDs(this.markers);
-  };
-
-  Interpreter.prototype.interpret = function() {
-    var candidate, candidates, current, lineStarter, lsSuccess, markers, results, success, _i, _j, _k, _len, _len1, _len2;
-    results = [];
-    markers = this.markers;
-    current = markers.filter(function(marker) {
-      return marker.id === 0;
-    });
-    if (current.length === 0) {
-      return this.trigger('error', 'No start marker found!');
-    } else if (current.length > 1) {
-      return this.trigger('error', 'Too many start markers visible');
-    } else {
-      current = current[0];
-      current.colour = 'magenta';
-      current.available = false;
-      lineStarter = current;
-      success = true;
-      while (success) {
-        success = false;
-        if (current.contains(Util.mouse.x, Util.mouse.y)) {
-          current.colour = 'cyan';
-          current.highlightExtra = true;
-        }
-        current.radius = current.size * this.distanceLimit;
-        candidates = markers.filter(function(marker) {
-          return marker.available && marker.index !== current.index && current.lookAhead(marker.x, marker.y);
-        });
-        if (candidates.length !== 0) {
-          for (_i = 0, _len = candidates.length; _i < _len; _i++) {
-            candidate = candidates[_i];
-            candidate.distanceFromCurrent = candidate.distanceFrom(current.x, current.y);
-          }
-          candidates.sort(this.sortByDistance);
-          if (candidates[0].distanceFromCurrent <= current.radius) {
-            results.push(candidates[0].id);
-            current = candidates[0];
-            current.colour = 'lime';
-            current.available = false;
-            success = true;
-          }
-        }
-        if (success === false) {
-          results.push(0);
-          candidates = markers.filter(function(marker) {
-            return marker.available && marker.index !== current.index && lineStarter.isAbove(marker.x, marker.y);
-          });
-          if (candidates.length !== 0) {
-            for (_j = 0, _len1 = candidates.length; _j < _len1; _j++) {
-              candidate = candidates[_j];
-              candidate.distanceFromCurrent = lineStarter.distanceAbove(candidate.x, candidate.y);
-            }
-            candidates.sort(this.sortByDistance);
-            if (candidates[0].distanceFromCurrent <= current.radius) {
-              lsSuccess = true;
-              current = candidates[0];
-              while (lsSuccess) {
-                lsSuccess = false;
-                current.radius = current.size * this.distanceLimit;
-                candidates = markers.filter(function(marker) {
-                  return marker.available && marker.index !== current.index && current.lookBehind(marker.x, marker.y);
-                });
-                if (candidates.length !== 0) {
-                  for (_k = 0, _len2 = candidates.length; _k < _len2; _k++) {
-                    candidate = candidates[_k];
-                    candidate.distanceFromCurrent = candidate.distanceFrom(current.x, current.y);
-                  }
-                  candidates.sort(this.sortByDistance);
-                  if (candidates[0].distanceFromCurrent <= current.radius) {
-                    lsSuccess = true;
-                    current = candidates[0];
-                  }
-                } else {
-                  lineStarter = current;
-                }
-              }
-              results.push(current.id);
-              current.colour = 'yellow';
-              current.available = false;
-              success = true;
-            }
-          }
-        }
-      }
-      return this.trigger('success', results);
-    }
-  };
-
-  Interpreter.prototype.averageImageData = function() {
-    var data, i, j, v, _i, _j, _ref, _ref1;
-    data = this.imageData;
-    for (i = _i = 0, _ref = data[0].data.length; 0 <= _ref ? _i < _ref : _i > _ref; i = 0 <= _ref ? ++_i : --_i) {
-      v = 0;
-      for (j = _j = 0, _ref1 = data.length; 0 <= _ref1 ? _j < _ref1 : _j > _ref1; j = 0 <= _ref1 ? ++_j : --_j) {
-        v += data[j].data[i];
-      }
-      v /= data.length;
-      data[0].data[i] = Math.round(v);
-    }
-    return data[0];
-  };
-
-  Interpreter.prototype.sortByDistance = function(a, b) {
-    if (a.distanceFromCurrent < b.distanceFromCurrent) {
-      return -1;
-    } else if (a.distanceFromCurrent > b.distanceFromCurrent) {
-      return 1;
-    } else {
-      return 0;
-    }
-  };
-
-  Interpreter.prototype.detector = new AR.Detector(15);
 
   return Interpreter;
 
@@ -563,163 +424,6 @@ Highlighter = (function() {
 })();
 
 module.exports = new Highlighter;
-
-}});
-
-window.require.define({"interpreter/marker": function(exports, require, module) {
-  var Marker,
-  __hasProp = {}.hasOwnProperty,
-  __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
-
-module.exports = Marker = (function(_super) {
-
-  __extends(Marker, _super);
-
-  function Marker(id, corners, index) {
-    var i, _i;
-    this.id = id;
-    this.corners = corners;
-    this.index = index != null ? index : 1024;
-    this.geom = [];
-    for (i = _i = 0; _i <= 3; i = ++_i) {
-      this.x += this.corners[i].x;
-      this.y += this.corners[i].y;
-      this.geom[i] = {};
-      this.geom[i].m = (this.corners[i].y - this.corners[(i + 1) % 4].y) / (this.corners[i].x - this.corners[(i + 1) % 4].x);
-      this.geom[i].c = this.corners[i].y - this.geom[i].m * this.corners[i].x;
-    }
-    this.x /= 4;
-    this.y /= 4;
-    this.size = Math.sqrt(Math.pow(this.corners[0].x - this.corners[2].x, 2) + Math.pow(this.corners[0].y - this.corners[2].y, 2));
-    this.size += Math.sqrt(Math.pow(this.corners[1].x - this.corners[3].x, 2) + Math.pow(this.corners[1].y - this.corners[3].y, 2));
-    this.size /= 2;
-    this.colour = 'red';
-    this.available = true;
-  }
-
-  Marker.prototype.distanceFrom = function(x, y) {
-    return Math.sqrt(Math.pow(x - this.x, 2) + Math.pow(y - this.y, 2));
-  };
-
-  Marker.prototype.contains = function(x, y) {
-    return this.pointInPolygon(this.corners, x, y);
-  };
-
-  Marker.prototype.lookAhead = function(x, y) {
-    var g, p;
-    if (!this.lookAheadPoints) {
-      p = Util.clone(this.corners);
-      g = this.geom;
-      if (g[0].m === Infinity || g[0].m === -Infinity) {
-        p[1] = p[0].y < p[1].y ? 480 : 0;
-      } else if (p[0].x < p[1].x) {
-        p[1].x = 640;
-        p[1].y = g[0].m * 640 + g[0].c;
-      } else {
-        p[1].x = 0;
-        p[1].y = g[0].c;
-      }
-      if (g[2].m === Infinity || g[2].m === -Infinity) {
-        p[2] = p[3].y < p[2].y ? 480 : 0;
-      } else if (p[3].x < p[2].x) {
-        p[2].x = 640;
-        p[2].y = g[2].m * 640 + g[2].c;
-      } else {
-        p[2].x = 0;
-        p[2].y = g[2].c;
-      }
-      this.lookAheadPoints = p;
-    }
-    return this.pointInPolygon(this.lookAheadPoints, x, y);
-  };
-
-  Marker.prototype.lookBehind = function(x, y) {
-    var g, p;
-    if (!this.lookBehindPoints) {
-      p = Util.clone(this.corners);
-      g = this.geom;
-      if (g[0].m === Infinity || g[0].m === -Infinity) {
-        p[1] = p[0].y > p[1].y ? 480 : 0;
-      } else if (p[0].x > p[1].x) {
-        p[1].x = 640;
-        p[1].y = g[0].m * 640 + g[0].c;
-      } else {
-        p[1].x = 0;
-        p[1].y = g[0].c;
-      }
-      if (g[2].m === Infinity || g[2].m === -Infinity) {
-        p[2] = p[3].y > p[2].y ? 480 : 0;
-      } else if (p[3].x > p[2].x) {
-        p[2].x = 640;
-        p[2].y = g[2].m * 640 + g[2].c;
-      } else {
-        p[2].x = 0;
-        p[2].y = g[2].c;
-      }
-      this.lookBehindPoints = p;
-    }
-    return this.pointInPolygon(this.lookBehindPoints, x, y);
-  };
-
-  Marker.prototype.isAbove = function(x, y) {
-    var g, p;
-    if (!this.isAbovePoints) {
-      p = Util.clone(this.corners);
-      g = this.geom;
-      if (g[0].m === Infinity || g[0].m === -Infinity) {
-        if (p[0].y < p[1].y) {
-          p[0].y = p[3].y = 0;
-          p[1].y = p[2].y = 480;
-          p[2].x = p[3].x = 640;
-        } else {
-          p[0].y = p[3].y = 480;
-          p[1].y = p[2].y = p[2].x = p[3].x = 0;
-        }
-      } else if (p[0].x < p[1].x) {
-        p[0].x = p[3].x = p[3].y = p[2].y = 0;
-        p[0].y = g[0].c;
-        p[1].x = p[2].x = 640;
-        p[1].y = g[0].m * 640 + g[0].c;
-      } else {
-        p[0].x = p[3].x = 640;
-        p[0].y = g[0].m * 640 + g[0].c;
-        p[3].y = 480;
-        p[1].x = p[2].x = 0;
-        p[1].y = g[0].c;
-        p[2].y = 480;
-      }
-      this.isAbovePoints = p;
-    }
-    return this.pointInPolygon(this.isAbovePoints, x, y);
-  };
-
-  Marker.prototype.distanceAbove = function(x, y) {
-    var d, g;
-    g = this.geom;
-    d = Math.abs((g[0].m * x) - y + g[0].c);
-    d /= Math.sqrt(g[0].m * g[0].m + 1);
-    return d;
-  };
-
-  Marker.prototype.pointInPolygon = function(p, x, y) {
-    var c, i, j, _i, _ref;
-    c = false;
-    for (i = _i = _ref = p.length - 1; _ref <= 0 ? _i <= 0 : _i >= 0; i = _ref <= 0 ? ++_i : --_i) {
-      j = (i + 1) % p.length;
-      if ((((p[i].y <= y) && (y < p[j].y)) || ((p[j].y <= y) && (y < p[i].y))) && (x < (p[j].x - p[i].x) * (y - p[i].y) / (p[j].y - p[i].y) + p[i].x)) {
-        c = !c;
-      }
-    }
-    return c;
-  };
-
-  Marker.prototype.x = 0;
-
-  Marker.prototype.y = 0;
-
-  return Marker;
-
-})(AR.Marker);
 
 }});
 
@@ -1058,36 +762,6 @@ util = (function(_super) {
     return null;
   };
 
-  util.prototype.clone = function(obj) {
-    var attr, copy, item;
-    if (null === obj || "object" !== typeof obj) {
-      return obj;
-    }
-    if (obj instanceof Array) {
-      copy = [];
-      copy = (function() {
-        var _i, _len, _results;
-        _results = [];
-        for (_i = 0, _len = obj.length; _i < _len; _i++) {
-          item = obj[_i];
-          _results.push(this.clone(item));
-        }
-        return _results;
-      }).call(this);
-      return copy;
-    }
-    if (obj instanceof Object) {
-      copy = {};
-      for (attr in obj) {
-        if (obj.hasOwnProperty(attr)) {
-          copy[attr] = this.clone(obj[attr]);
-        }
-      }
-      return copy;
-    }
-    throw new Error("Unable to copy obj! Its type isn't supported.");
-  };
-
   util.prototype.alert = function(msg) {
     return alert(msg);
   };
@@ -1109,6 +783,47 @@ util = (function(_super) {
 })(Backbone.View);
 
 window.Util = new util;
+
+}});
+
+window.require.define({"lib/worker": function(exports, require, module) {
+  var WebWorker,
+  __hasProp = {}.hasOwnProperty,
+  __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
+
+module.exports = WebWorker = (function(_super) {
+
+  __extends(WebWorker, _super);
+
+  function WebWorker() {
+    return WebWorker.__super__.constructor.apply(this, arguments);
+  }
+
+  WebWorker.prototype.initialize = function() {
+    var worker, _ths;
+    worker = this.worker = new Worker('/javascripts/workers.js');
+    _ths = this;
+    worker.onmessage = function(e) {
+      return _ths.trigger(e.data.event, e.data.data);
+    };
+    this.send('start', 'workers/' + this.get('name'));
+    return this.on('WW_READY', function(r) {
+      return _ths.ready = r;
+    });
+  };
+
+  WebWorker.prototype.send = function(event, data) {
+    return this.worker.postMessage({
+      event: event,
+      data: data
+    });
+  };
+
+  WebWorker.prototype.ready = false;
+
+  return WebWorker;
+
+})(Backbone.Model);
 
 }});
 
@@ -1232,7 +947,7 @@ window.require.define({"main": function(exports, require, module) {
   __hasProp = {}.hasOwnProperty,
   __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
 
-Interpreter = require('interpreter-new');
+Interpreter = require('interpreter');
 
 data = require('data/test');
 
@@ -1697,7 +1412,7 @@ window.require.define({"remote/templates/remote": function(exports, require, mod
   stack1 = foundHelper || depth0.pin;
   if(typeof stack1 === functionType) { stack1 = stack1.call(depth0, { hash: {} }); }
   else if(stack1=== undef) { stack1 = helperMissing.call(depth0, "pin", { hash: {} }); }
-  buffer += escapeExpression(stack1) + "</h3>\n  <span>Enter it on the device you wish to control.</span>\n  <p class=\"minor\">Waiting for connection...</p>\n</div>\n<nav class=\"hide\">\n  <ul>\n    <li class=\"active\" title=\"general\">General</li>\n    <li title=\"camera\">Camera</li>\n    <li title=\"stats\">Statistics</li>\n    <li>Another Item</li>\n    <li>Another Item</li>\n  </ul>\n</nav>\n<div class=\"hide\">\n  <section class=\"active\" id=\"general\">\n    <h2>General</h2>\n    <div class=\"slider\" id=\"distanceLimit\" \n      data-label=\"Distance Limit\"\n      data-min=\"1\"\n      data-max=\"15\"\n      data-value=\"4.5\"\n      data-float=\"true\"\n      data-concerns=\"interpreter\"></div>\n  </section>\n  <section id=\"camera\">\n    <h2>Camera</h2>\n    <div class=\"slider\" id=\"brightness\" \n      data-label=\"Brightness\"\n      data-min=\"-100\"\n      data-max=\"100\"\n      data-value=\"0\"\n      data-concerns=\"interpreter\"></div>\n    <div class=\"slider\" id=\"contrast\" \n      data-label=\"Contrast\"\n      data-min=\"-100\"\n      data-max=\"100\"\n      data-value=\"0\"\n      data-concerns=\"interpreter\"></div>\n    <div class=\"slider\" id=\"blend\" \n      data-label=\"Blend Frames\"\n      data-min=\"1\"\n      data-max=\"25\"\n      data-value=\"3\"\n      data-concerns=\"interpreter\"></div>\n    <div class=\"slider\" id=\"sharpen\" \n      data-label=\"Sharpen\"\n      data-min=\"0\"\n      data-max=\"10\"\n      data-value=\"0\"\n      data-float=\"true\"\n      data-concerns=\"interpreter\"></div>\n  </section>\n  <section id=\"stats\">\n    <h2>Statistics</h2>\n    <div class=\"graph\" id=\"fps\">\n      <canvas height=\"100\"></canvas>\n      <span></span>\n    </div>\n  </section>\n</div>";
+  buffer += escapeExpression(stack1) + "</h3>\n  <span>Enter it on the device you wish to control.</span>\n  <p class=\"minor\">Waiting for connection...</p>\n</div>\n<nav class=\"hide\">\n  <ul>\n    <li class=\"active\" title=\"general\">General</li>\n    <li title=\"camera\">Camera</li>\n    <li title=\"stats\">Statistics</li>\n    <li>Another Item</li>\n    <li>Another Item</li>\n  </ul>\n</nav>\n<div class=\"hide\">\n  <section class=\"active\" id=\"general\">\n    <h2>General</h2>\n    <div class=\"slider\" id=\"distanceLimit\" \n      data-label=\"Distance Limit\"\n      data-min=\"1\"\n      data-max=\"15\"\n      data-value=\"4.5\"\n      data-float=\"true\"\n      data-concerns=\"interpreter\"></div>\n  </section>\n  <section id=\"camera\">\n    <h2>Camera</h2>\n    <div class=\"slider\" id=\"brightness\" \n      data-label=\"Brightness\"\n      data-min=\"-100\"\n      data-max=\"100\"\n      data-value=\"0\"\n      data-concerns=\"interpreter\"></div>\n    <div class=\"slider\" id=\"contrast\" \n      data-label=\"Contrast\"\n      data-min=\"-100\"\n      data-max=\"100\"\n      data-value=\"0\"\n      data-concerns=\"interpreter\"></div>\n    <div class=\"slider\" id=\"blend\" \n      data-label=\"Blend Frames\"\n      data-min=\"1\"\n      data-max=\"25\"\n      data-value=\"1\"\n      data-concerns=\"interpreter\"></div>\n    <div class=\"slider\" id=\"sharpen\" \n      data-label=\"Sharpen\"\n      data-min=\"0\"\n      data-max=\"10\"\n      data-value=\"0\"\n      data-float=\"true\"\n      data-concerns=\"interpreter\"></div>\n  </section>\n  <section id=\"stats\">\n    <h2>Statistics</h2>\n    <div class=\"graph\" id=\"fps\">\n      <canvas height=\"100\"></canvas>\n      <span></span>\n    </div>\n  </section>\n</div>";
   return buffer;});
 }});
 

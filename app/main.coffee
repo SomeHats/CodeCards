@@ -1,4 +1,4 @@
-Interpreter = require 'interpreter-new'
+Interpreter = require 'interpreter'
 data = require 'data/test'
 
 Remote = require 'interpreter/remote'
