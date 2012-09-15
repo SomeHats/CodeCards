@@ -1610,7 +1610,7 @@ window.require.define({"remote/slider": function(exports, require, module) {
       var left, max, min, v;
       left = this.track.offset().left;
       min = left + 19;
-      max = this.track.width() - 10;
+      max = left + this.track.width() - 19;
       if (x < min) {
         v = 0;
       } else if (x > max) {

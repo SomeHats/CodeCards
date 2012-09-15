@@ -88,7 +88,7 @@ module.exports = class Slider extends Backbone.View
   setFromCoord: (x) ->
     left = @track.offset().left
     min = left + 19
-    max = @track.width() - 10
+    max = left + @track.width() - 19
     if x < min
       v = 0
     else if x > max
