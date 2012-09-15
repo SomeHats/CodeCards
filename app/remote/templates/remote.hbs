@@ -8,7 +8,7 @@
   <ul>
     <li class="active" title="general">General</li>
     <li title="camera">Camera</li>
-    <li>Another Item</li>
+    <li title="stats">Statistics</li>
     <li>Another Item</li>
     <li>Another Item</li>
   </ul>
@@ -40,8 +40,8 @@
       data-concerns="interpreter"></div>
     <div class="slider" id="blend" 
       data-label="Blend Frames"
-      data-min="0"
-      data-max="32"
+      data-min="1"
+      data-max="25"
       data-value="3"
       data-concerns="interpreter"></div>
     <div class="slider" id="sharpen" 
@@ -51,5 +51,12 @@
       data-value="0"
       data-float="true"
       data-concerns="interpreter"></div>
+  </section>
+  <section id="stats">
+    <h2>Statistics</h2>
+    <div class="graph" id="fps">
+      <canvas height="100"></canvas>
+      <span></span>
+    </div>
   </section>
 </div>

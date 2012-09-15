@@ -30,6 +30,7 @@ module.exports = class Interpreter extends Backbone.View
 
   detect: ->
     if @p.imageData.length > @p.blend
+      console.log 'blend lower: ' + @p.imageData.length + ', ' + @p.blend
       @p.imageData = []
 
     @p.imageData.push @imageData

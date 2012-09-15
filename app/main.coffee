@@ -2,18 +2,11 @@ Interpreter = require 'interpreter'
 data = require 'data/test'
 
 Remote = require 'interpreter/remote'
+Stats = require 'interpreter/stats'
 
 template = require 'templates/main'
 
 module.exports = class App extends Backbone.View
-  initialize: ->
-    stats = new Stats
-    stats.setMode 0
-
-    @$el.append stats.domElement
-
-    @stats = stats
-
   start: ->
     @interpreter = new Interpreter el: @$ '#canvas'
 
@@ -21,38 +14,39 @@ module.exports = class App extends Backbone.View
     _ths = @
 
     @interpreter.on 'error', (error) ->
-      _ths.stats.end()
-      _ths.stats.begin()
+      _ths.stats.tick()
       $('#alert').html 'Error: ' + error
 
     @interpreter.on 'success', (results)->
-      _ths.stats.end()
-      _ths.stats.begin()
+      _ths.stats.tick()
       code = ""
       code += data[result] for result in results
       $('#alert').html 'Success! ' + code
       code = js_beautify code
       $code.html code
 
-    gui = new dat.GUI autoPlace: false
-    gui.add(@interpreter, 'blend', 1, 30).step 16
-    gui.add @interpreter, 'brightness', -100, 100
-    gui.add @interpreter, 'contrast', -100, 100
-    gui.add(@interpreter, 'sharpen', 0, 10).setValue 0
-    gui.add @interpreter, 'distanceLimit', 1, 30
-    @$el.append gui.domElement
-
   setupRemote: ->
     _ths = @
     remote = @remote = new Remote el: @$ '.pin-entry'
 
+    ## Receiving
     # Settings
     remote.on 'change-setting', (data) ->
       _ths[data.concerns][data.setting] = data.value
+
+    ## Sending
+    # Stats
+    stats = @stats
+    stats.on 'tick', ->
+      remote.send 'tick',
+        fps: stats.fps
+        interval: stats.interval
       
   render: (callback= (-> null), ctx = @) ->
     _ths = @
     @$el.html template()
+
+    @stats = new Stats
 
     @setupRemote()
 

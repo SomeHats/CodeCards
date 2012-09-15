@@ -243,6 +243,7 @@ window.require.define({"interpreter": function(exports, require, module) {
     Interpreter.prototype.detect = function() {
       var data;
       if (this.p.imageData.length > this.p.blend) {
+        console.log('blend lower: ' + this.p.imageData.length + ', ' + this.p.blend);
         this.p.imageData = [];
       }
       this.p.imageData.push(this.imageData);
@@ -742,16 +743,65 @@ window.require.define({"interpreter/remote": function(exports, require, module) 
           event: 'join',
           data: pin
         });
-        return socket.on('remote', function(data) {
+        socket.on('remote', function(data) {
           return _ths.trigger(data.event, data.data);
         });
+        return _ths.send = function(event, data) {
+          return socket.emit('client', {
+            event: event,
+            data: data
+          });
+        };
       });
       return socket.emit('new client', pin);
+    };
+
+    Remote.prototype.send = function(event, data) {
+      return null;
     };
 
     return Remote;
 
   })(Backbone.View);
+  
+}});
+
+window.require.define({"interpreter/stats": function(exports, require, module) {
+  var Stats,
+    __hasProp = {}.hasOwnProperty,
+    __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
+
+  module.exports = Stats = (function(_super) {
+
+    __extends(Stats, _super);
+
+    function Stats() {
+      return Stats.__super__.constructor.apply(this, arguments);
+    }
+
+    Stats.prototype.last = 0;
+
+    Stats.prototype.fps = 20;
+
+    Stats.prototype.interval = 50;
+
+    Stats.prototype.tick = function() {
+      var current, interval, last;
+      last = this.last;
+      if (last === 0) {
+        this.last = Date.now();
+      } else {
+        current = Date.now();
+        interval = this.interval = current - last;
+        this.fps = 1000 / interval;
+        this.trigger('tick');
+        return this.last = current;
+      }
+    };
+
+    return Stats;
+
+  })(Backbone.Model);
   
 }});
 
@@ -1119,7 +1169,7 @@ window.require.define({"loader": function(exports, require, module) {
 }});
 
 window.require.define({"main": function(exports, require, module) {
-  var App, Interpreter, Remote, data, template,
+  var App, Interpreter, Remote, Stats, data, template,
     __hasProp = {}.hasOwnProperty,
     __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
 
@@ -1128,6 +1178,8 @@ window.require.define({"main": function(exports, require, module) {
   data = require('data/test');
 
   Remote = require('interpreter/remote');
+
+  Stats = require('interpreter/stats');
 
   template = require('templates/main');
 
@@ -1139,30 +1191,20 @@ window.require.define({"main": function(exports, require, module) {
       return App.__super__.constructor.apply(this, arguments);
     }
 
-    App.prototype.initialize = function() {
-      var stats;
-      stats = new Stats;
-      stats.setMode(0);
-      this.$el.append(stats.domElement);
-      return this.stats = stats;
-    };
-
     App.prototype.start = function() {
-      var $code, gui, _ths;
+      var $code, _ths;
       this.interpreter = new Interpreter({
         el: this.$('#canvas')
       });
       $code = $('code');
       _ths = this;
       this.interpreter.on('error', function(error) {
-        _ths.stats.end();
-        _ths.stats.begin();
+        _ths.stats.tick();
         return $('#alert').html('Error: ' + error);
       });
-      this.interpreter.on('success', function(results) {
+      return this.interpreter.on('success', function(results) {
         var code, result, _i, _len;
-        _ths.stats.end();
-        _ths.stats.begin();
+        _ths.stats.tick();
         code = "";
         for (_i = 0, _len = results.length; _i < _len; _i++) {
           result = results[_i];
@@ -1172,25 +1214,23 @@ window.require.define({"main": function(exports, require, module) {
         code = js_beautify(code);
         return $code.html(code);
       });
-      gui = new dat.GUI({
-        autoPlace: false
-      });
-      gui.add(this.interpreter, 'blend', 1, 30).step(16);
-      gui.add(this.interpreter, 'brightness', -100, 100);
-      gui.add(this.interpreter, 'contrast', -100, 100);
-      gui.add(this.interpreter, 'sharpen', 0, 10).setValue(0);
-      gui.add(this.interpreter, 'distanceLimit', 1, 30);
-      return this.$el.append(gui.domElement);
     };
 
     App.prototype.setupRemote = function() {
-      var remote, _ths;
+      var remote, stats, _ths;
       _ths = this;
       remote = this.remote = new Remote({
         el: this.$('.pin-entry')
       });
-      return remote.on('change-setting', function(data) {
+      remote.on('change-setting', function(data) {
         return _ths[data.concerns][data.setting] = data.value;
+      });
+      stats = this.stats;
+      return stats.on('tick', function() {
+        return remote.send('tick', {
+          fps: stats.fps,
+          interval: stats.interval
+        });
       });
     };
 
@@ -1206,6 +1246,7 @@ window.require.define({"main": function(exports, require, module) {
       }
       _ths = this;
       this.$el.html(template());
+      this.stats = new Stats;
       this.setupRemote();
       nav = this.$('nav');
       return setTimeout(function() {
@@ -1377,10 +1418,11 @@ window.require.define({"remote/remote": function(exports, require, module) {
     };
 
     Remote.prototype.setupUI = function() {
-      var sliders, socket;
+      var canvas, counter, ctx, fps, i, lastWidth, max, sliders, socket, stats, _i, _ths;
+      _ths = this;
       socket = this.socket;
       sliders = this.$('.slider');
-      return sliders.each(function() {
+      sliders.each(function() {
         var el, slider;
         el = $(this);
         slider = new Slider({
@@ -1396,6 +1438,44 @@ window.require.define({"remote/remote": function(exports, require, module) {
             }
           });
         });
+      });
+      fps = this.$('#fps');
+      canvas = fps.find('canvas');
+      ctx = canvas[0].getContext('2d');
+      ctx.strokeStyle = 'black';
+      counter = fps.find('span');
+      lastWidth = fps.width();
+      canvas.attr('width', lastWidth);
+      stats = [];
+      max = 10;
+      for (i = _i = 0; 0 <= lastWidth ? _i <= lastWidth : _i >= lastWidth; i = 0 <= lastWidth ? ++_i : --_i) {
+        stats[i] = 0;
+      }
+      return this.on('tick', function(data) {
+        var factor, n, width, _j;
+        n = data.fps;
+        max = max < n ? n : max;
+        width = fps.width();
+        stats.push(n);
+        if (width !== 0) {
+          counter.html(n.toFixed(2) + ' fps');
+          if (width !== lastWidth) {
+            lastWidth = width;
+            canvas.attr('width', width);
+          }
+          stats.push(n);
+          while (stats.length > width) {
+            stats.shift();
+          }
+          ctx.clearRect(0, 0, width, 100);
+          ctx.beginPath();
+          factor = max / 100;
+          for (i = _j = 0; 0 <= width ? _j <= width : _j >= width; i = 0 <= width ? ++_j : --_j) {
+            ctx.moveTo(i, 100);
+            ctx.lineTo(i, 100 - (stats[i] / factor));
+          }
+          return ctx.stroke();
+        }
       });
     };
 
@@ -1558,7 +1638,7 @@ window.require.define({"remote/templates/remote": function(exports, require, mod
     stack1 = foundHelper || depth0.pin;
     if(typeof stack1 === functionType) { stack1 = stack1.call(depth0, { hash: {} }); }
     else if(stack1=== undef) { stack1 = helperMissing.call(depth0, "pin", { hash: {} }); }
-    buffer += escapeExpression(stack1) + "</h3>\n  <span>Enter it on the device you wish to control.</span>\n  <p class=\"minor\">Waiting for connection...</p>\n</div>\n<nav class=\"hide\">\n  <ul>\n    <li class=\"active\" title=\"general\">General</li>\n    <li title=\"camera\">Camera</li>\n    <li>Another Item</li>\n    <li>Another Item</li>\n    <li>Another Item</li>\n  </ul>\n</nav>\n<div class=\"hide\">\n  <section class=\"active\" id=\"general\">\n    <h2>General</h2>\n    <div class=\"slider\" id=\"distanceLimit\" \n      data-label=\"Distance Limit\"\n      data-min=\"1\"\n      data-max=\"15\"\n      data-value=\"4.5\"\n      data-float=\"true\"\n      data-concerns=\"interpreter\"></div>\n  </section>\n  <section id=\"camera\">\n    <h2>Camera</h2>\n    <div class=\"slider\" id=\"brightness\" \n      data-label=\"Brightness\"\n      data-min=\"-100\"\n      data-max=\"100\"\n      data-value=\"0\"\n      data-concerns=\"interpreter\"></div>\n    <div class=\"slider\" id=\"contrast\" \n      data-label=\"Contrast\"\n      data-min=\"-100\"\n      data-max=\"100\"\n      data-value=\"0\"\n      data-concerns=\"interpreter\"></div>\n    <div class=\"slider\" id=\"blend\" \n      data-label=\"Blend Frames\"\n      data-min=\"0\"\n      data-max=\"32\"\n      data-value=\"3\"\n      data-concerns=\"interpreter\"></div>\n    <div class=\"slider\" id=\"sharpen\" \n      data-label=\"Sharpen\"\n      data-min=\"0\"\n      data-max=\"10\"\n      data-value=\"0\"\n      data-float=\"true\"\n      data-concerns=\"interpreter\"></div>\n  </section>\n</div>";
+    buffer += escapeExpression(stack1) + "</h3>\n  <span>Enter it on the device you wish to control.</span>\n  <p class=\"minor\">Waiting for connection...</p>\n</div>\n<nav class=\"hide\">\n  <ul>\n    <li class=\"active\" title=\"general\">General</li>\n    <li title=\"camera\">Camera</li>\n    <li title=\"stats\">Statistics</li>\n    <li>Another Item</li>\n    <li>Another Item</li>\n  </ul>\n</nav>\n<div class=\"hide\">\n  <section class=\"active\" id=\"general\">\n    <h2>General</h2>\n    <div class=\"slider\" id=\"distanceLimit\" \n      data-label=\"Distance Limit\"\n      data-min=\"1\"\n      data-max=\"15\"\n      data-value=\"4.5\"\n      data-float=\"true\"\n      data-concerns=\"interpreter\"></div>\n  </section>\n  <section id=\"camera\">\n    <h2>Camera</h2>\n    <div class=\"slider\" id=\"brightness\" \n      data-label=\"Brightness\"\n      data-min=\"-100\"\n      data-max=\"100\"\n      data-value=\"0\"\n      data-concerns=\"interpreter\"></div>\n    <div class=\"slider\" id=\"contrast\" \n      data-label=\"Contrast\"\n      data-min=\"-100\"\n      data-max=\"100\"\n      data-value=\"0\"\n      data-concerns=\"interpreter\"></div>\n    <div class=\"slider\" id=\"blend\" \n      data-label=\"Blend Frames\"\n      data-min=\"1\"\n      data-max=\"25\"\n      data-value=\"3\"\n      data-concerns=\"interpreter\"></div>\n    <div class=\"slider\" id=\"sharpen\" \n      data-label=\"Sharpen\"\n      data-min=\"0\"\n      data-max=\"10\"\n      data-value=\"0\"\n      data-float=\"true\"\n      data-concerns=\"interpreter\"></div>\n  </section>\n  <section id=\"stats\">\n    <h2>Statistics</h2>\n    <div class=\"graph\" id=\"fps\">\n      <canvas height=\"100\"></canvas>\n      <span></span>\n    </div>\n  </section>\n</div>";
     return buffer;});
 }});
 

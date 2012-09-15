@@ -58,4 +58,11 @@ module.exports = class Remote extends Backbone.View
       socket.on 'remote', (data) ->
         _ths.trigger data.event, data.data
 
+      _ths.send = (event, data) ->
+        socket.emit 'client',
+          event: event
+          data: data
+
     socket.emit 'new client', pin
+
+  send: (event, data) -> null
