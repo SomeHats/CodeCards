@@ -1,3 +1,9 @@
+if (typeof window === 'undefined') {
+  var isWorker = true;
+  global = {};
+} else {
+  var isWorker = false;
+}
 (function(/*! Brunch !*/) {
   'use strict';
 
@@ -73,6 +79,12 @@
   globals.require.define = define;
   globals.require.brunch = true;
 })();
+
+if (isWorker) {
+  var window = {};
+  var require = window.require = global.require;
+}
+
 
 // Make it safe to do console.log() always.
 (function (con) {
