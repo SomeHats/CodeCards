@@ -1662,7 +1662,7 @@ module.exports = Init = (function(_super) {
               current = candidates[0];
               while (lsSuccess) {
                 lsSuccess = false;
-                current.radius = current.size * this.distanceLimit;
+                current.radius = current.size * this.data.distanceLimit;
                 candidates = markers.filter(function(marker) {
                   return marker.available && marker.index !== current.index && current.lookBehind(marker.x, marker.y);
                 });

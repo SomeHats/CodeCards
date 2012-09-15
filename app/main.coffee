@@ -16,6 +16,11 @@ module.exports = class App extends Backbone.View
     @interpreter.on 'error', (error) ->
       _ths.stats.tick()
       $('#alert').html 'Error: ' + error
+      _ths.remote.send 'tick',
+        fps: _ths.stats.fps
+        interval: _ths.stats.interval
+        status: 'error'
+        message: error
 
     @interpreter.on 'success', (results)->
       _ths.stats.tick()
@@ -24,6 +29,11 @@ module.exports = class App extends Backbone.View
       $('#alert').html 'Success! ' + code
       code = js_beautify code
       $code.html code
+      _ths.remote.send 'tick',
+        fps: _ths.stats.fps
+        interval: _ths.stats.interval
+        status: 'success'
+        code: code
 
   setupRemote: ->
     _ths = @
@@ -33,14 +43,6 @@ module.exports = class App extends Backbone.View
     # Settings
     remote.on 'change-setting', (data) ->
       _ths[data.concerns][data.setting] = data.value
-
-    ## Sending
-    # Stats
-    stats = @stats
-    stats.on 'tick', ->
-      remote.send 'tick',
-        fps: stats.fps
-        interval: stats.interval
       
   render: (callback= (-> null), ctx = @) ->
     _ths = @

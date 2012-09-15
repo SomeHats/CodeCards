@@ -5,7 +5,7 @@ WebWorker = require 'lib/worker'
 
 module.exports = class Interpreter extends Backbone.View
   imageData: []
-  blend: 1
+  blend: 3
   contrast: 0
   brightness: 0
   sharpen: 0

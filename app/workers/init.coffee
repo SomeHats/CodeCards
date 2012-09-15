@@ -112,7 +112,7 @@ module.exports = class Init extends require('workers/worker')
 
               while lsSuccess
                 lsSuccess = false
-                current.radius = current.size * @distanceLimit
+                current.radius = current.size * @data.distanceLimit
 
                 candidates = markers.filter (marker) ->
                   marker.available and marker.index isnt current.index and current.lookBehind marker.x, marker.y

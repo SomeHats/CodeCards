@@ -94,6 +94,10 @@ module.exports = class Remote extends Backbone.View
             setting: el.attr 'id'
             value: parseFloat value
 
+    # Code Preview
+    result = @$ '#result'
+    code = @$ '#preview'
+
     # Performance stats
     fps = @$ '#fps'
     canvas = fps.find 'canvas'
@@ -108,6 +112,18 @@ module.exports = class Remote extends Backbone.View
       stats[i] = 0
 
     @on 'tick', (data) ->
+      # Code Preview
+      if data.status is 'error'
+        result.html 'Error: ' + data.message
+        code.html ''
+      else if data.status is 'success'
+        result.html 'Code Preview:'
+        code.html data.code
+      else
+        result.html 'Connection problem'
+        code.html 'Please wait...'
+
+      # Performance Stats
       n = data.fps
       max = if max < n then n else max
       width = fps.width()

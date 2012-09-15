@@ -59,12 +59,9 @@ class Highlighter
 
     ctx.beginPath()
 
-    if marker.lookAheadPoints
-      @trace marker.lookAheadPoints
-    else
-      @graphLine marker.geom[0].m, marker.geom[0].c, marker.corners[0].x
-      @graphLine marker.geom[2].m, marker.geom[2].c, marker.corners[2].x
-      @graphLine marker.geom[3].m, marker.geom[3].c, marker.corners[3].x
+    @graphLine marker.geom[0].m, marker.geom[0].c, marker.corners[0].x
+    @graphLine marker.geom[2].m, marker.geom[2].c, marker.corners[2].x
+    @graphLine marker.geom[3].m, marker.geom[3].c, marker.corners[3].x
 
     ctx.stroke()
     ctx.closePath()
