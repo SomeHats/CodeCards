@@ -86,6 +86,143 @@ if (isWorker) {
 }
 
 
+window.require.define({"data/languages/js.lang": function(exports, require, module) {
+  
+module.exports = {
+  name: 'js',
+  version: 0,
+  lang: {
+    1: ")",
+    2: "(",
+    3: "}",
+    4: "{",
+    5: "]",
+    6: "[",
+    7: ") { ",
+    8: "})",
+    9: "()",
+    10: "+ ",
+    11: "- ",
+    12: "* ",
+    13: "/ ",
+    14: "% ",
+    15: "++ ",
+    16: "-- ",
+    17: "= ",
+    18: "+= ",
+    19: "-= ",
+    20: "*= ",
+    21: "/= ",
+    22: "%= ",
+    23: "<<= ",
+    24: ">>= ",
+    25: ">>>= ",
+    26: "&= ",
+    27: "^= ",
+    28: "|= ",
+    29: "& ",
+    30: "| ",
+    31: "^ ",
+    32: "~ ",
+    33: "<< ",
+    34: ">> ",
+    35: ">>> ",
+    36: "== ",
+    37: "!= ",
+    38: "=== ",
+    39: "!== ",
+    40: "> ",
+    41: ">= ",
+    42: "< ",
+    43: "<= ",
+    44: "&& ",
+    45: "|| ",
+    46: "! ",
+    47: ".",
+    48: "? ",
+    49: ": ",
+    50: ", ",
+    51: "delete ",
+    52: "function ",
+    53: "get ",
+    54: "in ",
+    55: "instanceof ",
+    56: "let ",
+    57: "new ",
+    58: "set ",
+    59: "this",
+    60: "typeof ",
+    61: "void",
+    62: "yield ",
+    63: "true",
+    64: "false",
+    65: "undefined",
+    66: "null",
+    67: "NaN",
+    68: "Infinity",
+    71: "decodeURI(",
+    72: "decodeURIComponent(",
+    73: "encodeURI(",
+    74: "encodeURIComponent(",
+    75: "eval(",
+    76: "isFinite(",
+    77: "isNaN(",
+    78: "parseFloat",
+    79: "parseInt",
+    80: "Math",
+    81: ".E",
+    82: ".LN2",
+    83: ".LN10",
+    84: ".LOG2E",
+    85: ".LOG10E",
+    86: ".PI",
+    87: ".SQRT1_2",
+    88: ".SQRT2",
+    89: ".abs(",
+    90: ".acos(",
+    91: ".asin(",
+    92: ".atan(",
+    93: ".atan2(",
+    94: ".ceil(",
+    95: ".cos(",
+    96: ".exp(",
+    97: ".floor(",
+    98: ".log(",
+    99: ".max(",
+    100: ".min(",
+    101: ".pow(",
+    102: ".random(",
+    103: ".round(",
+    104: ".sin(",
+    105: ".sqrt(",
+    106: ".tan("
+  }
+};
+
+}});
+
+window.require.define({"data/languages/sample.lang": function(exports, require, module) {
+  
+module.exports = {
+  name: 'sample',
+  version: 3,
+  "extends": {
+    'js': 1
+  },
+  lang: {
+    1: "hello ",
+    2: {
+      word: "world ",
+      display: "<strong>world </strong>",
+      group: "example group",
+      before: [1],
+      after: ["example group", 1]
+    }
+  }
+};
+
+}});
+
 window.require.define({"data/test": function(exports, require, module) {
   
 module.exports = ["\n", "}", ") {", ")", "while (", "robot", ".turn(", ".look(", ".move(", " forward ", " left ", " right "];
@@ -1425,7 +1562,7 @@ window.require.define({"remote/templates/remote": function(exports, require, mod
   stack1 = foundHelper || depth0.pin;
   if(typeof stack1 === functionType) { stack1 = stack1.call(depth0, { hash: {} }); }
   else if(stack1=== undef) { stack1 = helperMissing.call(depth0, "pin", { hash: {} }); }
-  buffer += escapeExpression(stack1) + "</h3>\n  <span>Enter it on the device you wish to control.</span>\n  <p class=\"minor\">Waiting for connection...</p>\n</div>\n<nav class=\"hide\">\n  <ul>\n    <li class=\"active\" title=\"general\">General</li>\n    <li title=\"camera\">Camera</li>\n    <li title=\"stats\">Statistics</li>\n    <li>Another Item</li>\n    <li>Another Item</li>\n  </ul>\n</nav>\n<div class=\"hide\">\n  <section class=\"active\" id=\"general\">\n    <h2>General</h2>\n    <h3 id=\"result\"></h3>\n    <pre><code id=\"preview\"></code></pre>\n    <div class=\"slider\" id=\"distanceLimit\" \n      data-label=\"Distance Limit\"\n      data-min=\"1\"\n      data-max=\"15\"\n      data-value=\"4.5\"\n      data-float=\"true\"\n      data-concerns=\"interpreter\"></div>\n  </section>\n  <section id=\"camera\">\n    <h2>Camera</h2>\n    <div class=\"slider\" id=\"brightness\" \n      data-label=\"Brightness\"\n      data-min=\"-100\"\n      data-max=\"100\"\n      data-value=\"0\"\n      data-concerns=\"interpreter\"></div>\n    <div class=\"slider\" id=\"contrast\" \n      data-label=\"Contrast\"\n      data-min=\"-100\"\n      data-max=\"100\"\n      data-value=\"0\"\n      data-concerns=\"interpreter\"></div>\n    <div class=\"slider\" id=\"blend\" \n      data-label=\"Blend Frames\"\n      data-min=\"1\"\n      data-max=\"25\"\n      data-value=\"3\"\n      data-concerns=\"interpreter\"></div>\n    <div class=\"slider\" id=\"sharpen\" \n      data-label=\"Sharpen\"\n      data-min=\"0\"\n      data-max=\"10\"\n      data-value=\"0\"\n      data-float=\"true\"\n      data-concerns=\"interpreter\"></div>\n  </section>\n  <section id=\"stats\">\n    <h2>Statistics</h2>\n    <div class=\"graph\" id=\"fps\">\n      <canvas height=\"100\"></canvas>\n      <span></span>\n    </div>\n  </section>\n</div>";
+  buffer += escapeExpression(stack1) + "</h3>\n  <span>Enter it on the device you wish to control.</span>\n  <p class=\"minor\">Waiting for connection...</p>\n</div>\n<nav class=\"hide\">\n  <ul>\n    <li class=\"active\" title=\"general\">General</li>\n    <li title=\"camera\">Camera</li>\n    <li title=\"stats\">Statistics</li>\n    <li>Another Item</li>\n    <li>Another Item</li>\n  </ul>\n</nav>\n<div class=\"hide\">\n  <section class=\"active\" id=\"general\">\n    <h2>General</h2>\n    <h3 id=\"result\"></h3>\n    <pre><code id=\"preview\"></code></pre>\n    <div class=\"slider\" id=\"distanceLimit\" \n      data-label=\"Distance Limit\"\n      data-min=\"1\"\n      data-max=\"15\"\n      data-value=\"4.5\"\n      data-float=\"true\"\n      data-concerns=\"interpreter\"></div>\n  </section>\n  <section id=\"camera\">\n    <h2>Camera</h2>\n    <div class=\"slider\" id=\"brightness\" \n      data-label=\"Brightness\"\n      data-min=\"-100\"\n      data-max=\"100\"\n      data-value=\"0\"\n      data-concerns=\"interpreter\"></div>\n    <div class=\"slider\" id=\"contrast\" \n      data-label=\"Contrast\"\n      data-min=\"-100\"\n      data-max=\"100\"\n      data-value=\"0\"\n      data-concerns=\"interpreter\"></div>\n    <div class=\"slider\" id=\"blend\" \n      data-label=\"Blend Frames\"\n      data-min=\"1\"\n      data-max=\"25\"\n      data-value=\"3\"\n      data-concerns=\"interpreter\"></div>\n    <div class=\"slider\" id=\"sharpen\" \n      data-label=\"Sharpen\"\n      data-min=\"0\"\n      data-max=\"5\"\n      data-value=\"0\"\n      data-float=\"true\"\n      data-concerns=\"interpreter\"></div>\n  </section>\n  <section id=\"stats\">\n    <h2>Statistics</h2>\n    <div class=\"graph\" id=\"fps\">\n      <canvas height=\"100\"></canvas>\n      <span></span>\n    </div>\n  </section>\n</div>";
   return buffer;});
 }});
 
