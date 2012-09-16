@@ -201,6 +201,32 @@ module.exports = {
 
 }});
 
+window.require.define({"data/languages/robot.lang": function(exports, require, module) {
+  
+module.exports = {
+  name: "robot",
+  version: 0,
+  "extends": {
+    "js": 0
+  },
+  lang: {
+    500: "robot",
+    501: ".look(",
+    504: ".touch(",
+    502: ".move(",
+    503: ".turn(",
+    510: "forward",
+    511: "backward",
+    512: "left",
+    513: "right",
+    520: "empty",
+    521: "wall",
+    522: "tea"
+  }
+};
+
+}});
+
 window.require.define({"data/languages/sample.lang": function(exports, require, module) {
   
 module.exports = {
