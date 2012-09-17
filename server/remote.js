@@ -29,43 +29,51 @@ function handler(req, res) {
   //log.info('HTTP: ' + url);
   url = path.normalize(__dirname + '/../public' + url);
 
-  fs.readFile(url, function(error, data) {
-    // Oh noes!
-    if (error) {
-      log.error('Error with: ' + url);
-      log.notice(error);
-      res.writeHead(500);
-      return res.end('Error loading');
-    }
+  fs.exists(url, function(exists) {
+    if (exists) {
+      fs.readFile(url, function(error, data) {
+        // Oh noes!
+        if (error) {
+          log.error('Error with: ' + url);
+          log.notice(error);
+          res.writeHead(500);
+          return res.end('Error loading');
+        }
 
-    // Chrome likes mime types, apparently
-    switch(ext) {
-      case 'html':
-        res.setHeader('Content-Type', 'text/html');
-        break;
-      case 'js':
-        res.setHeader('Content-Type', 'application/javascript');
-        break;
-      case 'css':
-        res.setHeader('Content-Type', 'text/css');
-        break;
-      case 'svg':
-        res.setHeader('Content-Type', 'image/svg+xml');
-        break;
-    }
+        // Chrome likes mime types, apparently
+        switch(ext) {
+          case 'html':
+            res.setHeader('Content-Type', 'text/html');
+            break;
+          case 'js':
+            res.setHeader('Content-Type', 'application/javascript');
+            break;
+          case 'css':
+            res.setHeader('Content-Type', 'text/css');
+            break;
+          case 'svg':
+            res.setHeader('Content-Type', 'image/svg+xml');
+            break;
+        }
 
-    res.writeHead(200);
-    res.end(data);
+        res.writeHead(200);
+        res.end(data);
+      });
+    } else {
+      log.notice('404: ' + url);
+      res.writeHead(400);
+      res.end('Not found. :(');
+    }
   });
 }
 
-//
+
 // Generate a list of IDs for remotes to use. This is a kind of stupid way of doing
 // things as we're limited to 10k concurrent connections, but we're not likely to
-// exceed that.
+// exceed that anyway.
 //
 // This uses the Fisher-Yates shuffle:
-//  http://en.wikipedia.org/wiki/Fisher%E2%80%93Yates_shuffle
+// http://en.wikipedia.org/wiki/Fisher%E2%80%93Yates_shuffle
 
 ids = [];
 
@@ -73,6 +81,7 @@ ids = [];
 for(var i = 0; i < 10000; i++) {
   ids[i] = ("0000" + i).substr(-4);
 }
+// Shuffle them!
 var tmp;
 for(i = 0; i < 10000; i++) {
   j = Math.round(Math.random() * i);
