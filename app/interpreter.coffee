@@ -42,6 +42,7 @@ module.exports = class Interpreter extends Backbone.View
 
     worker.on 'filtered-image', (img) ->
       @imgData = img
+      console.log @ctx.putImageData img, 0, 0
     , @
 
     worker.on 'error', (data) ->

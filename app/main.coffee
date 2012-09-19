@@ -43,12 +43,21 @@ module.exports = class App extends Backbone.View
     # Settings
     remote.on 'change-setting', (data) ->
       _ths[data.concerns][data.setting] = data.value
+
+  interact: ->
+    sec = @$ 'section'
+    toggler = @$ '.toggler'
+
+    toggler.on 'click', ->
+      sec.toggleClass 'extended'
       
   render: (callback= (-> null), ctx = @) ->
     _ths = @
     @$el.html template()
 
     @stats = new Stats
+
+    @interact()
 
     @setupRemote()
 

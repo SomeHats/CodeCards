@@ -458,7 +458,8 @@ module.exports = Interpreter = (function(_super) {
       }
     }, this);
     worker.on('filtered-image', function(img) {
-      return this.imgData = img;
+      this.imgData = img;
+      return console.log(this.ctx.putImageData(img, 0, 0));
     }, this);
     worker.on('error', function(data) {
       this.trigger('error', data.msg);
@@ -1204,6 +1205,15 @@ module.exports = App = (function(_super) {
     });
   };
 
+  App.prototype.interact = function() {
+    var sec, toggler;
+    sec = this.$('section');
+    toggler = this.$('.toggler');
+    return toggler.on('click', function() {
+      return sec.toggleClass('extended');
+    });
+  };
+
   App.prototype.render = function(callback, ctx) {
     var nav, _ths;
     if (callback == null) {
@@ -1217,6 +1227,7 @@ module.exports = App = (function(_super) {
     _ths = this;
     this.$el.html(template());
     this.stats = new Stats;
+    this.interact();
     this.setupRemote();
     nav = this.$('nav');
     return setTimeout(function() {
@@ -1620,7 +1631,7 @@ window.require.define({"remote/templates/remote": function(exports, require, mod
   stack1 = foundHelper || depth0.pin;
   if(typeof stack1 === functionType) { stack1 = stack1.call(depth0, { hash: {} }); }
   else if(stack1=== undef) { stack1 = helperMissing.call(depth0, "pin", { hash: {} }); }
-  buffer += escapeExpression(stack1) + "</h3>\n  <span>Enter it on the device you wish to control.</span>\n  <p class=\"minor\">Waiting for connection...</p>\n</div>\n<nav class=\"hide\">\n  <ul>\n    <li class=\"active\" title=\"general\">General</li>\n    <li title=\"camera\">Camera</li>\n    <li title=\"stats\">Statistics</li>\n    <li>Another Item</li>\n    <li>Another Item</li>\n  </ul>\n</nav>\n<div class=\"hide\">\n  <section class=\"active\" id=\"general\">\n    <h2>General</h2>\n    <h3 id=\"result\"></h3>\n    <pre><code id=\"preview\"></code></pre>\n    <div class=\"slider\" id=\"distanceLimit\" \n      data-label=\"Distance Limit\"\n      data-min=\"1\"\n      data-max=\"15\"\n      data-value=\"4.5\"\n      data-float=\"true\"\n      data-concerns=\"interpreter\"></div>\n  </section>\n  <section id=\"camera\">\n    <h2>Camera</h2>\n    <div class=\"slider\" id=\"brightness\" \n      data-label=\"Brightness\"\n      data-min=\"-100\"\n      data-max=\"100\"\n      data-value=\"0\"\n      data-concerns=\"interpreter\"></div>\n    <div class=\"slider\" id=\"contrast\" \n      data-label=\"Contrast\"\n      data-min=\"-100\"\n      data-max=\"100\"\n      data-value=\"0\"\n      data-concerns=\"interpreter\"></div>\n    <div class=\"slider\" id=\"blend\" \n      data-label=\"Blend Frames\"\n      data-min=\"1\"\n      data-max=\"25\"\n      data-value=\"3\"\n      data-concerns=\"interpreter\"></div>\n    <div class=\"slider\" id=\"sharpen\" \n      data-label=\"Sharpen\"\n      data-min=\"0\"\n      data-max=\"5\"\n      data-value=\"0\"\n      data-float=\"true\"\n      data-concerns=\"interpreter\"></div>\n  </section>\n  <section id=\"stats\">\n    <h2>Statistics</h2>\n    <div class=\"graph\" id=\"fps\">\n      <canvas height=\"100\"></canvas>\n      <span></span>\n    </div>\n  </section>\n</div>";
+  buffer += escapeExpression(stack1) + "</h3>\n  <span>Enter it on the device you wish to control.</span>\n  <p class=\"minor\">Waiting for connection...</p>\n</div>\n<nav class=\"hide\">\n  <ul>\n    <li class=\"active\" title=\"general\">General</li>\n    <li title=\"camera\">Camera</li>\n    <li title=\"stats\">Statistics</li>\n    <li title=\"codepreview\">Preview</li>\n    <li>Another Item</li>\n  </ul>\n</nav>\n<div class=\"hide\">\n  <section class=\"active\" id=\"general\">\n    <h2>General</h2>\n    <div class=\"slider\" id=\"distanceLimit\" \n      data-label=\"Distance Limit\"\n      data-min=\"1\"\n      data-max=\"15\"\n      data-value=\"4.5\"\n      data-float=\"true\"\n      data-concerns=\"interpreter\"></div>\n  </section>\n  <section id=\"camera\">\n    <h2>Camera</h2>\n    <div class=\"slider\" id=\"brightness\" \n      data-label=\"Brightness\"\n      data-min=\"-100\"\n      data-max=\"100\"\n      data-value=\"0\"\n      data-concerns=\"interpreter\"></div>\n    <div class=\"slider\" id=\"contrast\" \n      data-label=\"Contrast\"\n      data-min=\"-100\"\n      data-max=\"100\"\n      data-value=\"0\"\n      data-concerns=\"interpreter\"></div>\n    <div class=\"slider\" id=\"blend\" \n      data-label=\"Blend Frames\"\n      data-min=\"1\"\n      data-max=\"25\"\n      data-value=\"3\"\n      data-concerns=\"interpreter\"></div>\n    <div class=\"slider\" id=\"sharpen\" \n      data-label=\"Sharpen\"\n      data-min=\"0\"\n      data-max=\"5\"\n      data-value=\"0\"\n      data-float=\"true\"\n      data-concerns=\"interpreter\"></div>\n  </section>\n  <section id=\"stats\">\n    <h2>Statistics</h2>\n    <div class=\"graph\" id=\"fps\">\n      <canvas height=\"100\"></canvas>\n      <span></span>\n    </div>\n  </section>\n  <section id=\"codepreview\">\n    <h2>Code Preview</h2>\n    <pre><code id=\"preview\"></code></pre>\n  </section>\n</div>";
   return buffer;});
 }});
 
@@ -1695,6 +1706,6 @@ window.require.define({"templates/main": function(exports, require, module) {
   var foundHelper, self=this;
 
 
-  return "<nav>\n  <a class=\"logo\" href=\"#\">\n    <h3 class=\"decoded\">Decoded</h3>\n    <h1><span>{</span>code<span>}</span>cards</h1>\n  </a>\n  <section class=\"pin-entry hide\"></section>\n</nav>\n<canvas id=\"canvas\" width=\"640\" height=\"480\" style=\"max-width: 100%\"></canvas>\n<div style=\"position: absolute; top: 0; left: 660px\">\n  <h3 id=\"alert\"></h3>\n  <pre><code class=\"language-js\"></code></pre>\n</div>";});
+  return "<nav>\n  <a class=\"logo\" href=\"#\">\n    <h3 class=\"decoded\">Decoded</h3>\n    <h1><span>{</span>code<span>}</span>cards</h1>\n  </a>\n  <section class=\"pin-entry hide\"></section>\n</nav>\n<section>\n  <div id=\"camview\">\n    <div>\n      <canvas id=\"canvas\" width=\"640\" height=\"480\"></canvas>\n    </div>\n    <a class=\"toggler\"></a>\n  </div>\n  <div id=\"mainview\">\n    <div id=\"code\">\n      <h3 id=\"alert\">Please allow your webcam...</h3>\n      <pre><code class=\"language-js\"></code></pre>\n    </div>\n    <div id=\"activity\">\n    </div>\n  </div>\n</section>";});
 }});
 

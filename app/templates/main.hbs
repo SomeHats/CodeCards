@@ -5,8 +5,19 @@
   </a>
   <section class="pin-entry hide"></section>
 </nav>
-<canvas id="canvas" width="640" height="480" style="max-width: 100%"></canvas>
-<div style="position: absolute; top: 0; left: 660px">
-  <h3 id="alert"></h3>
-  <pre><code class="language-js"></code></pre>
-</div>
+<section>
+  <div id="camview">
+    <div>
+      <canvas id="canvas" width="640" height="480"></canvas>
+    </div>
+    <a class="toggler"></a>
+  </div>
+  <div id="mainview">
+    <div id="code">
+      <h3 id="alert">Please allow your webcam...</h3>
+      <pre><code class="language-js"></code></pre>
+    </div>
+    <div id="activity">
+    </div>
+  </div>
+</section>

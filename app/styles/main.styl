@@ -9,7 +9,7 @@
     height 50px
     background-color black
     box-shadow 0 0px 8px rgba(0, 0, 0, 0.7)
-    z-index 20
+    z-index 100
 
     // Hidden
     opacity 0
@@ -93,3 +93,105 @@
 
       &.hide .status
         opacity 1
+
+  #camview
+    position fixed
+    left -640px
+    top 0
+    width 640px
+    height 100%
+    border-right 1px solid black
+    background-color #FCF700
+    z-index 50
+    padding-bottom 90px
+    box-shadow 0 0 40px rgba(0, 0, 0, 0.4)
+    transition all 0.3s ease
+
+    > div
+      position relative
+      z-index 50
+
+    .toggler
+      display block 
+      position absolute
+      z-index 40
+      top 50%
+      left 620px
+      width 40px
+      height 40px
+      margin-top -28px
+      outline 1px solid black
+      border 20px solid #FCF700
+      background-color black
+      cursor pointer
+      transform rotate(45deg)
+      transition all 0.3s ease
+
+      &:hover
+        border-width 0px
+
+      &:before
+        content ''
+        display block
+        position absolute
+        top -25px
+        left -27px
+        background #FCF700
+        height 70px
+        width 30px
+        transform rotate(-45deg)
+
+  .extended #camview
+    transform translateX(640px)
+
+  #mainview
+    z-index 20
+    position fixed
+    width 100%
+    height 100%
+    top 0
+    left 0
+    transition all 0.3s ease
+
+    > div
+      overflow hidden
+      overflow-y auto
+      padding 40px
+      padding-bottom 90px
+      width 50%
+      height 100%
+      position absolute
+      top 0
+      border-right 1px solid black
+      background-color #FCF700
+      box-shadow 0 0 40px rgba(0, 0, 0, 0.4)
+      transition all 0.3s ease
+
+  .extended #mainview
+    transform translateX(360px)
+
+    #activity
+      transform translateX(-280px)
+
+  #code
+    z-index 20
+    font-size 28px
+
+    h3
+      position absolute
+      bottom 0
+      left 0
+      height 130px
+      width 100%
+      padding 0
+      margin 0
+      line-height 80px
+      text-align center
+      background-color rgba(252, 247, 0, 0.6)
+      border-top 1px solid black
+      box-shadow 0 0 20px rgba(0, 0, 0, 0.2)
+
+
+  #activity
+    z-index 10
+    left 50%
