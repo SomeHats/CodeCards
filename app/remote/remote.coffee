@@ -1,6 +1,6 @@
-Slider = require 'remote/slider'
+UI = require 'ui/ui'
 
-template = require 'remote/templates/remote'
+template = require 'remote/template'
 
 module.exports = class Remote extends Backbone.View
   initialize: ->
@@ -82,17 +82,31 @@ module.exports = class Remote extends Backbone.View
     _ths = @
     socket = @socket
 
+    # Sliders
     sliders = @$ '.slider'
     sliders.each ->
       el = $ @
-      slider = new Slider el: @
+      slider = new UI.Slider el: @
       slider.on 'change', (value) ->
         socket.emit 'remote', 
           event: 'change-setting'
           data:
-            concerns: el.data 'concerns'
+            concerns: el.data 'concerns' or null
             setting: el.attr 'id'
             value: parseFloat value
+
+    # Toggle buttons
+    toggles = @$ '.toggle'
+    toggles.each ->
+      el = $ @
+      toggle = new UI.Toggle el: @
+      toggle.on 'change', (value) ->
+        socket.emit 'remote',
+          event: 'change-setting'
+          data:
+            concerns: el.data 'concerns' or null
+            setting: el.attr 'id'
+            value: value
 
     # Code Preview
     result = @$ '#result'

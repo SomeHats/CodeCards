@@ -1,0 +1,52 @@
+@import 'nib'
+@import '_ui'
+
+.slider
+  @extends .ui
+
+  .track
+    height size
+    border 1px solid border-colour
+    background-color rgba(black, 0.1)
+    margin 0
+    margin-top pad
+    padding 0 (size / 2 - 2)
+    overflow hidden
+
+    @media (max-width: 420px)
+      width 100%
+
+  .thumb
+    position relative
+    height (size - 2)
+    width (size - 2)
+    left 100%
+    margin-left -(size / 2 - 1)
+    background-color rgba(black, 0.7)
+    box-shadow 0 0 10px rgba(black, 0.5)
+    border-left 1px solid black
+    border-right 1px solid black
+    transition background-color 0.4s ease, box-shadow 0.4s ease
+
+  &:hover .thumb
+    box-shadow 0 0 15px rgba(black, 0.8)
+    background-color rgba(black, 0.7)
+
+  input
+    border none
+    border-bottom 1px solid black
+    background none
+    text-align center
+    float right
+    margin-left pad
+    height size
+    margin-top pad
+    font-size 20px
+    width 60px
+    outline none
+
+    @media (max-width: 420px)
+      margin-top -3px
+      position absolute
+      right pad
+      border none

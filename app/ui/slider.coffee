@@ -1,4 +1,4 @@
-template = require 'remote/templates/slider'
+template = require 'ui/templates/slider'
 
 module.exports = class Slider extends Backbone.View
   initialize: ->

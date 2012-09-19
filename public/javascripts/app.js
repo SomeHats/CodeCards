@@ -458,8 +458,7 @@ module.exports = Interpreter = (function(_super) {
       }
     }, this);
     worker.on('filtered-image', function(img) {
-      this.imgData = img;
-      return console.log(this.ctx.putImageData(img, 0, 0));
+      return this.imgData = img;
     }, this);
     worker.on('error', function(data) {
       this.trigger('error', data.msg);
@@ -815,6 +814,7 @@ module.exports = UserMedia = (function(_super) {
       });
     };
     error = function() {
+      console.log('User Media denied :(');
       console.log(this);
       return console.log(self);
     };
@@ -1201,7 +1201,14 @@ module.exports = App = (function(_super) {
       el: this.$('.pin-entry')
     });
     return remote.on('change-setting', function(data) {
-      return _ths[data.concerns][data.setting] = data.value;
+      console.log(data);
+      if (data.concerns) {
+        _ths[data.concerns][data.setting] = data.value;
+        return _ths[data.concerns].trigger('change:' + data.setting);
+      } else {
+        _ths[data.setting] = data.value;
+        return _ths.trigger('change:' + data.setting);
+      }
     });
   };
 
@@ -1209,8 +1216,15 @@ module.exports = App = (function(_super) {
     var sec, toggler;
     sec = this.$('section');
     toggler = this.$('.toggler');
-    return toggler.on('click', function() {
+    toggler.on('click', function() {
       return sec.toggleClass('extended');
+    });
+    return this.on('change:expandcamera', function() {
+      if (this.expandcamera) {
+        return sec.addClass('extended');
+      } else {
+        return sec.removeClass('extended');
+      }
     });
   };
 
@@ -1277,13 +1291,13 @@ module.exports = App = (function(_super) {
 }});
 
 window.require.define({"remote/remote": function(exports, require, module) {
-  var Remote, Slider, template,
+  var Remote, UI, template,
   __hasProp = {}.hasOwnProperty,
   __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
 
-Slider = require('remote/slider');
+UI = require('ui/ui');
 
-template = require('remote/templates/remote');
+template = require('remote/template');
 
 module.exports = Remote = (function(_super) {
 
@@ -1399,23 +1413,41 @@ module.exports = Remote = (function(_super) {
   };
 
   Remote.prototype.setupUI = function() {
-    var canvas, code, counter, ctx, fps, i, lastWidth, max, result, sliders, socket, stats, _i, _ths;
+    var canvas, code, counter, ctx, fps, i, lastWidth, max, result, sliders, socket, stats, toggles, _i, _ths;
     _ths = this;
     socket = this.socket;
     sliders = this.$('.slider');
     sliders.each(function() {
       var el, slider;
       el = $(this);
-      slider = new Slider({
+      slider = new UI.Slider({
         el: this
       });
       return slider.on('change', function(value) {
         return socket.emit('remote', {
           event: 'change-setting',
           data: {
-            concerns: el.data('concerns'),
+            concerns: el.data('concerns' || null),
             setting: el.attr('id'),
             value: parseFloat(value)
+          }
+        });
+      });
+    });
+    toggles = this.$('.toggle');
+    toggles.each(function() {
+      var el, toggle;
+      el = $(this);
+      toggle = new UI.Toggle({
+        el: this
+      });
+      return toggle.on('change', function(value) {
+        return socket.emit('remote', {
+          event: 'change-setting',
+          data: {
+            concerns: el.data('concerns' || null),
+            setting: el.attr('id'),
+            value: value
           }
         });
       });
@@ -1480,12 +1512,71 @@ module.exports = Remote = (function(_super) {
 
 }});
 
-window.require.define({"remote/slider": function(exports, require, module) {
+window.require.define({"remote/template": function(exports, require, module) {
+  module.exports = Handlebars.template(function (Handlebars,depth0,helpers,partials,data) {
+  helpers = helpers || Handlebars.helpers;
+  var buffer = "", stack1, foundHelper, self=this, functionType="function", helperMissing=helpers.helperMissing, undef=void 0, escapeExpression=this.escapeExpression;
+
+
+  buffer += "<div class=\"pin\">\n  <p>Here's your pin!</p>\n  <h3>";
+  foundHelper = helpers.pin;
+  stack1 = foundHelper || depth0.pin;
+  if(typeof stack1 === functionType) { stack1 = stack1.call(depth0, { hash: {} }); }
+  else if(stack1=== undef) { stack1 = helperMissing.call(depth0, "pin", { hash: {} }); }
+  buffer += escapeExpression(stack1) + "</h3>\n  <span>Enter it on the device you wish to control.</span>\n  <p class=\"minor\">Waiting for connection...</p>\n</div>\n<nav class=\"hide\">\n  <ul>\n    <li class=\"active\" title=\"general\">General</li>\n    <li title=\"camera\">Camera</li>\n    <li title=\"stats\">Statistics</li>\n    <li title=\"codepreview\">Preview</li>\n    <li>Another Item</li>\n  </ul>\n</nav>\n<div class=\"hide\">\n  <section class=\"active\" id=\"general\">\n    <h2>General</h2>\n  </section>\n  <section id=\"camera\">\n    <h2>Camera</h2>\n    <div class=\"toggle\" id=\"expandcamera\"\n      data-label=\"Camera\"\n      data-true=\"Hide\"\n      data-false=\"Show\"\n      data-value=\"0\"></div>\n    <div class=\"slider\" id=\"brightness\" \n      data-label=\"Brightness\"\n      data-min=\"-100\"\n      data-max=\"100\"\n      data-value=\"0\"\n      data-concerns=\"interpreter\"></div>\n    <div class=\"slider\" id=\"contrast\" \n      data-label=\"Contrast\"\n      data-min=\"-100\"\n      data-max=\"100\"\n      data-value=\"0\"\n      data-concerns=\"interpreter\"></div>\n    <div class=\"slider\" id=\"blend\" \n      data-label=\"Blend Frames\"\n      data-min=\"1\"\n      data-max=\"25\"\n      data-value=\"3\"\n      data-concerns=\"interpreter\"></div>\n    <div class=\"slider\" id=\"sharpen\" \n      data-label=\"Sharpen\"\n      data-min=\"0\"\n      data-max=\"5\"\n      data-value=\"0\"\n      data-float=\"true\"\n      data-concerns=\"interpreter\"></div>\n  </section>\n  <section id=\"stats\">\n    <h2>Statistics</h2>\n    <div class=\"graph\" id=\"fps\">\n      <canvas height=\"100\"></canvas>\n      <span></span>\n    </div>\n  </section>\n  <section id=\"codepreview\">\n    <h2>Code Preview</h2>\n    <pre><code id=\"preview\"></code></pre>\n  </section>\n</div>";
+  return buffer;});
+}});
+
+window.require.define({"router": function(exports, require, module) {
+  var Router,
+  __hasProp = {}.hasOwnProperty,
+  __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
+
+module.exports = Router = (function(_super) {
+
+  __extends(Router, _super);
+
+  function Router() {
+    return Router.__super__.constructor.apply(this, arguments);
+  }
+
+  Router.prototype.routes = {
+    "": "root",
+    "CodeCards": "main",
+    "remote": "remote",
+    ":404": "root"
+  };
+
+  return Router;
+
+})(Backbone.Router);
+
+}});
+
+window.require.define({"templates/loader": function(exports, require, module) {
+  module.exports = Handlebars.template(function (Handlebars,depth0,helpers,partials,data) {
+  helpers = helpers || Handlebars.helpers;
+  var foundHelper, self=this;
+
+
+  return "<header class=\"logo\">\n  <h3 class=\"decoded\">Decoded</h3>\n  <h1><span>{</span>code<span>}</span>cards</h1>\n</header>\n\n<a class=\"icon source\" href=\"#CodeCards\">\n  <img src=\"/svg/source-code.svg\">\n  <h3>CodeCards</h3>\n</a>\n\n<a class=\"icon remote\" href=\"#remote\">\n  <img src=\"/svg/remote.svg\">\n  <h3>Remote Control</h3>\n</a>\n\n<a class=\"icon design\" href=\"#designer\">\n  <img src=\"/svg/design.svg\">\n  <h3>Scenario Designer</h3>\n</a>";});
+}});
+
+window.require.define({"templates/main": function(exports, require, module) {
+  module.exports = Handlebars.template(function (Handlebars,depth0,helpers,partials,data) {
+  helpers = helpers || Handlebars.helpers;
+  var foundHelper, self=this;
+
+
+  return "<nav>\n  <a class=\"logo\" href=\"#\">\n    <h3 class=\"decoded\">Decoded</h3>\n    <h1><span>{</span>code<span>}</span>cards</h1>\n  </a>\n  <section class=\"pin-entry hide\"></section>\n</nav>\n<section>\n  <div id=\"camview\">\n    <div>\n      <canvas id=\"canvas\" width=\"640\" height=\"480\"></canvas>\n    </div>\n    <a class=\"toggler\"></a>\n  </div>\n  <div id=\"mainview\">\n    <div id=\"code\">\n      <h3 id=\"alert\">Please allow your webcam...</h3>\n      <pre><code class=\"language-js\"></code></pre>\n    </div>\n    <div id=\"activity\">\n    </div>\n  </div>\n</section>";});
+}});
+
+window.require.define({"ui/slider": function(exports, require, module) {
   var Slider, template,
   __hasProp = {}.hasOwnProperty,
   __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
 
-template = require('remote/templates/slider');
+template = require('ui/templates/slider');
 
 module.exports = Slider = (function(_super) {
 
@@ -1620,22 +1711,7 @@ module.exports = Slider = (function(_super) {
 
 }});
 
-window.require.define({"remote/templates/remote": function(exports, require, module) {
-  module.exports = Handlebars.template(function (Handlebars,depth0,helpers,partials,data) {
-  helpers = helpers || Handlebars.helpers;
-  var buffer = "", stack1, foundHelper, self=this, functionType="function", helperMissing=helpers.helperMissing, undef=void 0, escapeExpression=this.escapeExpression;
-
-
-  buffer += "<div class=\"pin\">\n  <p>Here's your pin!</p>\n  <h3>";
-  foundHelper = helpers.pin;
-  stack1 = foundHelper || depth0.pin;
-  if(typeof stack1 === functionType) { stack1 = stack1.call(depth0, { hash: {} }); }
-  else if(stack1=== undef) { stack1 = helperMissing.call(depth0, "pin", { hash: {} }); }
-  buffer += escapeExpression(stack1) + "</h3>\n  <span>Enter it on the device you wish to control.</span>\n  <p class=\"minor\">Waiting for connection...</p>\n</div>\n<nav class=\"hide\">\n  <ul>\n    <li class=\"active\" title=\"general\">General</li>\n    <li title=\"camera\">Camera</li>\n    <li title=\"stats\">Statistics</li>\n    <li title=\"codepreview\">Preview</li>\n    <li>Another Item</li>\n  </ul>\n</nav>\n<div class=\"hide\">\n  <section class=\"active\" id=\"general\">\n    <h2>General</h2>\n    <div class=\"slider\" id=\"distanceLimit\" \n      data-label=\"Distance Limit\"\n      data-min=\"1\"\n      data-max=\"15\"\n      data-value=\"4.5\"\n      data-float=\"true\"\n      data-concerns=\"interpreter\"></div>\n  </section>\n  <section id=\"camera\">\n    <h2>Camera</h2>\n    <div class=\"slider\" id=\"brightness\" \n      data-label=\"Brightness\"\n      data-min=\"-100\"\n      data-max=\"100\"\n      data-value=\"0\"\n      data-concerns=\"interpreter\"></div>\n    <div class=\"slider\" id=\"contrast\" \n      data-label=\"Contrast\"\n      data-min=\"-100\"\n      data-max=\"100\"\n      data-value=\"0\"\n      data-concerns=\"interpreter\"></div>\n    <div class=\"slider\" id=\"blend\" \n      data-label=\"Blend Frames\"\n      data-min=\"1\"\n      data-max=\"25\"\n      data-value=\"3\"\n      data-concerns=\"interpreter\"></div>\n    <div class=\"slider\" id=\"sharpen\" \n      data-label=\"Sharpen\"\n      data-min=\"0\"\n      data-max=\"5\"\n      data-value=\"0\"\n      data-float=\"true\"\n      data-concerns=\"interpreter\"></div>\n  </section>\n  <section id=\"stats\">\n    <h2>Statistics</h2>\n    <div class=\"graph\" id=\"fps\">\n      <canvas height=\"100\"></canvas>\n      <span></span>\n    </div>\n  </section>\n  <section id=\"codepreview\">\n    <h2>Code Preview</h2>\n    <pre><code id=\"preview\"></code></pre>\n  </section>\n</div>";
-  return buffer;});
-}});
-
-window.require.define({"remote/templates/slider": function(exports, require, module) {
+window.require.define({"ui/templates/slider": function(exports, require, module) {
   module.exports = Handlebars.template(function (Handlebars,depth0,helpers,partials,data) {
   helpers = helpers || Handlebars.helpers;
   var buffer = "", stack1, foundHelper, self=this, functionType="function", helperMissing=helpers.helperMissing, undef=void 0, escapeExpression=this.escapeExpression;
@@ -1665,47 +1741,90 @@ window.require.define({"remote/templates/slider": function(exports, require, mod
   return buffer;});
 }});
 
-window.require.define({"router": function(exports, require, module) {
-  var Router,
+window.require.define({"ui/templates/toggle": function(exports, require, module) {
+  module.exports = Handlebars.template(function (Handlebars,depth0,helpers,partials,data) {
+  helpers = helpers || Handlebars.helpers;
+  var buffer = "", stack1, foundHelper, self=this, functionType="function", helperMissing=helpers.helperMissing, undef=void 0, escapeExpression=this.escapeExpression;
+
+
+  buffer += "<div class=\"label\">";
+  foundHelper = helpers.label;
+  stack1 = foundHelper || depth0.label;
+  if(typeof stack1 === functionType) { stack1 = stack1.call(depth0, { hash: {} }); }
+  else if(stack1=== undef) { stack1 = helperMissing.call(depth0, "label", { hash: {} }); }
+  buffer += escapeExpression(stack1) + "</div>\n<button>";
+  foundHelper = helpers.text;
+  stack1 = foundHelper || depth0.text;
+  if(typeof stack1 === functionType) { stack1 = stack1.call(depth0, { hash: {} }); }
+  else if(stack1=== undef) { stack1 = helperMissing.call(depth0, "text", { hash: {} }); }
+  buffer += escapeExpression(stack1) + "</button>";
+  return buffer;});
+}});
+
+window.require.define({"ui/toggle": function(exports, require, module) {
+  var Toggle, template,
   __hasProp = {}.hasOwnProperty,
   __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
 
-module.exports = Router = (function(_super) {
+template = require('ui/templates/toggle');
 
-  __extends(Router, _super);
+module.exports = Toggle = (function(_super) {
 
-  function Router() {
-    return Router.__super__.constructor.apply(this, arguments);
+  __extends(Toggle, _super);
+
+  function Toggle() {
+    return Toggle.__super__.constructor.apply(this, arguments);
   }
 
-  Router.prototype.routes = {
-    "": "root",
-    "CodeCards": "main",
-    "remote": "remote",
-    ":404": "root"
+  Toggle.prototype.initialize = function() {
+    var el, o, _ths;
+    _ths = this;
+    o = this.options;
+    el = this.$el;
+    this.model = new Backbone.Model({
+      label: o.label || el.data('label' || 'Label'),
+      value: o.value || parseInt(el.data('value' || true)) ? true : false,
+      "true": o["true"] || el.data('true' || 'True'),
+      "false": o["false"] || el.data('false' || 'False')
+    });
+    this.o = this.model.toJSON();
+    this.model.on('change', function() {
+      _ths.o = this.toJSON();
+      _ths.o.text = _ths.o.value ? _ths.o["true"] : _ths.o["false"];
+      return _ths.trigger('change', _ths.o.value);
+    });
+    this.model.trigger('change');
+    return this.render();
   };
 
-  return Router;
+  Toggle.prototype.render = function() {
+    var button, model, _ths;
+    _ths = this;
+    model = this.o;
+    this.$el.html(template(model));
+    this.$el.addClass('toggle');
+    button = this.$('button');
+    return button.on('click', function() {
+      var value;
+      value = !_ths.model.get('value');
+      button.text(_ths.model.get(value ? 'true' : 'false'));
+      return _ths.model.set('value', value);
+    });
+  };
 
-})(Backbone.Router);
+  return Toggle;
+
+})(Backbone.View);
 
 }});
 
-window.require.define({"templates/loader": function(exports, require, module) {
-  module.exports = Handlebars.template(function (Handlebars,depth0,helpers,partials,data) {
-  helpers = helpers || Handlebars.helpers;
-  var foundHelper, self=this;
+window.require.define({"ui/ui": function(exports, require, module) {
+  var UI;
 
+module.exports = UI = {
+  Slider: require('ui/slider'),
+  Toggle: require('ui/toggle')
+};
 
-  return "<header class=\"logo\">\n  <h3 class=\"decoded\">Decoded</h3>\n  <h1><span>{</span>code<span>}</span>cards</h1>\n</header>\n\n<a class=\"icon source\" href=\"#CodeCards\">\n  <img src=\"/svg/source-code.svg\">\n  <h3>CodeCards</h3>\n</a>\n\n<a class=\"icon remote\" href=\"#remote\">\n  <img src=\"/svg/remote.svg\">\n  <h3>Remote Control</h3>\n</a>\n\n<a class=\"icon design\" href=\"#designer\">\n  <img src=\"/svg/design.svg\">\n  <h3>Scenario Designer</h3>\n</a>";});
-}});
-
-window.require.define({"templates/main": function(exports, require, module) {
-  module.exports = Handlebars.template(function (Handlebars,depth0,helpers,partials,data) {
-  helpers = helpers || Handlebars.helpers;
-  var foundHelper, self=this;
-
-
-  return "<nav>\n  <a class=\"logo\" href=\"#\">\n    <h3 class=\"decoded\">Decoded</h3>\n    <h1><span>{</span>code<span>}</span>cards</h1>\n  </a>\n  <section class=\"pin-entry hide\"></section>\n</nav>\n<section>\n  <div id=\"camview\">\n    <div>\n      <canvas id=\"canvas\" width=\"640\" height=\"480\"></canvas>\n    </div>\n    <a class=\"toggler\"></a>\n  </div>\n  <div id=\"mainview\">\n    <div id=\"code\">\n      <h3 id=\"alert\">Please allow your webcam...</h3>\n      <pre><code class=\"language-js\"></code></pre>\n    </div>\n    <div id=\"activity\">\n    </div>\n  </div>\n</section>";});
 }});
 

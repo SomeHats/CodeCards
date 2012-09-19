@@ -523,6 +523,7 @@ pre {
   color: #fcf700;
   background-color: #000;
   white-space: nowrap;
+  z-index: 10;
   -webkit-transition: all 0.4s ease;
   -moz-transition: all 0.4s ease;
   -o-transition: all 0.4s ease;
@@ -629,6 +630,7 @@ pre {
   filter: alpha(opacity=0);
   display: none;
   padding: 10px;
+  padding-bottom: 60px;
 }
 .remote section.active {
   opacity: 1;
@@ -645,6 +647,7 @@ pre {
   border-bottom: 2px solid #000;
   background-color: #fcf700;
   width: auto;
+  z-index: 10;
 }
 @media (min-height: 600px) {
   .remote section {
@@ -658,29 +661,120 @@ pre {
     right: 0;
   }
 }
-.slider {
+.ui,
+.button {
   display: inline-block;
   width: 100%;
-  padding: 10px;
+  height: 100px;
+  padding: 9px 0 10px 0;
   margin-right: -0.3em;
   border-bottom: 1px solid rgba(0,0,0,0.3);
 }
 @media (min-width: 780px) {
-  .slider {
+  .ui,
+  .button {
     width: 50%;
+    padding: 9px 10px 10px 10px;
     border-left: 1px solid rgba(0,0,0,0.3);
   }
 }
-@media (min-width: 1200px) {
-  .slider {
-    width: 33%;
+@media (min-width: 780px) and (max-width: 1200px) {
+  .ui:nth-child(2n),
+  .button:nth-child(2n) {
+    border-left: none;
+    padding-left: 0;
+  }
+  .ui:nth-child(2n+1),
+  .button:nth-child(2n+1) {
+    padding-right: 0;
   }
 }
+@media (min-width: 1200px) {
+  .ui,
+  .button {
+    width: 33.333%;
+  }
+  .ui:nth-child(3n-1),
+  .button:nth-child(3n-1) {
+    border-left: none;
+    padding-left: 0;
+  }
+  .ui:nth-child(3n+1),
+  .button:nth-child(3n+1) {
+    padding-right: 0;
+  }
+}
+.ui .label,
+.button .label {
+  font-size: 22px;
+  margin: 0;
+}
+@media (max-width: 420px) {
+  .ui .label,
+  .button .label {
+    float: left;
+    margin-bottom: 7px;
+  }
+}
+.button button {
+  background: #fcf700;
+  border: 1px solid rgba(0,0,0,0.3);
+  width: 100%;
+  height: 40px;
+  margin: 0;
+  margin-top: 10px;
+  font-size: 16px;
+}
+.ui,
+.slider {
+  display: inline-block;
+  width: 100%;
+  height: 100px;
+  padding: 9px 0 10px 0;
+  margin-right: -0.3em;
+  border-bottom: 1px solid rgba(0,0,0,0.3);
+}
+@media (min-width: 780px) {
+  .ui,
+  .slider {
+    width: 50%;
+    padding: 9px 10px 10px 10px;
+    border-left: 1px solid rgba(0,0,0,0.3);
+  }
+}
+@media (min-width: 780px) and (max-width: 1200px) {
+  .ui:nth-child(2n),
+  .slider:nth-child(2n) {
+    border-left: none;
+    padding-left: 0;
+  }
+  .ui:nth-child(2n+1),
+  .slider:nth-child(2n+1) {
+    padding-right: 0;
+  }
+}
+@media (min-width: 1200px) {
+  .ui,
+  .slider {
+    width: 33.333%;
+  }
+  .ui:nth-child(3n-1),
+  .slider:nth-child(3n-1) {
+    border-left: none;
+    padding-left: 0;
+  }
+  .ui:nth-child(3n+1),
+  .slider:nth-child(3n+1) {
+    padding-right: 0;
+  }
+}
+.ui .label,
 .slider .label {
   font-size: 22px;
   margin: 0;
 }
 @media (max-width: 420px) {
+  .ui .label,
   .slider .label {
     float: left;
     margin-bottom: 7px;
@@ -688,7 +782,7 @@ pre {
 }
 .slider .track {
   height: 40px;
-  border: 1px solid rgba(0,0,0,0.4);
+  border: 1px solid rgba(0,0,0,0.3);
   background-color: rgba(0,0,0,0.1);
   margin: 0;
   margin-top: 10px;
@@ -742,6 +836,80 @@ pre {
     right: 10px;
     border: none;
   }
+}
+.ui,
+.button,
+.toggle {
+  display: inline-block;
+  width: 100%;
+  height: 100px;
+  padding: 9px 0 10px 0;
+  margin-right: -0.3em;
+  border-bottom: 1px solid rgba(0,0,0,0.3);
+}
+@media (min-width: 780px) {
+  .ui,
+  .button,
+  .toggle {
+    width: 50%;
+    padding: 9px 10px 10px 10px;
+    border-left: 1px solid rgba(0,0,0,0.3);
+  }
+}
+@media (min-width: 780px) and (max-width: 1200px) {
+  .ui:nth-child(2n),
+  .button:nth-child(2n),
+  .toggle:nth-child(2n) {
+    border-left: none;
+    padding-left: 0;
+  }
+  .ui:nth-child(2n+1),
+  .button:nth-child(2n+1),
+  .toggle:nth-child(2n+1) {
+    padding-right: 0;
+  }
+}
+@media (min-width: 1200px) {
+  .ui,
+  .button,
+  .toggle {
+    width: 33.333%;
+  }
+  .ui:nth-child(3n-1),
+  .button:nth-child(3n-1),
+  .toggle:nth-child(3n-1) {
+    border-left: none;
+    padding-left: 0;
+  }
+  .ui:nth-child(3n+1),
+  .button:nth-child(3n+1),
+  .toggle:nth-child(3n+1) {
+    padding-right: 0;
+  }
+}
+.ui .label,
+.button .label,
+.toggle .label {
+  font-size: 22px;
+  margin: 0;
+}
+@media (max-width: 420px) {
+  .ui .label,
+  .button .label,
+  .toggle .label {
+    float: left;
+    margin-bottom: 7px;
+  }
+}
+.button button,
+.toggle button {
+  background: #fcf700;
+  border: 1px solid rgba(0,0,0,0.3);
+  width: 100%;
+  height: 40px;
+  margin: 0;
+  margin-top: 10px;
+  font-size: 16px;
 }
 .ir { display: block; border: 0; text-indent: -999em; overflow: hidden; background-color: transparent; background-repeat: no-repeat; text-align: left; direction: ltr; *line-height: 0; }
 .ir br { display: none; }

@@ -31,6 +31,7 @@ module.exports = class UserMedia extends Backbone.View
               self.el.isSetUp = true
 
     error = ->
+      console.log 'User Media denied :('
       console.log @
       console.log self
     

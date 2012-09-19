@@ -42,7 +42,13 @@ module.exports = class App extends Backbone.View
     ## Receiving
     # Settings
     remote.on 'change-setting', (data) ->
-      _ths[data.concerns][data.setting] = data.value
+      console.log data
+      if data.concerns
+        _ths[data.concerns][data.setting] = data.value
+        _ths[data.concerns].trigger 'change:' + data.setting
+      else
+        _ths[data.setting] = data.value
+        _ths.trigger 'change:' + data.setting
 
   interact: ->
     sec = @$ 'section'
@@ -50,6 +56,12 @@ module.exports = class App extends Backbone.View
 
     toggler.on 'click', ->
       sec.toggleClass 'extended'
+
+    @on 'change:expandcamera', ->
+      if @expandcamera
+        sec.addClass 'extended'
+      else
+        sec.removeClass 'extended'
       
   render: (callback= (-> null), ctx = @) ->
     _ths = @
