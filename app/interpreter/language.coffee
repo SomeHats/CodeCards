@@ -17,10 +17,6 @@ module.exports = class Language
         @merge @words, language.words
         @merge @words, words
 
-        console.log key
-        console.log language.words
-        console.log @words
-
   merge: (target, source) ->
     for key of source
       target[key] = source[key]

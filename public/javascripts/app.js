@@ -239,7 +239,7 @@ module.exports = {
   name: "robot",
   version: 0,
   "extends": {
-    "js.math": 0
+    "js": 0
   },
   words: {
     500: "robot",
@@ -248,7 +248,7 @@ module.exports = {
     502: ".move(",
     503: ".turn(",
     510: "forward",
-    511: "backward",
+    511: "back",
     512: "left",
     513: "right",
     520: "empty",
@@ -288,11 +288,382 @@ module.exports = {
     robot: 0
   },
   initialize: function(el) {
-    var $el, template;
+    var $el, template, _ths;
+    _ths = this;
     template = require('data/missions/templates/sample');
     $el = $(el);
-    return $el.html(template());
-  }
+    $el.addClass('sample');
+    $el.html(template());
+    this.canvas = $el.find('canvas');
+    this.ctx = this.canvas[0].getContext('2d');
+    this.width = 640;
+    this.height = 480;
+    this.size = 32;
+    this.animator.clear = function() {
+      return _ths.drawScene();
+    };
+    this.reset();
+    return this.animator.start();
+  },
+  reset: function() {
+    this.score = 0;
+    this.remaining = 100;
+    this.updateScore();
+    this.displayMap = Util.clone(this.map);
+    this.animator.reset();
+    return this.drawRobot({
+      x: 2,
+      y: 2,
+      rot: 0
+    });
+  },
+  run: function(str) {
+    var animator, back, displayMap, empty, forward, gameMap, i, left, right, robot, tea, wall, _i, _ref, _results, _ths;
+    this.reset();
+    _ths = this;
+    gameMap = Util.clone(this.map);
+    displayMap = this.displayMap = Util.clone(this.map);
+    str = "if (robot.touch() !== tea) {\n  if (robot.touch(left) === tea) {\n    robot.turn(left)\n  } else if (robot.touch(right) === tea) {\n    robot.turn(right)\n  }\n}\nif (robot.look() === wall) {\n  if (robot.look(left) === tea) {\n    robot.turn(left)\n  } else if (robot.look(right) === tea) {\n    robot.turn(right)\n  }\n}\nif (robot.touch() === wall) {\n  robot.turn(back)\n}\nrobot.move(forward)";
+    empty = 0;
+    wall = 1;
+    tea = 2;
+    forward = 0;
+    back = 2;
+    right = 1;
+    left = 3;
+    animator = this.animator;
+    robot = {
+      look: function(direction) {
+        var change, tile;
+        if (direction == null) {
+          direction = forward;
+        }
+        tile = empty;
+        direction = (this.direction + direction) % 4;
+        change = {
+          x: this.pos.x,
+          y: this.pos.y
+        };
+        while (tile === empty) {
+          switch (direction) {
+            case 0:
+              change = {
+                x: change.x + 1,
+                y: change.y
+              };
+              break;
+            case 1:
+              change = {
+                x: change.x,
+                y: change.y + 1
+              };
+              break;
+            case 2:
+              change = {
+                x: change.x - 1,
+                y: change.y
+              };
+              break;
+            case 3:
+              change = {
+                x: change.x,
+                y: change.y - 1
+              };
+          }
+          tile = gameMap[change.y] === void 0 || gameMap[change.y][change.x] === void 0 ? wall : gameMap[change.y][change.x];
+        }
+        return tile;
+      },
+      move: function(direction) {
+        var change;
+        if (direction == null) {
+          direction = forward;
+        }
+        direction = (this.direction + direction) % 4;
+        switch (direction) {
+          case 0:
+            change = {
+              x: this.pos.x + 1,
+              y: this.pos.y
+            };
+            break;
+          case 1:
+            change = {
+              x: this.pos.x,
+              y: this.pos.y + 1
+            };
+            break;
+          case 2:
+            change = {
+              x: this.pos.x - 1,
+              y: this.pos.y
+            };
+            break;
+          case 3:
+            change = {
+              x: this.pos.x,
+              y: this.pos.y - 1
+            };
+        }
+        if (gameMap[change.y] !== void 0 && gameMap[change.y][change.x] !== void 0 && gameMap[change.y][change.x] !== 1) {
+          this.pos.x = change.x;
+          this.pos.y = change.y;
+          animator.animate({
+            robot: change
+          });
+          if (gameMap[change.y][change.x] === tea) {
+            gameMap[change.y][change.x] = empty;
+            return animator.callback(function() {
+              displayMap[change.y][change.x] = empty;
+              _ths.score++;
+              return _ths.updateScore();
+            });
+          }
+        }
+      },
+      touch: function(direction) {
+        var change;
+        if (direction == null) {
+          direction = forward;
+        }
+        direction = (this.direction + direction) % 4;
+        switch (direction) {
+          case 0:
+            change = {
+              x: this.pos.x + 1,
+              y: this.pos.y
+            };
+            break;
+          case 1:
+            change = {
+              x: this.pos.x,
+              y: this.pos.y + 1
+            };
+            break;
+          case 2:
+            change = {
+              x: this.pos.x - 1,
+              y: this.pos.y
+            };
+            break;
+          case 3:
+            change = {
+              x: this.pos.x,
+              y: this.pos.y - 1
+            };
+        }
+        if (gameMap[change.y] === void 0 || gameMap[change.y][change.x] === void 0) {
+          return wall;
+        } else {
+          return gameMap[change.y][change.x];
+        }
+      },
+      turn: function(direction) {
+        direction = (this.direction + direction) % 4;
+        animator.animate({
+          robot: {
+            rot: direction
+          }
+        }, 10);
+        return this.direction = direction;
+      },
+      direction: 0,
+      pos: {
+        x: 2,
+        y: 2
+      }
+    };
+    animator.register('robot', {
+      x: robot.pos.x,
+      y: robot.pos.y,
+      rot: 0,
+      draw: function(geom) {
+        return _ths.drawRobot(geom);
+      }
+    });
+    eval("var fn = function () {\n " + str + " \n}");
+    _results = [];
+    for (i = _i = 0, _ref = this.remaining; 0 <= _ref ? _i < _ref : _i > _ref; i = 0 <= _ref ? ++_i : --_i) {
+      fn();
+      _results.push(animator.callback(function() {
+        _ths.remaining--;
+        return _ths.updateScore();
+      }));
+    }
+    return _results;
+  },
+  animator: {
+    queue: [],
+    actors: {},
+    running: false,
+    animate: function(change, duration) {
+      var item;
+      if (duration == null) {
+        duration = 5;
+      }
+      item = {};
+      item.progress = 0;
+      item.type = 'animate';
+      item.duration = duration;
+      item.change = change;
+      this.queue.push(item);
+      if (!this.running) {
+        return this.startQueue();
+      }
+    },
+    callback: function(fn, ctx) {
+      var item;
+      if (ctx == null) {
+        ctx = this;
+      }
+      item = {
+        type: 'callback',
+        callback: fn,
+        context: ctx
+      };
+      this.queue.push(item);
+      if (!this.running) {
+        return this.startQueue();
+      }
+    },
+    register: function(name, properties) {
+      return this.actors[name] = properties;
+    },
+    startQueue: function() {
+      if (!this.running && this.queue.length !== 0) {
+        return this.running = true;
+      }
+    },
+    start: function() {
+      var queue;
+      queue = this.queue;
+      return Util.on('animationFrame', function() {
+        var actor, current, name, property, remain, step;
+        if (this.running && queue.length !== 0) {
+          this.clear();
+          current = queue[0];
+          if (current.type === 'animate') {
+            for (name in current.change) {
+              actor = this.actors[name];
+              for (property in current.change[name]) {
+                remain = current.change[name][property] - actor[property];
+                step = remain / current.duration;
+                actor[property] += step;
+              }
+            }
+            current.duration -= 1;
+            if (current.duration === 0) {
+              queue.shift();
+            }
+          }
+          if (current.type === 'callback') {
+            current.callback();
+            queue.shift();
+          }
+          return this.drawActors();
+        }
+      }, this);
+    },
+    drawActors: function() {
+      var actors, name, _results;
+      actors = this.actors;
+      _results = [];
+      for (name in actors) {
+        _results.push(actors[name].draw(actors[name]));
+      }
+      return _results;
+    },
+    reset: function() {
+      while (this.queue.length) {
+        this.queue.shift();
+      }
+      this.actors = {};
+      this.clear();
+      return this.drawActors();
+    }
+  },
+  drawRobot: function(geom) {
+    var ctx, rot, size, x, y;
+    size = this.size;
+    ctx = this.ctx;
+    x = geom.x;
+    y = geom.y;
+    rot = geom.rot;
+    ctx.fillStyle = 'blue';
+    ctx.fillRect(x * size + 1, y * size + 1, size - 1, size - 1);
+    ctx.strokeStyle = 'lime';
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.moveTo((x + 0.5) * size, (y + 0.5) * size);
+    switch (rot) {
+      case 0:
+        ctx.lineTo((x + 1) * size, (y + 0.5) * size);
+        break;
+      case 1:
+        ctx.lineTo((x + 0.5) * size, (y + 1) * size);
+        break;
+      case 2:
+        ctx.lineTo(x * size, (y + 0.5) * size);
+        break;
+      case 3:
+        ctx.lineTo((x + 0.5) * size, y * size);
+    }
+    ctx.stroke();
+    return ctx.lineWidth = 1;
+  },
+  drawScene: function() {
+    var ctx, height, m, size, width, x, y, _i, _j, _k, _ref, _ref1, _ref2, _results;
+    width = this.width;
+    height = this.height;
+    size = this.size;
+    ctx = this.ctx;
+    m = this.displayMap || this.map;
+    ctx.fillStyle = 'white';
+    ctx.fillRect(0, 0, width, height);
+    ctx.strokeStyle = 'rgba(0, 0, 0, 0.3)';
+    ctx.beginPath();
+    x = y = 0;
+    for (x = _i = 0, _ref = width / size; 0 <= _ref ? _i <= _ref : _i >= _ref; x = 0 <= _ref ? ++_i : --_i) {
+      ctx.moveTo(x * size + 0.5, 0);
+      ctx.lineTo(x * size + 0.5, height);
+    }
+    for (y = _j = 0, _ref1 = height / size; 0 <= _ref1 ? _j <= _ref1 : _j >= _ref1; y = 0 <= _ref1 ? ++_j : --_j) {
+      ctx.moveTo(0, y * size + 0.5);
+      ctx.lineTo(width, y * size + 0.5);
+    }
+    ctx.stroke();
+    _results = [];
+    for (y = _k = 0, _ref2 = m.length; 0 <= _ref2 ? _k < _ref2 : _k > _ref2; y = 0 <= _ref2 ? ++_k : --_k) {
+      _results.push((function() {
+        var _l, _ref3, _results1;
+        _results1 = [];
+        for (x = _l = 0, _ref3 = m[y].length; 0 <= _ref3 ? _l < _ref3 : _l > _ref3; x = 0 <= _ref3 ? ++_l : --_l) {
+          if (m[y][x]) {
+            if (m[y][x] === 1) {
+              ctx.fillStyle = 'orange';
+            }
+            if (m[y][x] === 2) {
+              ctx.fillStyle = 'lime';
+            }
+            if (m[y][x] !== 3) {
+              _results1.push(ctx.fillRect(x * size + 1, y * size + 1, size - 1, size - 1));
+            } else {
+              _results1.push(void 0);
+            }
+          } else {
+            _results1.push(void 0);
+          }
+        }
+        return _results1;
+      })());
+    }
+    return _results;
+  },
+  updateScore: function() {
+    $('#score').text("Score: " + this.score);
+    return $('#remain').text("Remaining: " + this.remaining);
+  },
+  map: [[2, 2, 2, 0, 0, 0, 0, 1, 2, 2, 2, 2, 1, 0, 0, 0, 0, 2, 2, 2], [2, 2, 0, 0, 0, 0, 0, 1, 0, 2, 2, 0, 1, 0, 0, 0, 0, 0, 2, 2], [2, 0, 0, 0, 2, 0, 0, 1, 0, 2, 2, 0, 1, 0, 0, 2, 0, 0, 0, 2], [0, 0, 0, 0, 2, 2, 0, 0, 0, 0, 0, 0, 0, 0, 2, 2, 0, 0, 0, 0], [0, 0, 0, 0, 2, 2, 2, 0, 0, 0, 0, 0, 0, 2, 2, 2, 0, 0, 0, 0], [0, 0, 0, 1, 1, 1, 1, 1, 0, 0, 0, 0, 1, 1, 1, 1, 1, 0, 0, 0], [2, 2, 2, 0, 0, 0, 0, 0, 0, 2, 2, 0, 0, 0, 0, 0, 0, 2, 2, 2], [2, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2, 2], [2, 0, 0, 0, 0, 2, 2, 0, 0, 2, 2, 0, 0, 2, 2, 0, 0, 0, 0, 2], [0, 0, 0, 0, 0, 1, 0, 2, 2, 0, 0, 2, 2, 0, 1, 0, 0, 0, 0, 0], [0, 2, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 2, 0], [0, 2, 0, 2, 0, 1, 0, 0, 1, 1, 1, 1, 0, 0, 1, 0, 2, 0, 2, 0], [0, 2, 0, 2, 0, 1, 2, 0, 0, 0, 0, 0, 0, 2, 1, 0, 2, 0, 2, 0], [0, 0, 0, 2, 0, 1, 2, 2, 0, 0, 0, 0, 2, 2, 1, 0, 2, 0, 0, 0], [0, 0, 0, 0, 0, 1, 2, 2, 2, 0, 0, 2, 2, 2, 1, 0, 0, 0, 0, 0]]
 };
 
 }});
@@ -303,7 +674,7 @@ window.require.define({"data/missions/templates/sample": function(exports, requi
   var foundHelper, self=this;
 
 
-  return "<canvas width=\"640\" height=\"480\"/>";});
+  return "<canvas width=\"640\" height=\"480\"></canvas>\n<h3 id=\"remain\">Remaining:</h3>\n<h3 id=\"score\">Score:</h3>";});
 }});
 
 window.require.define({"data/test": function(exports, require, module) {
@@ -665,9 +1036,6 @@ module.exports = Language = (function() {
         }
         this.merge(this.words, language.words);
         this.merge(this.words, words);
-        console.log(key);
-        console.log(language.words);
-        console.log(this.words);
       }
     }
   }
@@ -1025,6 +1393,36 @@ util = (function(_super) {
     return null;
   };
 
+  util.prototype.clone = function(obj) {
+    var attr, copy, item;
+    if (null === obj || "object" !== typeof obj) {
+      return obj;
+    }
+    if (obj instanceof Array) {
+      copy = [];
+      copy = (function() {
+        var _i, _len, _results;
+        _results = [];
+        for (_i = 0, _len = obj.length; _i < _len; _i++) {
+          item = obj[_i];
+          _results.push(this.clone(item));
+        }
+        return _results;
+      }).call(this);
+      return copy;
+    }
+    if (obj instanceof Object) {
+      copy = {};
+      for (attr in obj) {
+        if (obj.hasOwnProperty(attr)) {
+          copy[attr] = this.clone(obj[attr]);
+        }
+      }
+      return copy;
+    }
+    throw new Error("Unable to copy obj! Its type isn't supported.");
+  };
+
   util.prototype.alert = function(msg) {
     return alert(msg);
   };
@@ -1239,6 +1637,14 @@ module.exports = App = (function(_super) {
     });
     Mission.initialize($('#mission')[0]);
     language = this.language = new Language(Mission.language);
+    this.on('change:play', function() {
+      this.interpreter.UserMedia.paused = this.play;
+      if (this.play) {
+        return Mission.reset();
+      } else {
+        return Mission.run();
+      }
+    });
     $code = $('code');
     _ths = this;
     this.interpreter.on('error', function(error) {
@@ -1600,7 +2006,7 @@ window.require.define({"remote/template": function(exports, require, module) {
   stack1 = foundHelper || depth0.pin;
   if(typeof stack1 === functionType) { stack1 = stack1.call(depth0, { hash: {} }); }
   else if(stack1=== undef) { stack1 = helperMissing.call(depth0, "pin", { hash: {} }); }
-  buffer += escapeExpression(stack1) + "</h3>\n  <span>Enter it on the device you wish to control.</span>\n  <p class=\"minor\">Waiting for connection...</p>\n</div>\n<nav class=\"hide\">\n  <ul>\n    <li class=\"active\" title=\"general\">General</li>\n    <li title=\"camera\">Camera</li>\n    <li title=\"stats\">Statistics</li>\n    <li title=\"codepreview\">Preview</li>\n    <li>Another Item</li>\n  </ul>\n</nav>\n<div class=\"hide\">\n  <section class=\"active\" id=\"general\">\n    <h2>General</h2>\n  </section>\n  <section id=\"camera\">\n    <h2>Camera</h2>\n    <div class=\"toggle\" id=\"expandcamera\"\n      data-label=\"Camera\"\n      data-true=\"Hide\"\n      data-false=\"Show\"\n      data-value=\"0\"></div>\n    <div class=\"slider\" id=\"brightness\" \n      data-label=\"Brightness\"\n      data-min=\"-100\"\n      data-max=\"100\"\n      data-value=\"0\"\n      data-concerns=\"interpreter\"></div>\n    <div class=\"slider\" id=\"contrast\" \n      data-label=\"Contrast\"\n      data-min=\"-100\"\n      data-max=\"100\"\n      data-value=\"0\"\n      data-concerns=\"interpreter\"></div>\n    <div class=\"slider\" id=\"blend\" \n      data-label=\"Blend Frames\"\n      data-min=\"1\"\n      data-max=\"25\"\n      data-value=\"3\"\n      data-concerns=\"interpreter\"></div>\n    <div class=\"slider\" id=\"sharpen\" \n      data-label=\"Sharpen\"\n      data-min=\"0\"\n      data-max=\"5\"\n      data-value=\"0\"\n      data-float=\"true\"\n      data-concerns=\"interpreter\"></div>\n  </section>\n  <section id=\"stats\">\n    <h2>Statistics</h2>\n    <div class=\"graph\" id=\"fps\">\n      <canvas height=\"100\"></canvas>\n      <span></span>\n    </div>\n  </section>\n  <section id=\"codepreview\">\n    <h2>Code Preview</h2>\n    <pre><code id=\"preview\"></code></pre>\n  </section>\n</div>";
+  buffer += escapeExpression(stack1) + "</h3>\n  <span>Enter it on the device you wish to control.</span>\n  <p class=\"minor\">Waiting for connection...</p>\n</div>\n<nav class=\"hide\">\n  <ul>\n    <li class=\"active\" title=\"general\">General</li>\n    <li title=\"camera\">Camera</li>\n    <li title=\"stats\">Statistics</li>\n    <li title=\"codepreview\">Preview</li>\n    <li>Another Item</li>\n  </ul>\n</nav>\n<div class=\"hide\">\n  <section class=\"active\" id=\"general\">\n    <h2>General</h2>\n    <div class=\"toggle\" id=\"play\"\n      data-label=\"Play\"\n      data-true=\"Go!\"\n      data-false=\"Resume Reader\"\n      data-value=\"1\"></div>\n  </section>\n  <section id=\"camera\">\n    <h2>Camera</h2>\n    <div class=\"toggle\" id=\"expandcamera\"\n      data-label=\"Camera\"\n      data-true=\"Hide\"\n      data-false=\"Show\"\n      data-value=\"0\"></div>\n    <div class=\"slider\" id=\"brightness\" \n      data-label=\"Brightness\"\n      data-min=\"-100\"\n      data-max=\"100\"\n      data-value=\"0\"\n      data-concerns=\"interpreter\"></div>\n    <div class=\"slider\" id=\"contrast\" \n      data-label=\"Contrast\"\n      data-min=\"-100\"\n      data-max=\"100\"\n      data-value=\"0\"\n      data-concerns=\"interpreter\"></div>\n    <div class=\"slider\" id=\"blend\" \n      data-label=\"Blend Frames\"\n      data-min=\"1\"\n      data-max=\"25\"\n      data-value=\"3\"\n      data-concerns=\"interpreter\"></div>\n    <div class=\"slider\" id=\"sharpen\" \n      data-label=\"Sharpen\"\n      data-min=\"0\"\n      data-max=\"5\"\n      data-value=\"0\"\n      data-float=\"true\"\n      data-concerns=\"interpreter\"></div>\n  </section>\n  <section id=\"stats\">\n    <h2>Statistics</h2>\n    <div class=\"graph\" id=\"fps\">\n      <canvas height=\"100\"></canvas>\n      <span></span>\n    </div>\n  </section>\n  <section id=\"codepreview\">\n    <h2>Code Preview</h2>\n    <pre><code id=\"preview\"></code></pre>\n  </section>\n</div>";
   return buffer;});
 }});
 

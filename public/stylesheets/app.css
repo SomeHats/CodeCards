@@ -63,6 +63,15 @@ table { border-collapse: collapse; border-spacing: 0; }
 td { vertical-align: top; }
 
 .chromeframe { margin: 0.2em 0; background: #ccc; color: black; padding: 0.2em 0; }
+#mission.sample {
+  padding: 15px;
+}
+#mission.sample canvas {
+  display: block;
+  box-shadow: 0 5px 30px rgba(0,0,0,0.3);
+  margin: auto;
+  max-width: 100%;
+}
 @font-face {
   font-family: 'Bebas';
   src: url("BebasNeue-webfont.eot");

@@ -2,7 +2,7 @@ module.exports =
   name: "robot"
   version: 0
   extends: 
-    "js.math": 0
+    "js": 0
 
   words:
     # Start from 500 to give plenty room to other language files
@@ -22,7 +22,7 @@ module.exports =
 
     # Directions
     510:  "forward"
-    511:  "backward"
+    511:  "back"
     512:  "left"
     513:  "right"
 

@@ -16,6 +16,13 @@ module.exports = class App extends Backbone.View
 
     Mission.initialize $('#mission')[0]
     language =  @language = new Language Mission.language
+    @on 'change:play', ->
+      @interpreter.UserMedia.paused = @play
+
+      if @play
+        Mission.reset()
+      else
+        Mission.run()
 
     $code = $ 'code'
     _ths = @
