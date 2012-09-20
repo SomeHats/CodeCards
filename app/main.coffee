@@ -1,5 +1,4 @@
 Interpreter = require 'interpreter'
-data = require 'data/test'
 
 Remote = require 'interpreter/remote'
 Stats = require 'interpreter/stats'
@@ -39,7 +38,7 @@ module.exports = class App extends Backbone.View
     @interpreter.on 'success', (results)->
       _ths.stats.tick()
       code = ""
-      code += data[result] for result in results
+      code += language.words[result] for result in results
       $('#alert').html 'Success! ' + code
       code = js_beautify code
       $code.html code
