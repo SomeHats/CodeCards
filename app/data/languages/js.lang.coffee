@@ -3,7 +3,7 @@
 module.exports =
   name: 'js'
   version: 0
-  lang:
+  words:
     # Brackets
     1:    ")"
     2:    "("

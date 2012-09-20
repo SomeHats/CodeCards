@@ -19,7 +19,7 @@ module.exports =
   #       word. These values will overwrite the ones from the 'extends' object.
   #       ID 0 is reserved for the "start" marker.
 
-  lang:
+  words:
     # Words can be defined as either strings or objects. If they are strings, 
     # then that string is displayed and interpreted, with no error checking.
     1: "hello "

@@ -2,9 +2,9 @@ module.exports =
   name: "robot"
   version: 0
   extends: 
-    "js": 0
+    "js.math": 0
 
-  lang:
+  words:
     # Start from 500 to give plenty room to other language files
 
     # The robot object

@@ -5,7 +5,7 @@ module.exports =
   version: 0
   extends:
     'js': 0
-  lang:
+  words:
     # Javascript takes IDs 1-99
     # Math object takes IDs 100-129
     # 27, 28 & 29 and reserved in case I've missed something

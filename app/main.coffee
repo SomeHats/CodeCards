@@ -4,11 +4,18 @@ data = require 'data/test'
 Remote = require 'interpreter/remote'
 Stats = require 'interpreter/stats'
 
+# Temporary solution:
+Mission = require 'data/missions/sample.mission'
+Language = require 'interpreter/language'
+
 template = require 'templates/main'
 
 module.exports = class App extends Backbone.View
   start: ->
     @interpreter = new Interpreter el: @$ '#canvas'
+
+    Mission.initialize $('#mission')[0]
+    language =  @language = new Language Mission.language
 
     $code = $ 'code'
     _ths = @

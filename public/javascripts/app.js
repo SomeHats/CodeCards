@@ -91,7 +91,7 @@ window.require.define({"data/languages/js.lang": function(exports, require, modu
 module.exports = {
   name: 'js',
   version: 0,
-  lang: {
+  words: {
     1: ")",
     2: "(",
     3: "}",
@@ -200,7 +200,7 @@ module.exports = {
   "extends": {
     'js': 0
   },
-  lang: {
+  words: {
     100: "Math",
     101: ".E",
     102: ".LN2",
@@ -239,9 +239,9 @@ module.exports = {
   name: "robot",
   version: 0,
   "extends": {
-    "js": 0
+    "js.math": 0
   },
-  lang: {
+  words: {
     500: "robot",
     501: ".look(",
     504: ".touch(",
@@ -267,7 +267,7 @@ module.exports = {
   "extends": {
     'js': 1
   },
-  lang: {
+  words: {
     1: "hello ",
     2: {
       word: "world ",
@@ -279,6 +279,31 @@ module.exports = {
   }
 };
 
+}});
+
+window.require.define({"data/missions/sample.mission": function(exports, require, module) {
+  
+module.exports = {
+  language: {
+    robot: 0
+  },
+  initialize: function(el) {
+    var $el, template;
+    template = require('data/missions/templates/sample');
+    $el = $(el);
+    return $el.html(template());
+  }
+};
+
+}});
+
+window.require.define({"data/missions/templates/sample": function(exports, require, module) {
+  module.exports = Handlebars.template(function (Handlebars,depth0,helpers,partials,data) {
+  helpers = helpers || Handlebars.helpers;
+  var foundHelper, self=this;
+
+
+  return "<canvas width=\"640\" height=\"480\"/>";});
 }});
 
 window.require.define({"data/test": function(exports, require, module) {
@@ -615,6 +640,52 @@ Highlighter = (function() {
 })();
 
 module.exports = new Highlighter;
+
+}});
+
+window.require.define({"interpreter/language": function(exports, require, module) {
+  var Language;
+
+module.exports = Language = (function() {
+
+  function Language(lang) {
+    var key, language, words;
+    for (key in lang) {
+      try {
+        language = require('data/languages/' + key + '.lang');
+      } catch (e) {
+        console.log('Language definition ' + key + ' not found :(');
+      }
+      if (language.version !== lang[key]) {
+        console.log('Wrong language version for ' + key);
+      } else {
+        words = language.words;
+        if (language["extends"]) {
+          language = new Language(language["extends"]);
+        }
+        this.merge(this.words, language.words);
+        this.merge(this.words, words);
+        console.log(key);
+        console.log(language.words);
+        console.log(this.words);
+      }
+    }
+  }
+
+  Language.prototype.merge = function(target, source) {
+    var key, _results;
+    _results = [];
+    for (key in source) {
+      _results.push(target[key] = source[key]);
+    }
+    return _results;
+  };
+
+  Language.prototype.words = {};
+
+  return Language;
+
+})();
 
 }});
 
@@ -1135,7 +1206,7 @@ module.exports = Loader = (function(_super) {
 }});
 
 window.require.define({"main": function(exports, require, module) {
-  var App, Interpreter, Remote, Stats, data, template,
+  var App, Interpreter, Language, Mission, Remote, Stats, data, template,
   __hasProp = {}.hasOwnProperty,
   __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
 
@@ -1146,6 +1217,10 @@ data = require('data/test');
 Remote = require('interpreter/remote');
 
 Stats = require('interpreter/stats');
+
+Mission = require('data/missions/sample.mission');
+
+Language = require('interpreter/language');
 
 template = require('templates/main');
 
@@ -1158,10 +1233,12 @@ module.exports = App = (function(_super) {
   }
 
   App.prototype.start = function() {
-    var $code, _ths;
+    var $code, language, _ths;
     this.interpreter = new Interpreter({
       el: this.$('#canvas')
     });
+    Mission.initialize($('#mission')[0]);
+    language = this.language = new Language(Mission.language);
     $code = $('code');
     _ths = this;
     this.interpreter.on('error', function(error) {
@@ -1568,7 +1645,7 @@ window.require.define({"templates/main": function(exports, require, module) {
   var foundHelper, self=this;
 
 
-  return "<nav>\n  <a class=\"logo\" href=\"#\">\n    <h3 class=\"decoded\">Decoded</h3>\n    <h1><span>{</span>code<span>}</span>cards</h1>\n  </a>\n  <section class=\"pin-entry hide\"></section>\n</nav>\n<section>\n  <div id=\"camview\">\n    <div>\n      <canvas id=\"canvas\" width=\"640\" height=\"480\"></canvas>\n    </div>\n    <a class=\"toggler\"></a>\n  </div>\n  <div id=\"mainview\">\n    <div id=\"code\">\n      <h3 id=\"alert\">Please allow your webcam...</h3>\n      <pre><code class=\"language-js\"></code></pre>\n    </div>\n    <div id=\"activity\">\n    </div>\n  </div>\n</section>";});
+  return "<nav>\n  <a class=\"logo\" href=\"#\">\n    <h3 class=\"decoded\">Decoded</h3>\n    <h1><span>{</span>code<span>}</span>cards</h1>\n  </a>\n  <section class=\"pin-entry hide\"></section>\n</nav>\n<section>\n  <div id=\"camview\">\n    <div>\n      <canvas id=\"canvas\" width=\"640\" height=\"480\"></canvas>\n    </div>\n    <a class=\"toggler\"></a>\n  </div>\n  <div id=\"mainview\">\n    <div id=\"code\">\n      <h3 id=\"alert\">Please allow your webcam...</h3>\n      <pre><code class=\"language-js\"></code></pre>\n    </div>\n    <div id=\"mission\">\n    </div>\n  </div>\n</section>";});
 }});
 
 window.require.define({"ui/slider": function(exports, require, module) {

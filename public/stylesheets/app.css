@@ -449,7 +449,7 @@ pre {
   -ms-transform: translateX(360px);
   transform: translateX(360px);
 }
-.main .extended #mainview #activity {
+.main .extended #mainview #mission {
   -webkit-transform: translateX(-280px);
   -moz-transform: translateX(-280px);
   -o-transform: translateX(-280px);
@@ -475,7 +475,7 @@ pre {
   -webkit-box-shadow: 0 0 20px rgba(0,0,0,0.2);
   box-shadow: 0 0 20px rgba(0,0,0,0.2);
 }
-.main #activity {
+.main #mission {
   z-index: 10;
   left: 50%;
 }
