@@ -49,26 +49,6 @@ module.exports =
     gameMap = Util.clone @map
     displayMap = @displayMap = Util.clone @map
 
-    str = """
-      if (robot.touch() !== tea) {
-        if (robot.touch(left) === tea) {
-          robot.turn(left)
-        } else if (robot.touch(right) === tea) {
-          robot.turn(right)
-        }
-      }
-      if (robot.look() === wall) {
-        if (robot.look(left) === tea) {
-          robot.turn(left)
-        } else if (robot.look(right) === tea) {
-          robot.turn(right)
-        }
-      }
-      if (robot.touch() === wall) {
-        robot.turn(back)
-      }
-      robot.move(forward)
-    """
     # Set up the environment for our game.
     empty = 0
     wall = 1
@@ -156,20 +136,26 @@ module.exports =
       draw: (geom) -> _ths.drawRobot geom
 
     # I feel dirty.
-    eval "var fn = function () {\n #{str} \n}"
+    success = yes
+    try
+      eval "var fn = function () {\n #{str} \n}"
+    catch e
+      Util.alert 'Error: ' + e.message
+      success = no
 
-    for i in [0...@remaining]
-      fn()
-      animator.callback ->
-        _ths.remaining--
-        _ths.updateScore()
+    if success
+      for i in [0...@remaining]
+        fn()
+        animator.callback ->
+          _ths.remaining--
+          _ths.updateScore()
 
   # Other functions and objects, used with the three above
   animator:
     queue: []
     actors: {}
     running: no
-    animate: (change, duration = 5) ->
+    animate: (change, duration = 10) ->
       item = {}
       item.progress = 0
       item.type = 'animate'

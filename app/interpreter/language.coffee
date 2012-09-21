@@ -21,4 +21,6 @@ module.exports = class Language
     for key of source
       target[key] = source[key]
 
-  words: {}
+  words: {
+    0: "\n"
+  }

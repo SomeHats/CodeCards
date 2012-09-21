@@ -239,7 +239,7 @@ module.exports = {
   name: "robot",
   version: 0,
   "extends": {
-    "js": 0
+    "js.math": 0
   },
   words: {
     500: "robot",
@@ -318,12 +318,11 @@ module.exports = {
     });
   },
   run: function(str) {
-    var animator, back, displayMap, empty, forward, gameMap, i, left, right, robot, tea, wall, _i, _ref, _results, _ths;
+    var animator, back, displayMap, empty, forward, gameMap, i, left, right, robot, success, tea, wall, _i, _ref, _results, _ths;
     this.reset();
     _ths = this;
     gameMap = Util.clone(this.map);
     displayMap = this.displayMap = Util.clone(this.map);
-    str = "if (robot.touch() !== tea) {\n  if (robot.touch(left) === tea) {\n    robot.turn(left)\n  } else if (robot.touch(right) === tea) {\n    robot.turn(right)\n  }\n}\nif (robot.look() === wall) {\n  if (robot.look(left) === tea) {\n    robot.turn(left)\n  } else if (robot.look(right) === tea) {\n    robot.turn(right)\n  }\n}\nif (robot.touch() === wall) {\n  robot.turn(back)\n}\nrobot.move(forward)";
     empty = 0;
     wall = 1;
     tea = 2;
@@ -481,16 +480,24 @@ module.exports = {
         return _ths.drawRobot(geom);
       }
     });
-    eval("var fn = function () {\n " + str + " \n}");
-    _results = [];
-    for (i = _i = 0, _ref = this.remaining; 0 <= _ref ? _i < _ref : _i > _ref; i = 0 <= _ref ? ++_i : --_i) {
-      fn();
-      _results.push(animator.callback(function() {
-        _ths.remaining--;
-        return _ths.updateScore();
-      }));
+    success = true;
+    try {
+      eval("var fn = function () {\n " + str + " \n}");
+    } catch (e) {
+      Util.alert('Error: ' + e.message);
+      success = false;
     }
-    return _results;
+    if (success) {
+      _results = [];
+      for (i = _i = 0, _ref = this.remaining; 0 <= _ref ? _i < _ref : _i > _ref; i = 0 <= _ref ? ++_i : --_i) {
+        fn();
+        _results.push(animator.callback(function() {
+          _ths.remaining--;
+          return _ths.updateScore();
+        }));
+      }
+      return _results;
+    }
   },
   animator: {
     queue: [],
@@ -499,7 +506,7 @@ module.exports = {
     animate: function(change, duration) {
       var item;
       if (duration == null) {
-        duration = 5;
+        duration = 10;
       }
       item = {};
       item.progress = 0;
@@ -675,12 +682,6 @@ window.require.define({"data/missions/templates/sample": function(exports, requi
 
 
   return "<canvas width=\"640\" height=\"480\"></canvas>\n<h3 id=\"remain\">Remaining:</h3>\n<h3 id=\"score\">Score:</h3>";});
-}});
-
-window.require.define({"data/test": function(exports, require, module) {
-  
-module.exports = ["\n", "}", ") {", ")", "while (", "robot", ".turn(", ".look(", ".move(", " forward ", " left ", " right "];
-
 }});
 
 window.require.define({"initialize": function(exports, require, module) {
@@ -1049,7 +1050,9 @@ module.exports = Language = (function() {
     return _results;
   };
 
-  Language.prototype.words = {};
+  Language.prototype.words = {
+    0: "\n"
+  };
 
   return Language;
 
@@ -1636,42 +1639,48 @@ module.exports = App = (function(_super) {
     Mission.initialize($('#mission')[0]);
     language = this.language = new Language(Mission.language);
     this.on('change:play', function() {
-      this.interpreter.UserMedia.paused = this.play;
-      if (this.play) {
-        return Mission.reset();
+      this.interpreter.UserMedia.paused = !this.play;
+      if (!this.play) {
+        Mission.run(this.code);
+        return $('#alert').html('Paused.');
       } else {
-        return Mission.run();
+        return Mission.reset();
       }
     });
     $code = $('code');
     _ths = this;
     this.interpreter.on('error', function(error) {
-      _ths.stats.tick();
-      $('#alert').html('Error: ' + error);
-      return _ths.remote.send('tick', {
-        fps: _ths.stats.fps,
-        interval: _ths.stats.interval,
-        status: 'error',
-        message: error
-      });
+      if (_thsplay) {
+        _ths.stats.tick();
+        $('#alert').html('Error: ' + error);
+        return _ths.remote.send('tick', {
+          fps: _ths.stats.fps,
+          interval: _ths.stats.interval,
+          status: 'error',
+          message: error
+        });
+      }
     });
     return this.interpreter.on('success', function(results) {
       var code, result, _i, _len;
-      _ths.stats.tick();
-      code = "";
-      for (_i = 0, _len = results.length; _i < _len; _i++) {
-        result = results[_i];
-        code += language.words[result];
+      if (_ths.play) {
+        _ths.stats.tick();
+        code = "";
+        for (_i = 0, _len = results.length; _i < _len; _i++) {
+          result = results[_i];
+          code += language.words[result];
+        }
+        $('#alert').html('Running...');
+        code = js_beautify(code);
+        $code.html(code);
+        _ths.remote.send('tick', {
+          fps: _ths.stats.fps,
+          interval: _ths.stats.interval,
+          status: 'success',
+          code: code
+        });
+        return _ths.code = code;
       }
-      $('#alert').html('Success! ' + code);
-      code = js_beautify(code);
-      $code.html(code);
-      return _ths.remote.send('tick', {
-        fps: _ths.stats.fps,
-        interval: _ths.stats.interval,
-        status: 'success',
-        code: code
-      });
     });
   };
 
@@ -1764,6 +1773,10 @@ module.exports = App = (function(_super) {
   };
 
   App.prototype.name = 'main';
+
+  App.prototype.play = true;
+
+  App.prototype.code = "Util.alert('No code available.');";
 
   return App;
 

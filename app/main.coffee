@@ -16,37 +16,42 @@ module.exports = class App extends Backbone.View
     Mission.initialize $('#mission')[0]
     language =  @language = new Language Mission.language
     @on 'change:play', ->
-      @interpreter.UserMedia.paused = @play
+      @interpreter.UserMedia.paused = !@play
 
-      if @play
-        Mission.reset()
+      if !@play
+        Mission.run(@code)
+        $('#alert').html 'Paused.'
       else
-        Mission.run()
+        Mission.reset()
 
     $code = $ 'code'
     _ths = @
 
     @interpreter.on 'error', (error) ->
-      _ths.stats.tick()
-      $('#alert').html 'Error: ' + error
-      _ths.remote.send 'tick',
-        fps: _ths.stats.fps
-        interval: _ths.stats.interval
-        status: 'error'
-        message: error
+      if _thsplay
+        _ths.stats.tick()
+        $('#alert').html 'Error: ' + error
+        _ths.remote.send 'tick',
+          fps: _ths.stats.fps
+          interval: _ths.stats.interval
+          status: 'error'
+          message: error
 
     @interpreter.on 'success', (results)->
-      _ths.stats.tick()
-      code = ""
-      code += language.words[result] for result in results
-      $('#alert').html 'Success! ' + code
-      code = js_beautify code
-      $code.html code
-      _ths.remote.send 'tick',
-        fps: _ths.stats.fps
-        interval: _ths.stats.interval
-        status: 'success'
-        code: code
+      if _ths.play
+        _ths.stats.tick()
+        code = ""
+        code += language.words[result] for result in results
+        $('#alert').html 'Running...'
+        code = js_beautify code
+        $code.html code
+        _ths.remote.send 'tick',
+          fps: _ths.stats.fps
+          interval: _ths.stats.interval
+          status: 'success'
+          code: code
+
+        _ths.code = code
 
   setupRemote: ->
     _ths = @
@@ -112,3 +117,6 @@ module.exports = class App extends Backbone.View
     }
 
   name: 'main'
+
+  play: true
+  code: "Util.alert('No code available.');"
