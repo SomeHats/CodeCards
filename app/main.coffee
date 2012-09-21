@@ -28,7 +28,7 @@ module.exports = class App extends Backbone.View
     _ths = @
 
     @interpreter.on 'error', (error) ->
-      if _thsplay
+      if _ths.play
         _ths.stats.tick()
         $('#alert').html 'Error: ' + error
         _ths.remote.send 'tick',
@@ -60,7 +60,6 @@ module.exports = class App extends Backbone.View
     ## Receiving
     # Settings
     remote.on 'change-setting', (data) ->
-      console.log data
       if data.concerns
         _ths[data.concerns][data.setting] = data.value
         _ths[data.concerns].trigger 'change:' + data.setting

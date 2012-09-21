@@ -253,7 +253,7 @@ module.exports = {
     513: "right",
     520: "empty",
     521: "wall",
-    522: "tea"
+    522: "cake"
   }
 };
 
@@ -1650,7 +1650,7 @@ module.exports = App = (function(_super) {
     $code = $('code');
     _ths = this;
     this.interpreter.on('error', function(error) {
-      if (_thsplay) {
+      if (_ths.play) {
         _ths.stats.tick();
         $('#alert').html('Error: ' + error);
         return _ths.remote.send('tick', {
@@ -1691,7 +1691,6 @@ module.exports = App = (function(_super) {
       el: this.$('.pin-entry')
     });
     return remote.on('change-setting', function(data) {
-      console.log(data);
       if (data.concerns) {
         _ths[data.concerns][data.setting] = data.value;
         return _ths[data.concerns].trigger('change:' + data.setting);

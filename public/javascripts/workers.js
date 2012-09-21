@@ -1551,7 +1551,7 @@ module.exports = Init = (function(_super) {
 
   Init.prototype.initialize = function() {
     this.ready();
-    this.detector = new AR.Detector(12);
+    this.detector = new AR.Detector(7);
     this.on('settings', function(settings) {
       var key, _results;
       _results = [];

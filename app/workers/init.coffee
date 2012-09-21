@@ -6,7 +6,7 @@ module.exports = class Init extends require('workers/worker')
   initialize: ->
     @ready()
 
-    @detector = new AR.Detector 12
+    @detector = new AR.Detector 7
 
     @on 'settings', (settings) ->
       for key of settings

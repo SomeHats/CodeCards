@@ -29,6 +29,6 @@ module.exports =
     # Objects in the robot's world
     520:  "empty"   # Empty space
     521:  "wall"    # Alan can't pass through these.
-    522:  "tea"     # Alan loves to drink tea. When Alan enters a tile with tea
-                    # in it, he drinks it and you gain a point. Try and get Alan
-                    # as much tea as you can.
+    522:  "cake"    # Alan loves to eat cake. When Alan enters a tile with cake
+                    # in it, he eats it and you gain a point. Try to get Alan
+                    # as much cake as you can.
