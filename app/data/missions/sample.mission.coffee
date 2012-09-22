@@ -52,7 +52,7 @@ module.exports =
     # Set up the environment for our game.
     empty = 0
     wall = 1
-    tea = 2
+    cake = 2
     forward = 0
     back = 2
     right = 1
@@ -81,6 +81,8 @@ module.exports =
 
       move: (direction = forward) ->
         direction = (@direction + direction) % 4
+
+        change = x: @pos.x, y: @pos.y
 
         switch direction
           when 0 then change = x: @pos.x + 1, y: @pos.y

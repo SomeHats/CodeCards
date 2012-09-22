@@ -318,14 +318,14 @@ module.exports = {
     });
   },
   run: function(str) {
-    var animator, back, displayMap, empty, forward, gameMap, i, left, right, robot, success, tea, wall, _i, _ref, _results, _ths;
+    var animator, back, cake, displayMap, empty, forward, gameMap, i, left, right, robot, success, wall, _i, _ref, _results, _ths;
     this.reset();
     _ths = this;
     gameMap = Util.clone(this.map);
     displayMap = this.displayMap = Util.clone(this.map);
     empty = 0;
     wall = 1;
-    tea = 2;
+    cake = 2;
     forward = 0;
     back = 2;
     right = 1;
@@ -379,6 +379,10 @@ module.exports = {
           direction = forward;
         }
         direction = (this.direction + direction) % 4;
+        change = {
+          x: this.pos.x,
+          y: this.pos.y
+        };
         switch (direction) {
           case 0:
             change = {
