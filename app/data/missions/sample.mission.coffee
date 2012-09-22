@@ -98,7 +98,7 @@ module.exports =
             animator.animate
               robot: change
 
-            if gameMap[change.y][change.x] is tea
+            if gameMap[change.y][change.x] is cake
               gameMap[change.y][change.x] = empty
               animator.callback ->
                 displayMap[change.y][change.x] = empty

@@ -414,7 +414,7 @@ module.exports = {
           animator.animate({
             robot: change
           });
-          if (gameMap[change.y][change.x] === tea) {
+          if (gameMap[change.y][change.x] === cake) {
             gameMap[change.y][change.x] = empty;
             return animator.callback(function() {
               displayMap[change.y][change.x] = empty;
