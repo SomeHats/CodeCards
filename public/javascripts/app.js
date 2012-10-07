@@ -302,8 +302,10 @@ module.exports = {
     this.animator.clear = function() {
       return _ths.drawScene();
     };
-    this.reset();
-    return this.animator.start();
+    Util.on('animationFrame', function() {
+      return _ths.animator.tick();
+    });
+    return this.reset();
   },
   reset: function() {
     this.score = 0;
@@ -411,9 +413,7 @@ module.exports = {
         if (gameMap[change.y] !== void 0 && gameMap[change.y][change.x] !== void 0 && gameMap[change.y][change.x] !== 1) {
           this.pos.x = change.x;
           this.pos.y = change.y;
-          animator.animate({
-            robot: change
-          });
+          animator.animate('robot', 200, change);
           if (gameMap[change.y][change.x] === cake) {
             gameMap[change.y][change.x] = empty;
             return animator.callback(function() {
@@ -463,11 +463,9 @@ module.exports = {
       },
       turn: function(direction) {
         direction = (this.direction + direction) % 4;
-        animator.animate({
-          robot: {
-            rot: direction
-          }
-        }, 10);
+        animator.animate('robot', 200, {
+          rot: direction
+        });
         return this.direction = direction;
       },
       direction: 0,
@@ -503,96 +501,7 @@ module.exports = {
       return _results;
     }
   },
-  animator: {
-    queue: [],
-    actors: {},
-    running: false,
-    animate: function(change, duration) {
-      var item;
-      if (duration == null) {
-        duration = 10;
-      }
-      item = {};
-      item.progress = 0;
-      item.type = 'animate';
-      item.duration = duration;
-      item.change = change;
-      this.queue.push(item);
-      if (!this.running) {
-        return this.startQueue();
-      }
-    },
-    callback: function(fn, ctx) {
-      var item;
-      if (ctx == null) {
-        ctx = this;
-      }
-      item = {
-        type: 'callback',
-        callback: fn,
-        context: ctx
-      };
-      this.queue.push(item);
-      if (!this.running) {
-        return this.startQueue();
-      }
-    },
-    register: function(name, properties) {
-      return this.actors[name] = properties;
-    },
-    startQueue: function() {
-      if (!this.running && this.queue.length !== 0) {
-        return this.running = true;
-      }
-    },
-    start: function() {
-      var queue;
-      queue = this.queue;
-      return Util.on('animationFrame', function() {
-        var actor, current, name, property, remain, step;
-        if (this.running && queue.length !== 0) {
-          this.clear();
-          current = queue[0];
-          if (current.type === 'animate') {
-            for (name in current.change) {
-              actor = this.actors[name];
-              for (property in current.change[name]) {
-                remain = current.change[name][property] - actor[property];
-                step = remain / current.duration;
-                actor[property] += step;
-              }
-            }
-            current.duration -= 1;
-            if (current.duration === 0) {
-              queue.shift();
-            }
-          }
-          if (current.type === 'callback') {
-            current.callback();
-            queue.shift();
-          }
-          return this.drawActors();
-        }
-      }, this);
-    },
-    drawActors: function() {
-      var actors, name, _results;
-      actors = this.actors;
-      _results = [];
-      for (name in actors) {
-        _results.push(actors[name].draw(actors[name]));
-      }
-      return _results;
-    },
-    reset: function() {
-      while (this.queue.length) {
-        this.queue.shift();
-      }
-      this.actors = {};
-      this.clear();
-      return this.drawActors();
-    }
-  },
+  animator: new Animator(false),
   drawRobot: function(geom) {
     var ctx, rot, size, x, y;
     size = this.size;
@@ -1289,25 +1198,6 @@ module.exports = UserMedia = (function(_super) {
 
 }});
 
-window.require.define({"lib/animator": function(exports, require, module) {
-  var Animator,
-  __hasProp = {}.hasOwnProperty,
-  __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
-
-module.exports = Animator = (function(_super) {
-
-  __extends(Animator, _super);
-
-  function Animator() {
-    return Animator.__super__.constructor.apply(this, arguments);
-  }
-
-  return Animator;
-
-})(Backbone.Events);
-
-}});
-
 window.require.define({"lib/mediator": function(exports, require, module) {
   var Mediator;
 
@@ -1659,6 +1549,7 @@ module.exports = App = (function(_super) {
     this.interpreter = new Interpreter({
       el: this.$('#canvas')
     });
+    this.mission = Mission;
     Mission.initialize($('#mission')[0]);
     language = this.language = new Language(Mission.language);
     this.on('change:play', function() {

@@ -13,6 +13,8 @@ module.exports = class App extends Backbone.View
   start: ->
     @interpreter = new Interpreter el: @$ '#canvas'
 
+    @mission = Mission
+
     Mission.initialize $('#mission')[0]
     language =  @language = new Language Mission.language
     @on 'change:play', ->

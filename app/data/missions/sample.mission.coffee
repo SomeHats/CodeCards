@@ -24,9 +24,8 @@ module.exports =
     @size = 32
 
     @animator.clear = -> _ths.drawScene()
+    Util.on 'animationFrame', -> _ths.animator.tick()
     @reset()
-
-    @animator.start()
 
   # reset: This function should return the mission to its initial state.
   reset: ->
@@ -95,8 +94,7 @@ module.exports =
           gameMap[change.y][change.x] isnt 1
             @pos.x = change.x
             @pos.y = change.y
-            animator.animate
-              robot: change
+            animator.animate 'robot', 200, change
 
             if gameMap[change.y][change.x] is cake
               gameMap[change.y][change.x] = empty
@@ -121,9 +119,7 @@ module.exports =
 
       turn: (direction) ->
         direction = (@direction + direction) % 4
-        animator.animate
-          robot: rot: direction
-        , 10
+        animator.animate 'robot', 200, rot: direction
         @direction = direction
 
       direction: 0
@@ -144,7 +140,7 @@ module.exports =
     catch e
       Util.alert 'Error: ' + e.message
       success = no
-
+      
     if success
       for i in [0...@remaining]
         fn()
@@ -153,71 +149,7 @@ module.exports =
           _ths.updateScore()
 
   # Other functions and objects, used with the three above
-  animator:
-    queue: []
-    actors: {}
-    running: no
-    animate: (change, duration = 10) ->
-      item = {}
-      item.progress = 0
-      item.type = 'animate'
-      item.duration = duration
-      item.change = change
-      @queue.push item
-      if (!@running)
-        @startQueue()
-
-    callback: (fn, ctx = @) ->
-      item = type: 'callback', callback: fn, context: ctx
-      @queue.push item
-      if (!@running)
-        @startQueue()
-
-    register: (name, properties) ->
-      @actors[name] = properties
-
-    startQueue: ->
-      if !@running and @queue.length isnt 0
-        @running = yes
-    
-    start: ->
-      queue = @queue
-      Util.on 'animationFrame', ->
-        if @running and queue.length isnt 0
-          @clear()
-          current = queue[0]
-
-          if current.type is 'animate'
-            for name of current.change
-              actor = @actors[name]
-
-              for property of current.change[name]
-                remain = current.change[name][property] - actor[property]
-                step = remain / current.duration
-                actor[property] += step
-              
-            current.duration -= 1
-            if current.duration is 0
-              queue.shift()
-
-          if current.type is 'callback'
-            current.callback()
-            queue.shift()
-
-          @drawActors()
-      , @
-
-    drawActors: ->
-      actors = @actors
-      for name of actors
-        actors[name].draw actors[name]
-
-    reset: ->
-      while @queue.length
-        @queue.shift()
-      @actors = {}
-      @clear()
-      @drawActors()
+  animator: new Animator false
 
   drawRobot: (geom) ->
     size = @size
