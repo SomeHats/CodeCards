@@ -1,0 +1,3 @@
+[submodule "vendor/scripts/animator.js"]
+	path = vendor/scripts/animator.js
+	url = https://github.com/SomeHats/animator.js

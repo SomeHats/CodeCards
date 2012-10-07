@@ -1289,6 +1289,25 @@ module.exports = UserMedia = (function(_super) {
 
 }});
 
+window.require.define({"lib/animator": function(exports, require, module) {
+  var Animator,
+  __hasProp = {}.hasOwnProperty,
+  __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
+
+module.exports = Animator = (function(_super) {
+
+  __extends(Animator, _super);
+
+  function Animator() {
+    return Animator.__super__.constructor.apply(this, arguments);
+  }
+
+  return Animator;
+
+})(Backbone.Events);
+
+}});
+
 window.require.define({"lib/mediator": function(exports, require, module) {
   var Mediator;
 
