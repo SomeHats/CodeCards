@@ -935,14 +935,17 @@ module.exports = Language = (function() {
 
   function Language(lang) {
     var key, language, words;
+    this.words = {
+      0: "\n"
+    };
     for (key in lang) {
       try {
         language = require('data/languages/' + key + '.lang');
       } catch (e) {
         console.log('Language definition ' + key + ' not found :(');
       }
-      if (language.version !== lang[key]) {
-        console.log('Wrong language version for ' + key);
+      if (lang[key] !== '*' && language.version !== lang[key]) {
+        console.log('Wrong language version for ' + key, language.version, lang[key]);
       } else {
         words = language.words;
         if (language["extends"]) {
@@ -961,10 +964,6 @@ module.exports = Language = (function() {
       _results.push(target[key] = source[key]);
     }
     return _results;
-  };
-
-  Language.prototype.words = {
-    0: "\n"
   };
 
   return Language;
