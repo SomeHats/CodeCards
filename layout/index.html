@@ -208,11 +208,12 @@ function base64_encode (data) {
               widthpx = Math.round(widthmm * mm2i * dpi),
               heightpx = Math.round(heightmm * mm2i * dpi),
               sf = ($(document.body).innerWidth() - 40) / widthpx,
-              mm2px = mm2i * dpi;
+              mm2px = mm2i * dpi,
+              scroll = $(window).scrollTop();
 
           $svgs.attr({
-            width: (widthpx * sf) + 'px',
-            height: (heightpx * sf) + 'px'
+            width: (widthpx * sf) / 2 - 40 + 'px',
+            height: (heightpx * sf) / 2 - (40 * heightpx/widthpx) + 'px'
           });
 
           $svgs.each(function(i, el) {
@@ -223,6 +224,8 @@ function base64_encode (data) {
             $('#card_h').val() * mm2px,
             $('#fontsize').val() * mm2px,
             $('#padding').val() * mm2px);
+
+          $(window).scrollTop(scroll);
         }
 
         function listWords() {
@@ -276,6 +279,7 @@ function base64_encode (data) {
                   guides: $('#guides_cb')[0].checked,
                   front: $('#front_cb')[0].checked,
                   back: $('#back_cb')[0].checked,
+                  print: $('#print_cb')[0].checked,
                   cut: false
                 },
                 $template = $('#template'),
@@ -292,7 +296,15 @@ function base64_encode (data) {
 
             // Sort cards
             cards.sort(function(a, b) {
-              return b.size.w - a.size.w;
+              if (Math.round(a.size.w) !== Math.round(b.size.w)) {
+                return b.size.w - a.size.w;
+              } else if (a.display < b.display) {
+                return 1;
+              } else if (b.display < a.display) {
+                return -1;
+              } else {
+                return 0;
+              }
             });
 
             // Bin pack cards. 1st fit descending. Fuck yeah D1!
@@ -338,14 +350,18 @@ function base64_encode (data) {
               $guides = $svg.find('.guides');
 
               for (j = 0; j < binsPerPage; j++) {
-                if(layers.front) {
-                  soFar = 0;
-                  if(bins[i * binsPerPage + j]) {
-                    bin = bins[i * binsPerPage + j].items;
-                    for(k = 0; k < bin.length; k++) {
-                      text(bin[k],
-                        centerx(soFar, soFar - bin[k].size.w, bin[k].size.width), 
-                        centery(j * cHeight, (j + 1) * cHeight, bin[k].size.h/2), $svg);
+                soFar = 0;
+                if(bins[i * binsPerPage + j]) {
+                  bin = bins[i * binsPerPage + j].items;
+                  for(k = 0; k < bin.length; k++) {
+                    if(layers.front) {
+
+                      if(layers.print) {
+                        text(bin[k],
+                          centerx(soFar, soFar - bin[k].size.w, bin[k].size.width), 
+                          centery(j * cHeight, (j + 1) * cHeight, bin[k].size.h/2), $svg);
+                      }
+
                       soFar += bin[k].size.w;
 
                       if (layers.guides) {
@@ -354,6 +370,25 @@ function base64_encode (data) {
                           x2: soFar,
                           y1: j * cHeight,
                           y2: (j + 1) * cHeight
+                        }).appendTo($guides);
+                      }
+                    } else {
+                      console.log('mew');
+                      if(layers.print) {
+                        console.log('yup');
+                        text(bin[k],
+                          centerx(soFar, soFar - bin[k].size.w, bin[k].size.width), 
+                          centery(height - (j * cHeight), height - (j + 1) * cHeight, bin[k].size.h/2), $svg);
+                      }
+
+                      soFar += bin[k].size.w;
+
+                      if (layers.guides) {
+                        c('line').attr({
+                          x1: soFar,
+                          x2: soFar,
+                          y1: height - j * cHeight,
+                          y2: height - (j + 1) * cHeight
                         }).appendTo($guides);
                       }
                     }
@@ -365,7 +400,6 @@ function base64_encode (data) {
             $svgs = $('.svg:not(#template)');
 
             if(layers.guides) {
-              console.log('hey there');
               $svgs.each(function(i, el) {
                 svg = $(el).find('svg');
                 drawGuides(svg);
@@ -393,6 +427,28 @@ function base64_encode (data) {
                   y: i - cHeight,
                   width: width,
                   height: height - (i - cHeight),
+                  fill: 'lime'
+                });
+                rect.appendTo(apt);
+              } else {
+                for (i = height - cHeight; i > 0; i -= cHeight) {
+                  line = c('line');
+                  line.attr({
+                    x1: 0,
+                    x2: width,
+                    y1: i,
+                    y2: i
+                  });
+
+                  line.appendTo(apt);
+                }
+
+                rect = c('rect');
+                rect.attr({
+                  x: 0,
+                  y: 0,
+                  width: width,
+                  height: cHeight + i,
                   fill: 'lime'
                 });
                 rect.appendTo(apt);
@@ -454,6 +510,12 @@ function base64_encode (data) {
     </script>
 
     <style>
+      * {
+        -webkit-box-sizing: border-box;
+        -moz-box-sizing: border-box;
+        box-sizing: border-box;
+      }
+
       body, html {
         width: 100%;
         height: 100%;
@@ -503,10 +565,10 @@ function base64_encode (data) {
       }
 
       .svg {
-        display: block;
+        display: inline-block;
         padding: 0;
         padding-bottom: 20px;
-        margin: 20px 0;
+        margin: 20px;
         overflow: visible;
       }
 
@@ -552,7 +614,8 @@ function base64_encode (data) {
         Layers: 
         <label><input type="radio" id="front_cb" name="fb" checked>Front</label>
         <label><input type="radio" id="back_cb" name="fb">Back</label>
-        <label><input type="checkbox" id="cut_cb">Cut lines</label>
+        <label><input type="radio" id="print_cb" name="pc" checked>Print</label>
+        <label><input type="radio" id="cut_cb" name="pc">Cut lines</label>
         <label><input type="checkbox" id="guides_cb" checked>Guides</label>
       </div>
     </div>
