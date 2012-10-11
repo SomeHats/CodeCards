@@ -936,7 +936,10 @@ module.exports = Language = (function() {
   function Language(lang) {
     var key, language, words;
     this.words = {
-      0: "\n"
+      0: {
+        word: "\n",
+        print: "Start ->"
+      }
     };
     for (key in lang) {
       try {

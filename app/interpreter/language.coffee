@@ -1,6 +1,8 @@
 module.exports = class Language
   constructor: (lang) ->
-    @words = 0: "\n"
+    @words = 0:
+      word: "\n"
+      print: "Start ->"
 
     for key of lang
       try
