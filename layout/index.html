@@ -373,12 +373,11 @@ function base64_encode (data) {
                         }).appendTo($guides);
                       }
                     } else {
-                      console.log('mew');
                       if(layers.print) {
-                        console.log('yup');
-                        text(bin[k],
-                          centerx(soFar, soFar - bin[k].size.w, bin[k].size.width), 
-                          centery(height - (j * cHeight), height - (j + 1) * cHeight, bin[k].size.h/2), $svg);
+                        drawAruco(bin[k].id,
+                          (soFar + soFar + bin[k].size.w) / 2,
+                          height - (j + 0.5) * cHeight,
+                          $svg);
                       }
 
                       soFar += bin[k].size.w;
@@ -491,6 +490,55 @@ function base64_encode (data) {
               });
 
               $el.appendTo($svg);
+            }
+
+            function drawAruco(id, x, y, $svg) {
+              var marker = getMarker(id),
+                  unit = cHeight / 20,
+                  top = y - (unit * 7),
+                  left = x - (unit * 7),
+                  i, j;
+
+              for(i = 0; i < 7; i++) {
+                for(j = 0; j < 7; j++) {
+                  if(marker[i][j] === 0) {
+                    c('rect').attr({
+                      y: top + (i * unit * 2),
+                      x: left + (j * unit * 2),
+                      width: unit * 2,
+                      height: unit * 2,
+                      class: 'aruco'
+                    }).appendTo($svg);
+                  }
+                }
+              }
+
+              // From coffeescript source. See ../markers/src/
+              function getMarker(id) {
+                var i, out, slice, _i;
+                id = parseInt(id);
+                id = ('0000000000' + id.toString(2)).slice(-10);
+                out = [];
+                out.push([0, 0, 0, 0, 0, 0, 0]);
+                for (i = _i = 0; _i <= 4; i = ++_i) {
+                  slice = id.slice(i * 2, (i + 1) * 2);
+                  switch (slice) {
+                    case '00':
+                      out.push([0, 1, 0, 0, 0, 0, 0]);
+                      break;
+                    case '01':
+                      out.push([0, 1, 0, 1, 1, 1, 0]);
+                      break;
+                    case '10':
+                      out.push([0, 0, 1, 0, 0, 1, 0]);
+                      break;
+                    case '11':
+                      out.push([0, 0, 1, 1, 1, 0, 0]);
+                  }
+                }
+                out.push([0, 0, 0, 0, 0, 0, 0])
+                return out;
+              }
             }
 
             function centery(min, max, mid) {
@@ -617,6 +665,7 @@ function base64_encode (data) {
         <label><input type="radio" id="print_cb" name="pc" checked>Print</label>
         <label><input type="radio" id="cut_cb" name="pc">Cut lines</label>
         <label><input type="checkbox" id="guides_cb" checked>Guides</label>
+        | It is recommended that you adjust settings with &quot;front&quot; visible.
       </div>
     </div>
     <h1>CodeCards card layout</h1>
@@ -653,6 +702,11 @@ function base64_encode (data) {
               stroke: none;
               fill: magenta;
               fill-opacity: 0.3;
+            }
+
+            rect.aruco {
+              stroke: none;
+              fill: black;
             }
           </style>
 
