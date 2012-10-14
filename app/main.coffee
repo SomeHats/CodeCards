@@ -3,57 +3,78 @@ Interpreter = require 'interpreter'
 Remote = require 'interpreter/remote'
 Stats = require 'interpreter/stats'
 
-# Temporary solution:
-Mission = require 'data/missions/sample.mission'
-Language = require 'interpreter/language'
+Mission = require 'interpreter/mission'
 
 template = require 'templates/main'
 
 module.exports = class App extends Backbone.View
   start: ->
-    @interpreter = new Interpreter el: @$ '#canvas'
-
-    @mission = Mission
-
-    Mission.initialize $('#mission')[0]
-    language =  @language = new Language Mission.language
-    @on 'change:play', ->
-      @interpreter.UserMedia.paused = !@play
-
-      if !@play
-        Mission.run(@code)
-        $('#alert').html 'Paused.'
-      else
-        Mission.reset()
-
     $code = $ 'code'
     _ths = @
 
+    # The interpreter object is responsible for retrieving and processing a stream from
+    # the user's webcam.
+    @interpreter = new Interpreter el: @$ '#canvas'
+
+    # Error is a string describing what went wrong. TODO: error objects,
+    # with types and all that stuff.
     @interpreter.on 'error', (error) ->
       if _ths.play
-        _ths.stats.tick()
+        # Hacky displaying of error message
         $('#alert').html 'Error: ' + error
+
+        # Update stats
+        _ths.stats.tick()
+
+        # Send stats and error data to the remote control
         _ths.remote.send 'tick',
           fps: _ths.stats.fps
           interval: _ths.stats.interval
           status: 'error'
           message: error
 
+    # The results object is an array of IDs, ordered according to where they should come
+    # in a string
     @interpreter.on 'success', (results)->
       if _ths.play
+        # Show a hacky success message
+        $('#alert').html 'Running...'
+
+        # Update stats
         _ths.stats.tick()
+
+        # Composite the results into a string, according to the language file
         code = ""
         code += language.words[result] for result in results
-        $('#alert').html 'Running...'
+        
+        # Make it look nice and render it to the page
         code = js_beautify code
         $code.html code
+
+        # Send stats and code to the remote control
         _ths.remote.send 'tick',
           fps: _ths.stats.fps
           interval: _ths.stats.interval
           status: 'success'
           code: code
 
+        # Tell the world
         _ths.code = code
+        _ths.trigger 'code', code
+
+    # Load up the mission. TODO:- missions other than sample
+    @mission = mission = new Mission 'sample'
+
+    # Run the mission when needed
+    @on 'change:play', ->
+      @interpreter.UserMedia.paused = !@play
+
+      if !@play
+        @code = 'robot.move();if(robot.touch()===wall){robot.turn(back);}'
+        @mission.run(@code)
+        $('#alert').html 'Paused.'
+      else
+        @mission.reset()
 
   setupRemote: ->
     _ths = @

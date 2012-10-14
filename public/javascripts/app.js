@@ -284,6 +284,7 @@ module.exports = {
 window.require.define({"data/missions/sample.mission": function(exports, require, module) {
   
 module.exports = {
+  view: 'fullscreen',
   language: {
     robot: 0
   },
@@ -975,6 +976,42 @@ module.exports = Language = (function() {
 
 }});
 
+window.require.define({"interpreter/mission": function(exports, require, module) {
+  var Language, Mission,
+  __hasProp = {}.hasOwnProperty,
+  __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
+
+Language = require('interpreter/language');
+
+module.exports = Mission = (function(_super) {
+
+  __extends(Mission, _super);
+
+  function Mission() {
+    return Mission.__super__.constructor.apply(this, arguments);
+  }
+
+  Mission.prototype.initialize = function(name) {
+    var language;
+    this.m = require("data/missions/" + name + ".mission");
+    this.m.initialize($('#mission')[0]);
+    return language = this.language = new Language(Mission.language);
+  };
+
+  Mission.prototype.run = function(data) {
+    return this.m.run(data);
+  };
+
+  Mission.prototype.reset = function() {
+    return this.m.reset();
+  };
+
+  return Mission;
+
+})(Backbone.View);
+
+}});
+
 window.require.define({"interpreter/remote": function(exports, require, module) {
   var Remote, template,
   __hasProp = {}.hasOwnProperty,
@@ -1522,7 +1559,7 @@ module.exports = Loader = (function(_super) {
 }});
 
 window.require.define({"main": function(exports, require, module) {
-  var App, Interpreter, Language, Mission, Remote, Stats, template,
+  var App, Interpreter, Mission, Remote, Stats, template,
   __hasProp = {}.hasOwnProperty,
   __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
 
@@ -1532,9 +1569,7 @@ Remote = require('interpreter/remote');
 
 Stats = require('interpreter/stats');
 
-Mission = require('data/missions/sample.mission');
-
-Language = require('interpreter/language');
+Mission = require('interpreter/mission');
 
 template = require('templates/main');
 
@@ -1547,28 +1582,16 @@ module.exports = App = (function(_super) {
   }
 
   App.prototype.start = function() {
-    var $code, language, _ths;
+    var $code, mission, _ths;
+    $code = $('code');
+    _ths = this;
     this.interpreter = new Interpreter({
       el: this.$('#canvas')
     });
-    this.mission = Mission;
-    Mission.initialize($('#mission')[0]);
-    language = this.language = new Language(Mission.language);
-    this.on('change:play', function() {
-      this.interpreter.UserMedia.paused = !this.play;
-      if (!this.play) {
-        Mission.run(this.code);
-        return $('#alert').html('Paused.');
-      } else {
-        return Mission.reset();
-      }
-    });
-    $code = $('code');
-    _ths = this;
     this.interpreter.on('error', function(error) {
       if (_ths.play) {
-        _ths.stats.tick();
         $('#alert').html('Error: ' + error);
+        _ths.stats.tick();
         return _ths.remote.send('tick', {
           fps: _ths.stats.fps,
           interval: _ths.stats.interval,
@@ -1577,16 +1600,16 @@ module.exports = App = (function(_super) {
         });
       }
     });
-    return this.interpreter.on('success', function(results) {
+    this.interpreter.on('success', function(results) {
       var code, result, _i, _len;
       if (_ths.play) {
+        $('#alert').html('Running...');
         _ths.stats.tick();
         code = "";
         for (_i = 0, _len = results.length; _i < _len; _i++) {
           result = results[_i];
           code += language.words[result];
         }
-        $('#alert').html('Running...');
         code = js_beautify(code);
         $code.html(code);
         _ths.remote.send('tick', {
@@ -1595,7 +1618,19 @@ module.exports = App = (function(_super) {
           status: 'success',
           code: code
         });
-        return _ths.code = code;
+        _ths.code = code;
+        return _ths.trigger('code', code);
+      }
+    });
+    this.mission = mission = new Mission('sample');
+    return this.on('change:play', function() {
+      this.interpreter.UserMedia.paused = !this.play;
+      if (!this.play) {
+        this.code = 'robot.move();if(robot.touch()===wall){robot.turn(back);}';
+        this.mission.run(this.code);
+        return $('#alert').html('Paused.');
+      } else {
+        return this.mission.reset();
       }
     });
   };
