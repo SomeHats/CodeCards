@@ -158,6 +158,9 @@ function base64_encode (data) {
           }
         });
 
+        // Zoom pages
+        $('#zoom').on('click', function() {$(document.body).toggleClass('zoom'); change();});
+
         $('.options input').on('change keyup', change);
 
         $('select').on('change click', function() {
@@ -193,7 +196,6 @@ function base64_encode (data) {
             $('#notice').text('Not found');
             listWords(false);
           }
-
           change();
         }).trigger('change');
 
@@ -211,10 +213,17 @@ function base64_encode (data) {
               mm2px = mm2i * dpi,
               scroll = $(window).scrollTop();
 
-          $svgs.attr({
-            width: (widthpx * sf) / 2 - 40 + 'px',
-            height: (heightpx * sf) / 2 - (40 * heightpx/widthpx) + 'px'
-          });
+          if($(document.body).hasClass('zoom')) {
+            $svgs.attr({
+              width: (widthpx * sf) - 40 + 'px',
+              height: (heightpx * sf) - (40 * heightpx/widthpx) + 'px'
+            });
+          } else {
+            $svgs.attr({
+              width: (widthpx * sf) / 2 - 40 + 'px',
+              height: (heightpx * sf) / 2 - (40 * heightpx/widthpx) + 'px'
+            });
+          }
 
           $svgs.each(function(i, el) {
             el.setAttribute('viewBox', '0 0 ' + widthpx + ' ' + heightpx);
@@ -280,11 +289,11 @@ function base64_encode (data) {
                   front: $('#front_cb')[0].checked,
                   back: $('#back_cb')[0].checked,
                   print: $('#print_cb')[0].checked,
-                  cut: false
+                  cut: $('#cut_cb')[0].checked
                 },
                 $template = $('#template'),
                 $cont = $('#cont'),
-                binsPerPage = Math.floor(height / cHeight),
+                binsPerPage = Math.floor((height - padding / 3)/ cHeight),
                 bins = [],
                 $svgs, $svg, tmp, i, j, k, needNewBin, pages,
                 soFar, bin, $guides;
@@ -310,7 +319,7 @@ function base64_encode (data) {
             // Bin pack cards. 1st fit descending. Fuck yeah D1!
             for (i = 0; i < cards.length; i++) {
               for (j = 0; j < cards[i].n; j++) {
-                if (cards[i].size.w > width) {
+                if (cards[i].size.w > width - padding) {
                   // Won't fit on a page.
                   console.log(cards[i].display + ' is too big');
                 } else {
@@ -326,7 +335,7 @@ function base64_encode (data) {
 
                   if(needNewBin) {
                     bins.push({
-                      remaining: width,
+                      remaining: width - padding,
                       items: []
                     });
 
@@ -344,13 +353,13 @@ function base64_encode (data) {
               $svg = $template.clone()
                 .appendTo($cont)
                 .attr('id', 'page-' + i)
-                .attr('download', 'page-' + i + '.svg')
+                .attr('download', 'cc-'+(layers.front?'front-':'back-')+(layers.print?'print-':'cut-')+'page-' + i + '.svg')
                 .find('svg');
 
               $guides = $svg.find('.guides');
 
               for (j = 0; j < binsPerPage; j++) {
-                soFar = 0;
+                soFar = padding / 2;
                 if(bins[i * binsPerPage + j]) {
                   bin = bins[i * binsPerPage + j].items;
                   for(k = 0; k < bin.length; k++) {
@@ -359,35 +368,49 @@ function base64_encode (data) {
                       if(layers.print) {
                         text(bin[k],
                           centerx(soFar, soFar - bin[k].size.w, bin[k].size.width), 
-                          centery(j * cHeight, (j + 1) * cHeight, bin[k].size.h/2), $svg);
+                          centery(j * cHeight + padding / 6, (j + 1) * cHeight + padding / 6, bin[k].size.h/2), $svg);
+                      }
+
+                      if (layers.cut) {
+                        drawPuzzleConnector(soFar, j * cHeight + padding / 6, $svg);
                       }
 
                       soFar += bin[k].size.w;
+                      if (layers.cut && k === bin.length - 1) {
+                        drawPuzzleConnector(soFar, j * cHeight + padding / 6, $svg);
+                      }
 
                       if (layers.guides) {
                         c('line').attr({
                           x1: soFar,
                           x2: soFar,
-                          y1: j * cHeight,
-                          y2: (j + 1) * cHeight
+                          y1: j * cHeight + padding / 6,
+                          y2: (j + 1) * cHeight + padding / 6
                         }).appendTo($guides);
                       }
                     } else {
                       if(layers.print) {
                         drawAruco(bin[k].id,
                           (soFar + soFar + bin[k].size.w) / 2,
-                          height - (j + 0.5) * cHeight,
+                          (height - (j + 0.5) * cHeight) - padding / 6,
                           $svg);
                       }
 
+                      if (layers.cut) {
+                        drawPuzzleConnector(soFar, height - ((j + 1) * cHeight + padding / 6), $svg);
+                      }
+
                       soFar += bin[k].size.w;
+                      if (layers.cut && k === bin.length - 1) {
+                        drawPuzzleConnector(soFar, height - ((j + 1) * cHeight + padding / 6), $svg);
+                      }
 
                       if (layers.guides) {
                         c('line').attr({
                           x1: soFar,
                           x2: soFar,
-                          y1: height - j * cHeight,
-                          y2: height - (j + 1) * cHeight
+                          y1: (height - j * cHeight) - padding / 6,
+                          y2: (height - (j + 1) * cHeight) - padding / 6
                         }).appendTo($guides);
                       }
                     }
@@ -398,17 +421,55 @@ function base64_encode (data) {
 
             $svgs = $('.svg:not(#template)');
 
-            if(layers.guides) {
+            if(layers.guides || layers.cut) {
               $svgs.each(function(i, el) {
                 svg = $(el).find('svg');
-                drawGuides(svg);
+                drawHorizontals(svg);
               });
             }
 
-            function drawGuides($el) {
-              var i, line, rect, apt = $el.find('.guides');
+            function drawPuzzleConnector(x, y, svg) {
+              x += padding / 8
+
+              var path = '',
+                  p = {
+                    x1: x - (padding / 3),
+                    y1: y,
+                    x2: x - (padding / 3),
+                    y2: y + (cHeight / 3),
+                    x3: x + (padding / 5),
+                    y3: y + cHeight / 2,
+                    x4: x - (padding / 3),
+                    y4: y + (2 * cHeight / 3),
+                    x5: x - (padding / 3),
+                    y5: y + cHeight
+                  };
+
+              path+=['M', p.x1, p.y1,
+
+                     'C', p.x1 - padding / 6, p.y1 + cHeight / 12,
+                          p.x2 - padding / 8, p.y2 - cHeight / 12,
+                          p.x2, p.y2,
+
+                     'C', p.x2 + padding / 3, p.y2 + cHeight / 9,
+                          p.x3, p.y3 - cHeight / 3,
+                          p.x3, p.y3,
+
+                     'C', p.x3, p.y3 + cHeight / 3,
+                          p.x4 + padding / 3, p.y4 - cHeight / 9,
+                          p.x4, p.y4,
+
+                     'C', p.x4 - padding / 8, p.y4 + cHeight / 12,
+                          p.x5 - padding / 6, p.y5 - cHeight / 12,
+                          p.x5, p.y5].join(' ');
+
+              c('path').attr('d', path).appendTo(svg);
+            }
+
+            function drawHorizontals($el) {
+              var i, line, rect, apt = (layers.guides) ? $el.find('.guides') : $el;
               if(layers.front) {
-                for (i = cHeight; i < height; i += cHeight) {
+                for (i = padding / 6; i < height - padding / 3; i += cHeight) {
                   line = c('line');
                   line.attr({
                     x1: 0,
@@ -420,17 +481,18 @@ function base64_encode (data) {
                   line.appendTo(apt);
                 }
 
-                rect = c('rect');
-                rect.attr({
-                  x: 0,
-                  y: i - cHeight,
-                  width: width,
-                  height: height - (i - cHeight),
-                  fill: 'lime'
-                });
-                rect.appendTo(apt);
+                if (layers.guides) {
+                  rect = c('rect');
+                  rect.attr({
+                    x: 0,
+                    y: i - cHeight,
+                    width: width,
+                    height: height - (i - cHeight)
+                  });
+                  rect.appendTo(apt);
+                }
               } else {
-                for (i = height - cHeight; i > 0; i -= cHeight) {
+                for (i = height - padding / 6; i > 0; i -= cHeight) {
                   line = c('line');
                   line.attr({
                     x1: 0,
@@ -442,15 +504,16 @@ function base64_encode (data) {
                   line.appendTo(apt);
                 }
 
-                rect = c('rect');
-                rect.attr({
-                  x: 0,
-                  y: 0,
-                  width: width,
-                  height: cHeight + i,
-                  fill: 'lime'
-                });
-                rect.appendTo(apt);
+                if (layers.guides) {
+                  rect = c('rect');
+                  rect.attr({
+                    x: 0,
+                    y: 0,
+                    width: width,
+                    height: cHeight + i
+                  });
+                  rect.appendTo(apt);
+                }
               }
             }
 
@@ -628,6 +691,10 @@ function base64_encode (data) {
         box-shadow: 0 5px 25px rgba(0, 0, 0, 0.4);
       }
 
+      .zoom .svg {
+        display: block;
+      }
+
       input[type=number] {
         width: 50px;
         text-align: center;
@@ -657,7 +724,7 @@ function base64_encode (data) {
       <label>Resolution: <input type="number" id="dpi" value="300">dpi.</label>
       <label>Card Height: <input type="number" id="card_h" value="40">mm.</label>
       <label>Font Size: <input type="number" id="fontsize" value="20">mm.</label>
-      <label>Padding: <input type="number" id="padding" value="8">mm.</label>
+      <label>Padding: <input type="number" id="padding" value="12">mm.</label>
       <div>
         Layers: 
         <label><input type="radio" id="front_cb" name="fb" checked>Front</label>
@@ -666,11 +733,12 @@ function base64_encode (data) {
         <label><input type="radio" id="cut_cb" name="pc">Cut lines</label>
         <label><input type="checkbox" id="guides_cb" checked>Guides</label>
         | It is recommended that you adjust settings with &quot;front&quot; visible.
+        | <button id="zoom">Zoom</button>
       </div>
     </div>
     <h1>CodeCards card layout</h1>
     <label>Card set: <input type="text" id="lang" value="robot"></label><span id="notice"></span>
-    <p><a href="#" id="toggleWords">Show/Hide words</a></p>
+    <p><a href="javascript:void" id="toggleWords">Show/Hide words</a></p>
     <div id="words" class="hidden"></div>
     <div id="cont">
       <a class="svg" href="#" id="template" download="sample.svg">
@@ -692,6 +760,10 @@ function base64_encode (data) {
               fill: none;
               shape-rendering: crispEdges;
               vector-effect: non-scaling-stroke;
+            }
+
+            path {
+              shape-rendering: auto;
             }
 
             .guides line {
