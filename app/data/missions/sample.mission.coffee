@@ -1,4 +1,5 @@
 module.exports =
+  view: 'fullscreen'
 
   # language: which language definitions are needed for your mission? Give them
   #           in the form name: version

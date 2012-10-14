@@ -173,6 +173,11 @@
     #mission
       transform translateX(-280px)
 
+    &.view-fullscreen #mission
+      width 50%
+      left -40px
+      transform translateX(50%)
+
   #code
     z-index 20
     font-size 28px
@@ -191,7 +196,14 @@
       border-top 1px solid black
       box-shadow 0 0 20px rgba(0, 0, 0, 0.2)
 
+  .view-fullscreen #code
+    display none
 
   #mission
     z-index 10
     left 50%
+
+  .view-fullscreen #mission
+    margin 0
+    left 0%
+    width 100%

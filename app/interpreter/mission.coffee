@@ -24,11 +24,16 @@ module.exports = class Mission extends Backbone.View
     if _.indexOf(@accepted.view, m.view) is -1
       throw new RangeError "mission.view should be #{@accepted.view.join ' or '}, not #{m.view}."
 
-    if _.indexOf(@accepted.interpreter) is -1
+    if _.indexOf(@accepted.interpreter, m.interpreter) is -1
       throw new RangeError "mission.interpreter should be #{@accepted.interpreter.join ' or '}, not #{m.interpreter}."
 
     if typeof m.continuous isnt 'boolean'
       throw new TypeError "mission.continuous should be boolean not #{typeof m.continuous}."
+
+    if m.view is '2up'
+      $('#mainview').removeClass 'view-fullscreen'
+    else
+      $('#mainview').addClass 'view-fullscreen'
 
     m.initialize $('#mission')[0]
 
@@ -41,5 +46,5 @@ module.exports = class Mission extends Backbone.View
     @m.reset()
 
   accepted:
-    view: ['2up']
+    view: ['2up', 'fullscreen']
     interpreter: ['linear']

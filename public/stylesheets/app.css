@@ -465,6 +465,15 @@ pre {
   -ms-transform: translateX(-280px);
   transform: translateX(-280px);
 }
+.main .extended #mainview.view-fullscreen #mission {
+  width: 50%;
+  left: -40px;
+  -webkit-transform: translateX(50%);
+  -moz-transform: translateX(50%);
+  -o-transform: translateX(50%);
+  -ms-transform: translateX(50%);
+  transform: translateX(50%);
+}
 .main #code {
   z-index: 20;
   font-size: 28px;
@@ -484,9 +493,17 @@ pre {
   -webkit-box-shadow: 0 0 20px rgba(0,0,0,0.2);
   box-shadow: 0 0 20px rgba(0,0,0,0.2);
 }
+.main .view-fullscreen #code {
+  display: none;
+}
 .main #mission {
   z-index: 10;
   left: 50%;
+}
+.main .view-fullscreen #mission {
+  margin: 0;
+  left: 0%;
+  width: 100%;
 }
 .remote .pin {
   font-size: 30px;

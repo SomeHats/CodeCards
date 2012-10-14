@@ -284,6 +284,7 @@ module.exports = {
 window.require.define({"data/missions/sample.mission": function(exports, require, module) {
   
 module.exports = {
+  view: 'fullscreen',
   language: {
     robot: 1
   },
@@ -1013,11 +1014,16 @@ module.exports = Mission = (function(_super) {
     if (_.indexOf(this.accepted.view, m.view) === -1) {
       throw new RangeError("mission.view should be " + (this.accepted.view.join(' or ')) + ", not " + m.view + ".");
     }
-    if (_.indexOf(this.accepted.interpreter) === -1) {
+    if (_.indexOf(this.accepted.interpreter, m.interpreter) === -1) {
       throw new RangeError("mission.interpreter should be " + (this.accepted.interpreter.join(' or ')) + ", not " + m.interpreter + ".");
     }
     if (typeof m.continuous !== 'boolean') {
       throw new TypeError("mission.continuous should be boolean not " + (typeof m.continuous) + ".");
+    }
+    if (m.view === '2up') {
+      $('#mainview').removeClass('view-fullscreen');
+    } else {
+      $('#mainview').addClass('view-fullscreen');
     }
     m.initialize($('#mission')[0]);
     return language = this.language = new Language(Mission.language);
@@ -1032,7 +1038,7 @@ module.exports = Mission = (function(_super) {
   };
 
   Mission.prototype.accepted = {
-    view: ['2up'],
+    view: ['2up', 'fullscreen'],
     interpreter: ['linear']
   };
 
