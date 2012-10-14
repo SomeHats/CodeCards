@@ -70,7 +70,6 @@ module.exports = class App extends Backbone.View
       @interpreter.UserMedia.paused = !@play
 
       if !@play
-        @code = 'robot.move();if(robot.touch()===wall){robot.turn(back);}'
         @mission.run(@code)
         $('#alert').html 'Paused.'
       else

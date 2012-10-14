@@ -1626,7 +1626,6 @@ module.exports = App = (function(_super) {
     return this.on('change:play', function() {
       this.interpreter.UserMedia.paused = !this.play;
       if (!this.play) {
-        this.code = 'robot.move();if(robot.touch()===wall){robot.turn(back);}';
         this.mission.run(this.code);
         return $('#alert').html('Paused.');
       } else {
