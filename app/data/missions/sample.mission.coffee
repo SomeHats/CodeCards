@@ -1,10 +1,9 @@
 module.exports =
-  view: 'fullscreen'
 
   # language: which language definitions are needed for your mission? Give them
   #           in the form name: version
-  language:
-    robot: 0
+  language: 
+    robot: 1
 
   # initialize: a function to be called when setting up your mission on screen.
   #             The function is passed a single DOM element. Put any HTML inside

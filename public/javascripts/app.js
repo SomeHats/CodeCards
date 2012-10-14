@@ -284,9 +284,8 @@ module.exports = {
 window.require.define({"data/missions/sample.mission": function(exports, require, module) {
   
 module.exports = {
-  view: 'fullscreen',
   language: {
-    robot: 0
+    robot: 1
   },
   initialize: function(el) {
     var $el, template, _ths;
@@ -992,9 +991,35 @@ module.exports = Mission = (function(_super) {
   }
 
   Mission.prototype.initialize = function(name) {
-    var language;
-    this.m = require("data/missions/" + name + ".mission");
-    this.m.initialize($('#mission')[0]);
+    var language, m;
+    this.m = m = {
+      view: '2up',
+      interpreter: 'linear',
+      continuous: false
+    };
+    _.extend(m, require("data/missions/" + name + ".mission"));
+    if (typeof m.initialize !== 'function') {
+      throw new TypeError("mission.initialize should be a function not " + (typeof m.initialize) + ".");
+    }
+    if (typeof m.language !== 'object') {
+      throw new TypeError("mission.language should be an object not " + (typeof m.language) + ".");
+    }
+    if (typeof m.reset !== 'function') {
+      throw new TypeError("mission.reset should be a function not " + (typeof m.reset) + ".");
+    }
+    if (typeof m.run !== 'function') {
+      throw new TypeError("mission.run should be a function not " + (typeof m.run) + ".");
+    }
+    if (_.indexOf(this.accepted.view, m.view) === -1) {
+      throw new RangeError("mission.view should be " + (this.accepted.view.join(' or ')) + ", not " + m.view + ".");
+    }
+    if (_.indexOf(this.accepted.interpreter) === -1) {
+      throw new RangeError("mission.interpreter should be " + (this.accepted.interpreter.join(' or ')) + ", not " + m.interpreter + ".");
+    }
+    if (typeof m.continuous !== 'boolean') {
+      throw new TypeError("mission.continuous should be boolean not " + (typeof m.continuous) + ".");
+    }
+    m.initialize($('#mission')[0]);
     return language = this.language = new Language(Mission.language);
   };
 
@@ -1004,6 +1029,11 @@ module.exports = Mission = (function(_super) {
 
   Mission.prototype.reset = function() {
     return this.m.reset();
+  };
+
+  Mission.prototype.accepted = {
+    view: ['2up'],
+    interpreter: ['linear']
   };
 
   return Mission;
