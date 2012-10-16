@@ -295,6 +295,7 @@ module.exports = {
     $el = $(el);
     $el.addClass('sample');
     $el.html(template());
+    this.sprite.image = $el.find('img')[0];
     this.canvas = $el.find('canvas');
     this.ctx = this.canvas[0].getContext('2d');
     this.width = 640;
@@ -504,33 +505,19 @@ module.exports = {
   },
   animator: new Animator(false),
   drawRobot: function(geom) {
-    var ctx, rot, size, x, y;
+    var ctx, rot, size, sprite, x, y;
     size = this.size;
     ctx = this.ctx;
+    sprite = this.sprite;
     x = geom.x;
     y = geom.y;
-    rot = geom.rot;
-    ctx.fillStyle = 'blue';
-    ctx.fillRect(x * size + 1, y * size + 1, size - 1, size - 1);
-    ctx.strokeStyle = 'lime';
-    ctx.lineWidth = 2;
-    ctx.beginPath();
-    ctx.moveTo((x + 0.5) * size, (y + 0.5) * size);
-    switch (rot) {
-      case 0:
-        ctx.lineTo((x + 1) * size, (y + 0.5) * size);
-        break;
-      case 1:
-        ctx.lineTo((x + 0.5) * size, (y + 1) * size);
-        break;
-      case 2:
-        ctx.lineTo(x * size, (y + 0.5) * size);
-        break;
-      case 3:
-        ctx.lineTo((x + 0.5) * size, y * size);
+    rot = Math.round(geom.rot);
+    sprite.current = ['right', 'down', 'left', 'up'][rot % 4];
+    if ((sprite.stage += 0.2) >= sprite[sprite.current].length) {
+      sprite.stage = 0;
     }
-    ctx.stroke();
-    return ctx.lineWidth = 1;
+    console.log(sprite.image);
+    return ctx.drawImage(sprite.image, Math.floor(sprite.stage) * sprite.tile, sprite[sprite.current].row * sprite.tile, sprite.tile, sprite.tile, x * size, y * size, size, size);
   },
   drawScene: function() {
     var ctx, height, m, size, width, x, y, _i, _j, _k, _ref, _ref1, _ref2, _results;
@@ -584,7 +571,28 @@ module.exports = {
     $('#score').text("Score: " + this.score);
     return $('#remain').text("Remaining: " + this.remaining);
   },
-  map: [[2, 2, 2, 0, 0, 0, 0, 1, 2, 2, 2, 2, 1, 0, 0, 0, 0, 2, 2, 2], [2, 2, 0, 0, 0, 0, 0, 1, 0, 2, 2, 0, 1, 0, 0, 0, 0, 0, 2, 2], [2, 0, 0, 0, 2, 0, 0, 1, 0, 2, 2, 0, 1, 0, 0, 2, 0, 0, 0, 2], [0, 0, 0, 0, 2, 2, 0, 0, 0, 0, 0, 0, 0, 0, 2, 2, 0, 0, 0, 0], [0, 0, 0, 0, 2, 2, 2, 0, 0, 0, 0, 0, 0, 2, 2, 2, 0, 0, 0, 0], [0, 0, 0, 1, 1, 1, 1, 1, 0, 0, 0, 0, 1, 1, 1, 1, 1, 0, 0, 0], [2, 2, 2, 0, 0, 0, 0, 0, 0, 2, 2, 0, 0, 0, 0, 0, 0, 2, 2, 2], [2, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2, 2], [2, 0, 0, 0, 0, 2, 2, 0, 0, 2, 2, 0, 0, 2, 2, 0, 0, 0, 0, 2], [0, 0, 0, 0, 0, 1, 0, 2, 2, 0, 0, 2, 2, 0, 1, 0, 0, 0, 0, 0], [0, 2, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 2, 0], [0, 2, 0, 2, 0, 1, 0, 0, 1, 1, 1, 1, 0, 0, 1, 0, 2, 0, 2, 0], [0, 2, 0, 2, 0, 1, 2, 0, 0, 0, 0, 0, 0, 2, 1, 0, 2, 0, 2, 0], [0, 0, 0, 2, 0, 1, 2, 2, 0, 0, 0, 0, 2, 2, 1, 0, 2, 0, 0, 0], [0, 0, 0, 0, 0, 1, 2, 2, 2, 0, 0, 2, 2, 2, 1, 0, 0, 0, 0, 0]]
+  map: [[2, 2, 2, 0, 0, 0, 0, 1, 2, 2, 2, 2, 1, 0, 0, 0, 0, 2, 2, 2], [2, 2, 0, 0, 0, 0, 0, 1, 0, 2, 2, 0, 1, 0, 0, 0, 0, 0, 2, 2], [2, 0, 0, 0, 2, 0, 0, 1, 0, 2, 2, 0, 1, 0, 0, 2, 0, 0, 0, 2], [0, 0, 0, 0, 2, 2, 0, 0, 0, 0, 0, 0, 0, 0, 2, 2, 0, 0, 0, 0], [0, 0, 0, 0, 2, 2, 2, 0, 0, 0, 0, 0, 0, 2, 2, 2, 0, 0, 0, 0], [0, 0, 0, 1, 1, 1, 1, 1, 0, 0, 0, 0, 1, 1, 1, 1, 1, 0, 0, 0], [2, 2, 2, 0, 0, 0, 0, 0, 0, 2, 2, 0, 0, 0, 0, 0, 0, 2, 2, 2], [2, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2, 2], [2, 0, 0, 0, 0, 2, 2, 0, 0, 2, 2, 0, 0, 2, 2, 0, 0, 0, 0, 2], [0, 0, 0, 0, 0, 1, 0, 2, 2, 0, 0, 2, 2, 0, 1, 0, 0, 0, 0, 0], [0, 2, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 2, 0], [0, 2, 0, 2, 0, 1, 0, 0, 1, 1, 1, 1, 0, 0, 1, 0, 2, 0, 2, 0], [0, 2, 0, 2, 0, 1, 2, 0, 0, 0, 0, 0, 0, 2, 1, 0, 2, 0, 2, 0], [0, 0, 0, 2, 0, 1, 2, 2, 0, 0, 0, 0, 2, 2, 1, 0, 2, 0, 0, 0], [0, 0, 0, 0, 0, 1, 2, 2, 2, 0, 0, 2, 2, 2, 1, 0, 0, 0, 0, 0]],
+  sprite: {
+    right: {
+      row: 0,
+      length: 4
+    },
+    left: {
+      row: 1,
+      length: 4
+    },
+    up: {
+      row: 2,
+      length: 8
+    },
+    down: {
+      row: 3,
+      length: 4
+    },
+    current: 'down',
+    stage: 0,
+    tile: 32
+  }
 };
 
 }});
@@ -595,7 +603,7 @@ window.require.define({"data/missions/templates/sample": function(exports, requi
   var foundHelper, self=this;
 
 
-  return "<canvas width=\"640\" height=\"480\"></canvas>\n<h3 id=\"remain\">Remaining:</h3>\n<h3 id=\"score\">Score:</h3>";});
+  return "<canvas width=\"640\" height=\"480\"></canvas>\n<h3 id=\"remain\">Remaining:</h3>\n<h3 id=\"score\">Score:</h3>\n<img src=\"/missions/sample/ff.png\">";});
 }});
 
 window.require.define({"initialize": function(exports, require, module) {

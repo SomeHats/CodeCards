@@ -18,6 +18,8 @@ module.exports =
     $el.addClass 'sample'
     $el.html template()
 
+    @sprite.image = $el.find('img')[0]
+
     @canvas = $el.find 'canvas'
     @ctx = @canvas[0].getContext '2d'
     @width = 640
@@ -155,27 +157,26 @@ module.exports =
   drawRobot: (geom) ->
     size = @size
     ctx = @ctx
+    sprite = @sprite
 
     x = geom.x
     y = geom.y
-    rot = geom.rot
+    rot = Math.round geom.rot
 
-    ctx.fillStyle = 'blue'
-    ctx.fillRect x * size + 1, y * size + 1, size - 1, size - 1
+    sprite.current = ['right', 'down', 'left', 'up'][rot % 4];
 
-    ctx.strokeStyle = 'lime'
-    ctx.lineWidth = 2
-    ctx.beginPath()
-    ctx.moveTo (x + 0.5) * size, (y + 0.5) * size
+    if (sprite.stage += 0.2) >= sprite[sprite.current].length
+      sprite.stage = 0
 
-    switch rot
-      when 0 then ctx.lineTo (x + 1) * size, (y + 0.5) * size
-      when 1 then ctx.lineTo (x + 0.5) * size, (y + 1) * size
-      when 2 then ctx.lineTo x * size, (y + 0.5) * size
-      when 3 then ctx.lineTo (x + 0.5) * size, y * size
+    console.log sprite.image
 
-    ctx.stroke()
-    ctx.lineWidth = 1
+    ctx.drawImage sprite.image,
+      Math.floor(sprite.stage) * sprite.tile,
+      sprite[sprite.current].row * sprite.tile,
+      sprite.tile, sprite.tile,
+      x * size, y * size,
+      size, size
+    
 
   drawScene: ->
     width = @width
@@ -231,3 +232,24 @@ module.exports =
     [0,2,0,2,0,1,2,0,0,0,0,0,0,2,1,0,2,0,2,0],
     [0,0,0,2,0,1,2,2,0,0,0,0,2,2,1,0,2,0,0,0],
     [0,0,0,0,0,1,2,2,2,0,0,2,2,2,1,0,0,0,0,0]]
+
+  sprite:
+    right:
+      row: 0
+      length: 4
+
+    left: 
+      row: 1
+      length: 4
+
+    up: 
+      row: 2
+      length: 8
+
+    down: 
+      row: 3
+      length: 4
+
+    current: 'down',
+    stage: 0,
+    tile: 32
