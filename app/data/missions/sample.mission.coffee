@@ -19,6 +19,8 @@ module.exports =
     $el.html template()
 
     @sprite.image = $el.find('img')[0]
+    $el.find('img').on 'load', ->
+      _ths.reset()
 
     @canvas = $el.find 'canvas'
     @ctx = @canvas[0].getContext '2d'
@@ -39,7 +41,7 @@ module.exports =
     @displayMap = Util.clone @map
 
     @animator.reset()
-    @drawRobot x: 2, y: 2, rot: 0
+    @drawRobot x: 2, y: 2, rot: 1
 
   # run: This function is called when it is triggered by the remote. It is 
   #      passed a single string, which is made from reading the IDs from the 

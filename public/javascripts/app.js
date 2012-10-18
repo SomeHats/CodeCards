@@ -296,6 +296,9 @@ module.exports = {
     $el.addClass('sample');
     $el.html(template());
     this.sprite.image = $el.find('img')[0];
+    $el.find('img').on('load', function() {
+      return _ths.reset();
+    });
     this.canvas = $el.find('canvas');
     this.ctx = this.canvas[0].getContext('2d');
     this.width = 640;
@@ -318,7 +321,7 @@ module.exports = {
     return this.drawRobot({
       x: 2,
       y: 2,
-      rot: 0
+      rot: 1
     });
   },
   run: function(str) {

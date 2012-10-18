@@ -4144,7 +4144,7 @@ Animator = (function() {
               }
             }
             progress = (now - current.start) / current.duration;
-            if (progress > 1) {
+            if (progress >= 1) {
               progress = 1;
               current.start = null;
               this.queue.shift();
@@ -4153,16 +4153,22 @@ Animator = (function() {
               actor[property] = this.easing[current.easing](current.originals[property], current.change[property], progress);
             }
             this.clear();
-            return this.draw();
+            this.draw();
+            if (progress === 1) {
+              return this.tick();
+            }
+            break;
           case Animator.prototype.CALLBACK:
             current.callback.apply(current.context);
-            return this.queue.shift();
+            this.queue.shift();
+            return this.tick();
           case Animator.prototype.DELAY:
             if (!current.end) {
               current.end = now + current.duration;
             }
             if (now >= current.end) {
-              return this.queue.shift();
+              this.queue.shift();
+              return this.tick();
             }
         }
       } else {
