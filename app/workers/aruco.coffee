@@ -764,7 +764,7 @@ class AR.Detector
     @candidates = @findCandidates(@contours, @minSize, 0.05, 10)
     @candidates = @clockwiseCorners(@candidates)
     @candidates = @notTooNear(@candidates, 10)
-    @findMarkers @grey, @candidates, 100
+    @findMarkers @grey, @candidates, 352
 
   findCandidates: (contours, minSize, epsilon, minLength) ->
     candidates = []
