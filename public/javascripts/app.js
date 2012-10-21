@@ -519,7 +519,6 @@ module.exports = {
     if ((sprite.stage += 0.2) >= sprite[sprite.current].length) {
       sprite.stage = 0;
     }
-    console.log(sprite.image);
     return ctx.drawImage(sprite.image, Math.floor(sprite.stage) * sprite.tile, sprite[sprite.current].row * sprite.tile, sprite.tile, sprite.tile, x * size, y * size, size, size);
   },
   drawScene: function() {
@@ -1223,41 +1222,42 @@ module.exports = UserMedia = (function(_super) {
   }
 
   UserMedia.prototype.initialize = function() {
-    var error, self, success;
-    self = this;
+    var error, success, _ths;
+    _ths = this;
     success = function(stream) {
       var ctx, video;
       video = document.createElement('video');
       video.autoplay = true;
+      console.log(stream);
       if (window.webkitURL && window.webkitURL.createObjectURL) {
         video.src = window.webkitURL.createObjectURL(stream);
       } else {
+        console.log('hello');
         video.src = stream;
       }
-      self.ctx = ctx = self.el.getContext('2d');
+      $(document.body).append(video);
+      _ths.ctx = ctx = _ths.el.getContext('2d');
       return Util.on('animationFrame', function() {
-        if (!self.paused) {
+        if (!_ths.paused) {
           if (video.readyState === video.HAVE_ENOUGH_DATA) {
             ctx.drawImage(video, 0, 0, video.videoWidth, video.videoHeight);
-            if (self.el.isSetUp) {
-              self.ctx.drawImage(video, 0, 0, video.videoWidth, video.videoHeight);
-              self.imageData = self.ctx.getImageData(0, 0, self.el.width, self.el.height);
-              return self.trigger('imageData');
+            if (_ths.el.isSetUp) {
+              _ths.ctx.drawImage(video, 0, 0, video.videoWidth, video.videoHeight);
+              _ths.imageData = _ths.ctx.getImageData(0, 0, _ths.el.width, _ths.el.height);
+              return _ths.trigger('imageData');
             } else if (video.videoWidth) {
-              self.el.setAttribute('width', video.videoWidth);
-              self.el.setAttribute('height', video.videoHeight);
-              self.el.width = video.videoWidth;
-              self.el.height = video.videoHeight;
-              return self.el.isSetUp = true;
+              _ths.el.setAttribute('width', video.videoWidth);
+              _ths.el.setAttribute('height', video.videoHeight);
+              _ths.el.width = video.videoWidth;
+              _ths.el.height = video.videoHeight;
+              return _ths.el.isSetUp = true;
             }
           }
         }
       });
     };
     error = function() {
-      console.log('User Media denied :(');
-      console.log(this);
-      return console.log(self);
+      return console.log('User Media denied :(');
     };
     if (navigator.getUserMedia) {
       return navigator.getUserMedia({

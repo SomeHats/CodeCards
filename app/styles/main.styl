@@ -96,7 +96,7 @@
 
   #camview
     position fixed
-    left -640px
+    //left -640px
     top 0
     width 640px
     height 100%
@@ -116,30 +116,22 @@
       position absolute
       z-index 40
       top 50%
-      left 620px
-      width 40px
-      height 40px
-      margin-top -28px
-      outline 1px solid black
-      border 20px solid #FCF700
-      background-color black
+      left 640px
+      width 0
+      height 0
+      margin-top -25px
+      border-style solid
+      border-color transparent
+      border-width 25px
+      border-left-color black
+      border-right-width 0
       cursor pointer
-      transform rotate(45deg)
       transition all 0.3s ease
+      overflow visible
 
       &:hover
-        border-width 0px
-
-      &:before
-        content ''
-        display block
-        position absolute
-        top -25px
-        left -27px
-        background #FCF700
-        height 70px
-        width 30px
-        transform rotate(-45deg)
+        margin-top -40px
+        border-width 40px
 
   .extended #camview
     transform translateX(640px)

@@ -350,7 +350,6 @@ pre {
 }
 .main #camview {
   position: fixed;
-  left: -640px;
   top: 0;
   width: 640px;
   height: 100%;
@@ -375,42 +374,26 @@ pre {
   position: absolute;
   z-index: 40;
   top: 50%;
-  left: 620px;
-  width: 40px;
-  height: 40px;
-  margin-top: -28px;
-  outline: 1px solid #000;
-  border: 20px solid #fcf700;
-  background-color: #000;
+  left: 640px;
+  width: 0;
+  height: 0;
+  margin-top: -25px;
+  border-style: solid;
+  border-color: transparent;
+  border-width: 25px;
+  border-left-color: #000;
+  border-right-width: 0;
   cursor: pointer;
-  -webkit-transform: rotate(45deg);
-  -moz-transform: rotate(45deg);
-  -o-transform: rotate(45deg);
-  -ms-transform: rotate(45deg);
-  transform: rotate(45deg);
   -webkit-transition: all 0.3s ease;
   -moz-transition: all 0.3s ease;
   -o-transition: all 0.3s ease;
   -ms-transition: all 0.3s ease;
   transition: all 0.3s ease;
+  overflow: visible;
 }
 .main #camview .toggler:hover {
-  border-width: 0px;
-}
-.main #camview .toggler:before {
-  content: '';
-  display: block;
-  position: absolute;
-  top: -25px;
-  left: -27px;
-  background: #fcf700;
-  height: 70px;
-  width: 30px;
-  -webkit-transform: rotate(-45deg);
-  -moz-transform: rotate(-45deg);
-  -o-transform: rotate(-45deg);
-  -ms-transform: rotate(-45deg);
-  transform: rotate(-45deg);
+  margin-top: -40px;
+  border-width: 40px;
 }
 .main .extended #camview {
   -webkit-transform: translateX(640px);

@@ -170,8 +170,6 @@ module.exports =
     if (sprite.stage += 0.2) >= sprite[sprite.current].length
       sprite.stage = 0
 
-    console.log sprite.image
-
     ctx.drawImage sprite.image,
       Math.floor(sprite.stage) * sprite.tile,
       sprite[sprite.current].row * sprite.tile,

@@ -948,7 +948,7 @@ AR.Detector = (function() {
     this.candidates = this.findCandidates(this.contours, this.minSize, 0.05, 10);
     this.candidates = this.clockwiseCorners(this.candidates);
     this.candidates = this.notTooNear(this.candidates, 10);
-    return this.findMarkers(this.grey, this.candidates, 49);
+    return this.findMarkers(this.grey, this.candidates, 100);
   };
 
   Detector.prototype.findCandidates = function(contours, minSize, epsilon, minLength) {
