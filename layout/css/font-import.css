@@ -1,0 +1,29 @@
+@font-face {
+  font-family: "DIN Next";
+  font-weight: 400;
+  font-style: normal;
+  src: url("fonts/324dee78-6585-4c13-8ca3-5817cc600d84.eot?iefix") format("eot");
+}
+
+@font-face {
+  font-family: "DIN Next";
+  font-weight: 400;
+  font-style: normal;
+  src: url("fonts/324dee78-6585-4c13-8ca3-5817cc600d84.eot?iefix");
+  src: url("fonts/4bf0ead4-e61b-4992-832b-6ff05828d99f.woff") format("woff"), url("fonts/73713a0b-8f6a-4c4e-b8a8-7cf238e632f6.ttf") format("truetype"), url("fonts/b90b6bdf-15e2-4544-9fe0-92c79fff0ecd.svg#b90b6bdf-15e2-4544-9fe0-92c79fff0ecd") format("svg");
+}
+
+@font-face {
+  font-family: "DIN Next";
+  font-weight: 300;
+  font-style: normal;
+  src: url("fonts/3e0b2cd7-9657-438b-b4af-e04122e8f1f7.eot?iefix") format("eot");
+}
+
+@font-face {
+  font-family: "DIN Next";
+  font-weight: 300;
+  font-style: normal;
+  src: url("fonts/3e0b2cd7-9657-438b-b4af-e04122e8f1f7.eot?iefix");
+  src: url("fonts/bc176270-17fa-4c78-a343-9fe52824e501.woff") format("woff"), url("fonts/3516f91d-ac48-42cd-acfe-1be691152cc4.ttf") format("truetype"), url("fonts/d1b1e866-a411-42ba-8f75-72bf28e23694.svg#d1b1e866-a411-42ba-8f75-72bf28e23694") format("svg");
+}
