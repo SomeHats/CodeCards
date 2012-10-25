@@ -284,7 +284,6 @@ module.exports = {
 window.require.define({"data/missions/sample.mission": function(exports, require, module) {
   
 module.exports = {
-  view: 'fullscreen',
   language: {
     robot: 1
   },
@@ -605,7 +604,7 @@ window.require.define({"data/missions/templates/sample": function(exports, requi
   var foundHelper, self=this;
 
 
-  return "<canvas width=\"640\" height=\"480\"></canvas>\n<h3 id=\"remain\">Remaining:</h3>\n<h3 id=\"score\">Score:</h3>\n<img src=\"/missions/sample/ff.png\">";});
+  return "<canvas width=\"640\" height=\"480\"></canvas>\n<h3 id=\"remain\">Remaining:</h3>\n<h3 id=\"score\">Score:</h3>\n<img style=\"display: none;\" src=\"/missions/sample/ff.png\">";});
 }});
 
 window.require.define({"initialize": function(exports, require, module) {
