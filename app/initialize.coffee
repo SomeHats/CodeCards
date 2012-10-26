@@ -1,8 +1,8 @@
 require 'lib/util'
 Router = require 'router'
 
-Loader = require 'loader'
-Main = require 'main'
+Home = require 'home'
+CodeCards = require 'CodeCards/CodeCards'
 Remote = require 'remote/remote'
 
 module.exports = class App extends Backbone.View
@@ -13,28 +13,29 @@ module.exports = class App extends Backbone.View
     @$body = $ document.body
     
     router = new Router
-    _this = @
+    _ths = @
 
-    router.on 'route:root', -> _this.start(Loader)
-    router.on 'route:main', -> _this.start(Main)
-    router.on 'route:remote', -> _this.start(Remote)
+    router.on 'route:root', -> _ths.start Home, 'home'
+    router.on 'route:codecards', -> _ths.start CodeCards, 'codeCards'
+    router.on 'route:remote', -> _ths.start Remote, 'remote'
 
     Backbone.history.start()
 
     window.router = router
 
-  start: (page) ->
+  start: (page, name) ->
     @$body.addClass 'transitioning'
     window.scrollTo 0, 0
     @unrenderCurrent ->
-      @current = new page el: @cont
+      @[name] = new page el: @cont
+      @current = @[name]
       @renderCurrent()
 
   renderCurrent: ->
     @cont.addClass @current.name
-    _this = @
+    _ths = @
     @current.render ->
-      _this.$body.removeClass 'transitioning'
+      _ths.$body.removeClass 'transitioning'
 
   unrenderCurrent: (callback= -> null) ->
     @current.unrender ->

@@ -86,6 +86,181 @@ if (isWorker) {
 }
 
 
+window.require.define({"CodeCards/CodeCards": function(exports, require, module) {
+  var App, Interpreter, Mission, Remote, Stats, template,
+  __hasProp = {}.hasOwnProperty,
+  __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
+
+Interpreter = require('interpreter');
+
+Remote = require('interpreter/remote');
+
+Stats = require('interpreter/stats');
+
+Mission = require('interpreter/mission');
+
+template = require('templates/main');
+
+module.exports = App = (function(_super) {
+
+  __extends(App, _super);
+
+  function App() {
+    return App.__super__.constructor.apply(this, arguments);
+  }
+
+  App.prototype.start = function() {
+    var $code, mission, _ths;
+    $code = $('code');
+    _ths = this;
+    this.interpreter = new Interpreter({
+      el: this.$('#canvas')
+    });
+    this.interpreter.on('error', function(error) {
+      if (_ths.play) {
+        $('#alert').html('Error: ' + error);
+        _ths.stats.tick();
+        return _ths.remote.send('tick', {
+          fps: _ths.stats.fps,
+          interval: _ths.stats.interval,
+          status: 'error',
+          message: error
+        });
+      }
+    });
+    this.interpreter.on('success', function(results) {
+      var code, result, _i, _len;
+      if (_ths.play) {
+        $('#alert').html('Running...');
+        _ths.stats.tick();
+        code = "";
+        for (_i = 0, _len = results.length; _i < _len; _i++) {
+          result = results[_i];
+          code += language.words[result];
+        }
+        code = js_beautify(code);
+        $code.html(code);
+        _ths.remote.send('tick', {
+          fps: _ths.stats.fps,
+          interval: _ths.stats.interval,
+          status: 'success',
+          code: code
+        });
+        _ths.code = code;
+        return _ths.trigger('code', code);
+      }
+    });
+    this.mission = mission = new Mission('sample');
+    return this.on('change:play', function() {
+      this.interpreter.UserMedia.paused = !this.play;
+      if (!this.play) {
+        this.mission.run(this.code);
+        return $('#alert').html('Paused.');
+      } else {
+        return this.mission.reset();
+      }
+    });
+  };
+
+  App.prototype.setupRemote = function() {
+    var remote, _ths;
+    _ths = this;
+    remote = this.remote = new Remote({
+      el: this.$('.pin-entry')
+    });
+    return remote.on('change-setting', function(data) {
+      if (data.concerns) {
+        _ths[data.concerns][data.setting] = data.value;
+        return _ths[data.concerns].trigger('change:' + data.setting);
+      } else {
+        _ths[data.setting] = data.value;
+        return _ths.trigger('change:' + data.setting);
+      }
+    });
+  };
+
+  App.prototype.interact = function() {
+    var sec, toggler;
+    sec = this.$('section');
+    toggler = this.$('.toggler');
+    toggler.on('click', function() {
+      return sec.toggleClass('extended');
+    });
+    return this.on('change:expandcamera', function() {
+      if (this.expandcamera) {
+        return sec.addClass('extended');
+      } else {
+        return sec.removeClass('extended');
+      }
+    });
+  };
+
+  App.prototype.render = function(callback, ctx) {
+    var nav, _ths;
+    if (callback == null) {
+      callback = (function() {
+        return null;
+      });
+    }
+    if (ctx == null) {
+      ctx = this;
+    }
+    _ths = this;
+    this.$el.html(template());
+    this.stats = new Stats;
+    this.interact();
+    this.setupRemote();
+    nav = this.$('nav');
+    return setTimeout(function() {
+      nav.animate({
+        opacity: 1,
+        translateY: '0px'
+      }, {
+        easing: 'ease-out',
+        duration: 250,
+        complete: function() {
+          return callback.apply(ctx);
+        }
+      });
+      return _ths.start();
+    }, 25);
+  };
+
+  App.prototype.unrender = function(callback, ctx) {
+    var nav;
+    if (callback == null) {
+      callback = (function() {
+        return null;
+      });
+    }
+    if (ctx == null) {
+      ctx = this;
+    }
+    nav = this.$('nav');
+    return nav.animate({
+      opacity: 0,
+      translateY: '70px'
+    }, {
+      easing: 'ease-in',
+      duration: 250,
+      complete: function() {
+        return callback.apply(ctx);
+      }
+    });
+  };
+
+  App.prototype.name = 'main';
+
+  App.prototype.play = true;
+
+  App.prototype.code = "Util.alert('No code available.');";
+
+  return App;
+
+})(Backbone.View);
+
+}});
+
 window.require.define({"data/languages/js.lang": function(exports, require, module) {
   
 module.exports = {
@@ -619,8 +794,123 @@ window.require.define({"data/missions/templates/sample": function(exports, requi
   return "<canvas width=\"640\" height=\"480\"></canvas>\n<h3 id=\"remain\">Remaining:</h3>\n<h3 id=\"score\">Score:</h3>\n<img class=\"ff\" style=\"display: none;\" src=\"/missions/sample/ff.png\">\n<img class=\"cake\" style=\"display: none;\" src=\"/missions/sample/cake.png\">";});
 }});
 
+window.require.define({"home": function(exports, require, module) {
+  var Loader, template,
+  __hasProp = {}.hasOwnProperty,
+  __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
+
+template = require('templates/home');
+
+module.exports = Loader = (function(_super) {
+
+  __extends(Loader, _super);
+
+  function Loader() {
+    return Loader.__super__.constructor.apply(this, arguments);
+  }
+
+  Loader.prototype.initialize = function() {};
+
+  Loader.prototype.render = function(callback, ctx) {
+    var header, icons;
+    if (callback == null) {
+      callback = (function() {
+        return null;
+      });
+    }
+    if (ctx == null) {
+      ctx = this;
+    }
+    this.$el.html(template());
+    header = this.$('header');
+    icons = this.$('.icon');
+    return setTimeout(function() {
+      header.animate({
+        opacity: 1,
+        translateY: '0px'
+      }, {
+        easing: 'ease'
+      });
+      return icons.each(function(index) {
+        if (index === 1) {
+          return $(this).animate({
+            opacity: 1,
+            translateY: '0px'
+          }, {
+            easing: 'ease',
+            delay: index * 150 + 100,
+            complete: function() {
+              return callback.apply(ctx);
+            }
+          });
+        } else {
+          return $(this).animate({
+            opacity: 1,
+            translateY: '0px'
+          }, {
+            easing: 'ease',
+            delay: index * 150 + 100
+          });
+        }
+      });
+    }, 25);
+  };
+
+  Loader.prototype.unrender = function(callback, ctx) {
+    var header, icons;
+    if (callback == null) {
+      callback = (function() {
+        return null;
+      });
+    }
+    if (ctx == null) {
+      ctx = this;
+    }
+    header = this.$('header');
+    icons = this.$('.icon');
+    header.animate({
+      opacity: 0,
+      translateY: '-200px'
+    }, {
+      duration: 300,
+      easing: 'ease-in'
+    });
+    return icons.each(function(index) {
+      if (index === 1) {
+        return $(this).animate({
+          opacity: 0,
+          translateY: '150px'
+        }, {
+          easing: 'ease-in',
+          delay: index * 150,
+          duration: 300,
+          complete: function() {
+            return callback.apply(ctx);
+          }
+        });
+      } else {
+        return $(this).animate({
+          opacity: 0,
+          translateY: '150px'
+        }, {
+          easing: 'ease-in',
+          delay: index * 150,
+          duration: 300
+        });
+      }
+    });
+  };
+
+  Loader.prototype.name = 'loader';
+
+  return Loader;
+
+})(Backbone.View);
+
+}});
+
 window.require.define({"initialize": function(exports, require, module) {
-  var App, Loader, Main, Remote, Router,
+  var App, CodeCards, Home, Remote, Router,
   __hasProp = {}.hasOwnProperty,
   __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
 
@@ -628,9 +918,9 @@ require('lib/util');
 
 Router = require('router');
 
-Loader = require('loader');
+Home = require('home');
 
-Main = require('main');
+CodeCards = require('CodeCards/CodeCards');
 
 Remote = require('remote/remote');
 
@@ -643,42 +933,43 @@ module.exports = App = (function(_super) {
   }
 
   App.prototype.initialize = function() {
-    var router, _this;
+    var router, _ths;
     window.Util.animationFrame();
     this.cont = $('#container');
     this.$body = $(document.body);
     router = new Router;
-    _this = this;
+    _ths = this;
     router.on('route:root', function() {
-      return _this.start(Loader);
+      return _ths.start(Home, 'home');
     });
-    router.on('route:main', function() {
-      return _this.start(Main);
+    router.on('route:codecards', function() {
+      return _ths.start(CodeCards, 'codeCards');
     });
     router.on('route:remote', function() {
-      return _this.start(Remote);
+      return _ths.start(Remote, 'remote');
     });
     Backbone.history.start();
     return window.router = router;
   };
 
-  App.prototype.start = function(page) {
+  App.prototype.start = function(page, name) {
     this.$body.addClass('transitioning');
     window.scrollTo(0, 0);
     return this.unrenderCurrent(function() {
-      this.current = new page({
+      this[name] = new page({
         el: this.cont
       });
+      this.current = this[name];
       return this.renderCurrent();
     });
   };
 
   App.prototype.renderCurrent = function() {
-    var _this;
+    var _ths;
     this.cont.addClass(this.current.name);
-    _this = this;
+    _ths = this;
     return this.current.render(function() {
-      return _this.$body.removeClass('transitioning');
+      return _ths.$body.removeClass('transitioning');
     });
   };
 
@@ -1502,121 +1793,6 @@ module.exports = WebWorker = (function(_super) {
 
 }});
 
-window.require.define({"loader": function(exports, require, module) {
-  var Loader, template,
-  __hasProp = {}.hasOwnProperty,
-  __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
-
-template = require('templates/loader');
-
-module.exports = Loader = (function(_super) {
-
-  __extends(Loader, _super);
-
-  function Loader() {
-    return Loader.__super__.constructor.apply(this, arguments);
-  }
-
-  Loader.prototype.initialize = function() {};
-
-  Loader.prototype.render = function(callback, ctx) {
-    var header, icons;
-    if (callback == null) {
-      callback = (function() {
-        return null;
-      });
-    }
-    if (ctx == null) {
-      ctx = this;
-    }
-    this.$el.html(template());
-    header = this.$('header');
-    icons = this.$('.icon');
-    return setTimeout(function() {
-      header.animate({
-        opacity: 1,
-        translateY: '0px'
-      }, {
-        easing: 'ease'
-      });
-      return icons.each(function(index) {
-        if (index === 1) {
-          return $(this).animate({
-            opacity: 1,
-            translateY: '0px'
-          }, {
-            easing: 'ease',
-            delay: index * 150 + 100,
-            complete: function() {
-              return callback.apply(ctx);
-            }
-          });
-        } else {
-          return $(this).animate({
-            opacity: 1,
-            translateY: '0px'
-          }, {
-            easing: 'ease',
-            delay: index * 150 + 100
-          });
-        }
-      });
-    }, 25);
-  };
-
-  Loader.prototype.unrender = function(callback, ctx) {
-    var header, icons;
-    if (callback == null) {
-      callback = (function() {
-        return null;
-      });
-    }
-    if (ctx == null) {
-      ctx = this;
-    }
-    header = this.$('header');
-    icons = this.$('.icon');
-    header.animate({
-      opacity: 0,
-      translateY: '-200px'
-    }, {
-      duration: 300,
-      easing: 'ease-in'
-    });
-    return icons.each(function(index) {
-      if (index === 1) {
-        return $(this).animate({
-          opacity: 0,
-          translateY: '150px'
-        }, {
-          easing: 'ease-in',
-          delay: index * 150,
-          duration: 300,
-          complete: function() {
-            return callback.apply(ctx);
-          }
-        });
-      } else {
-        return $(this).animate({
-          opacity: 0,
-          translateY: '150px'
-        }, {
-          easing: 'ease-in',
-          delay: index * 150,
-          duration: 300
-        });
-      }
-    });
-  };
-
-  Loader.prototype.name = 'loader';
-
-  return Loader;
-
-})(Backbone.View);
-
-}});
-
 window.require.define({"main": function(exports, require, module) {
   var App, Interpreter, Mission, Remote, Stats, template,
   __hasProp = {}.hasOwnProperty,
@@ -2044,7 +2220,7 @@ module.exports = Router = (function(_super) {
 
   Router.prototype.routes = {
     "": "root",
-    "CodeCards": "main",
+    "CodeCards": "codecards",
     "remote": "remote",
     ":404": "root"
   };
@@ -2055,7 +2231,7 @@ module.exports = Router = (function(_super) {
 
 }});
 
-window.require.define({"templates/loader": function(exports, require, module) {
+window.require.define({"templates/home": function(exports, require, module) {
   module.exports = Handlebars.template(function (Handlebars,depth0,helpers,partials,data) {
   helpers = helpers || Handlebars.helpers;
   var foundHelper, self=this;

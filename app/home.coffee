@@ -1,4 +1,4 @@
-template = require 'templates/loader'
+template = require 'templates/home'
 
 module.exports = class Loader extends Backbone.View
   initialize: ->
