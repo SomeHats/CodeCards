@@ -1,4 +1,5 @@
 module.exports =
+  view: 'fullscreen'
 
   # language: which language definitions are needed for your mission? Give them
   #           in the form name: version
@@ -17,9 +18,16 @@ module.exports =
     $el.addClass 'sample'
     $el.html template()
 
-    @sprite.image = $el.find('img')[0]
-    $el.find('img').on 'load', ->
+    ff = $el.find '.ff'
+    ff.on 'load', ->
       _ths.reset()
+    @sprite.player.image = ff[0]
+
+    cake = $el.find '.cake'
+    cake.on 'load', ->
+      _ths.reset()
+    @sprite.cake.image = cake[0]
+
 
     @canvas = $el.find 'canvas'
     @ctx = @canvas[0].getContext '2d'
@@ -40,7 +48,7 @@ module.exports =
     @displayMap = Util.clone @map
 
     @animator.reset()
-    @drawRobot x: 2, y: 2, rot: 1
+    @drawPlayer x: 2, y: 2, rot: 1
 
   # run: This function is called when it is triggered by the remote. It is 
   #      passed a single string, which is made from reading the IDs from the 
@@ -63,7 +71,7 @@ module.exports =
 
     animator = @animator
 
-    robot =
+    player =
       look: (direction = forward) ->
         tile = empty
         direction = (@direction + direction) % 4
@@ -98,7 +106,7 @@ module.exports =
           gameMap[change.y][change.x] isnt 1
             @pos.x = change.x
             @pos.y = change.y
-            animator.animate 'robot', 200, change
+            animator.animate 'player', 200, change
 
             if gameMap[change.y][change.x] is cake
               gameMap[change.y][change.x] = empty
@@ -123,7 +131,7 @@ module.exports =
 
       turn: (direction) ->
         direction = (@direction + direction) % 4
-        animator.animate 'robot', 200, rot: direction
+        animator.animate 'player', 200, rot: direction
         @direction = direction
 
       direction: 0
@@ -131,14 +139,15 @@ module.exports =
         x: 2
         y: 2
 
-    animator.register 'robot',
-      x: robot.pos.x
-      y: robot.pos.y
+    animator.register 'player',
+      x: player.pos.x
+      y: player.pos.y
       rot: 0
-      draw: (geom) -> _ths.drawRobot geom
+      draw: (geom) -> _ths.drawPlayer geom
 
     # I feel dirty.
     success = yes
+    str = str.replace 'robot', 'player'
     try
       eval "var fn = function () {\n #{str} \n}"
     catch e
@@ -155,10 +164,10 @@ module.exports =
   # Other functions and objects, used with the three above
   animator: new Animator false
 
-  drawRobot: (geom) ->
+  drawPlayer: (geom) ->
     size = @size
     ctx = @ctx
-    sprite = @sprite
+    sprite = @sprite.player
 
     x = geom.x
     y = geom.y
@@ -183,7 +192,11 @@ module.exports =
     size = @size
     ctx = @ctx
     m = @displayMap or @map
+    cakeSprite = @sprite.cake
+    size = @size
 
+    if (cakeSprite.stage += 0.2) >= cakeSprite[cakeSprite.current].length
+      cakeSprite.stage = 0
 
     ctx.fillStyle = 'white'
     ctx.fillRect 0, 0, width, height
@@ -206,10 +219,15 @@ module.exports =
         if m[y][x]
           if m[y][x] is 1
             ctx.fillStyle = 'orange'
-          if m[y][x] is 2
-            ctx.fillStyle = 'lime'
-          if m[y][x] isnt 3
             ctx.fillRect x*size + 1, y * size + 1, size-1, size-1
+          if m[y][x] is 2
+            ctx.drawImage cakeSprite.image,
+              Math.floor(cakeSprite.stage) * cakeSprite.tile,
+              cakeSprite[cakeSprite.current].row * cakeSprite.tile,
+              cakeSprite.tile, cakeSprite.tile,
+              x * size, y * size,
+              size, size
+    null
 
   updateScore: ->
     $('#score').text "Score: #{@score}"
@@ -233,22 +251,32 @@ module.exports =
     [0,0,0,0,0,1,2,2,2,0,0,2,2,2,1,0,0,0,0,0]]
 
   sprite:
-    right:
-      row: 0
-      length: 4
+    player:
+      right:
+        row: 0
+        length: 4
 
-    left: 
-      row: 1
-      length: 4
+      left: 
+        row: 1
+        length: 4
 
-    up: 
-      row: 2
-      length: 8
+      up: 
+        row: 2
+        length: 8
 
-    down: 
-      row: 3
-      length: 4
+      down: 
+        row: 3
+        length: 4
 
-    current: 'down',
-    stage: 0,
-    tile: 32
+      current: 'down'
+      stage: 0
+      tile: 32
+
+    cake:
+      cake:
+        row: 0
+        length: 3
+
+      current: 'cake'
+      stage: 0
+      tile: 32

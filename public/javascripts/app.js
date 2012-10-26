@@ -284,20 +284,27 @@ module.exports = {
 window.require.define({"data/missions/sample.mission": function(exports, require, module) {
   
 module.exports = {
+  view: 'fullscreen',
   language: {
     robot: 1
   },
   initialize: function(el) {
-    var $el, template, _ths;
+    var $el, cake, ff, template, _ths;
     _ths = this;
     template = require('data/missions/templates/sample');
     $el = $(el);
     $el.addClass('sample');
     $el.html(template());
-    this.sprite.image = $el.find('img')[0];
-    $el.find('img').on('load', function() {
+    ff = $el.find('.ff');
+    ff.on('load', function() {
       return _ths.reset();
     });
+    this.sprite.player.image = ff[0];
+    cake = $el.find('.cake');
+    cake.on('load', function() {
+      return _ths.reset();
+    });
+    this.sprite.cake.image = cake[0];
     this.canvas = $el.find('canvas');
     this.ctx = this.canvas[0].getContext('2d');
     this.width = 640;
@@ -317,14 +324,14 @@ module.exports = {
     this.updateScore();
     this.displayMap = Util.clone(this.map);
     this.animator.reset();
-    return this.drawRobot({
+    return this.drawPlayer({
       x: 2,
       y: 2,
       rot: 1
     });
   },
   run: function(str) {
-    var animator, back, cake, displayMap, empty, forward, gameMap, i, left, right, robot, success, wall, _i, _ref, _results, _ths;
+    var animator, back, cake, displayMap, empty, forward, gameMap, i, left, player, right, success, wall, _i, _ref, _results, _ths;
     this.reset();
     _ths = this;
     gameMap = Util.clone(this.map);
@@ -337,7 +344,7 @@ module.exports = {
     right = 1;
     left = 3;
     animator = this.animator;
-    robot = {
+    player = {
       look: function(direction) {
         var change, tile;
         if (direction == null) {
@@ -417,7 +424,7 @@ module.exports = {
         if (gameMap[change.y] !== void 0 && gameMap[change.y][change.x] !== void 0 && gameMap[change.y][change.x] !== 1) {
           this.pos.x = change.x;
           this.pos.y = change.y;
-          animator.animate('robot', 200, change);
+          animator.animate('player', 200, change);
           if (gameMap[change.y][change.x] === cake) {
             gameMap[change.y][change.x] = empty;
             return animator.callback(function() {
@@ -467,7 +474,7 @@ module.exports = {
       },
       turn: function(direction) {
         direction = (this.direction + direction) % 4;
-        animator.animate('robot', 200, {
+        animator.animate('player', 200, {
           rot: direction
         });
         return this.direction = direction;
@@ -478,15 +485,16 @@ module.exports = {
         y: 2
       }
     };
-    animator.register('robot', {
-      x: robot.pos.x,
-      y: robot.pos.y,
+    animator.register('player', {
+      x: player.pos.x,
+      y: player.pos.y,
       rot: 0,
       draw: function(geom) {
-        return _ths.drawRobot(geom);
+        return _ths.drawPlayer(geom);
       }
     });
     success = true;
+    str = str.replace('robot', 'player');
     try {
       eval("var fn = function () {\n " + str + " \n}");
     } catch (e) {
@@ -506,11 +514,11 @@ module.exports = {
     }
   },
   animator: new Animator(false),
-  drawRobot: function(geom) {
+  drawPlayer: function(geom) {
     var ctx, rot, size, sprite, x, y;
     size = this.size;
     ctx = this.ctx;
-    sprite = this.sprite;
+    sprite = this.sprite.player;
     x = geom.x;
     y = geom.y;
     rot = Math.round(geom.rot);
@@ -521,12 +529,17 @@ module.exports = {
     return ctx.drawImage(sprite.image, Math.floor(sprite.stage) * sprite.tile, sprite[sprite.current].row * sprite.tile, sprite.tile, sprite.tile, x * size, y * size, size, size);
   },
   drawScene: function() {
-    var ctx, height, m, size, width, x, y, _i, _j, _k, _ref, _ref1, _ref2, _results;
+    var cakeSprite, ctx, height, m, size, width, x, y, _i, _j, _k, _l, _ref, _ref1, _ref2, _ref3;
     width = this.width;
     height = this.height;
     size = this.size;
     ctx = this.ctx;
     m = this.displayMap || this.map;
+    cakeSprite = this.sprite.cake;
+    size = this.size;
+    if ((cakeSprite.stage += 0.2) >= cakeSprite[cakeSprite.current].length) {
+      cakeSprite.stage = 0;
+    }
     ctx.fillStyle = 'white';
     ctx.fillRect(0, 0, width, height);
     ctx.strokeStyle = 'rgba(0, 0, 0, 0.3)';
@@ -541,32 +554,20 @@ module.exports = {
       ctx.lineTo(width, y * size + 0.5);
     }
     ctx.stroke();
-    _results = [];
     for (y = _k = 0, _ref2 = m.length; 0 <= _ref2 ? _k < _ref2 : _k > _ref2; y = 0 <= _ref2 ? ++_k : --_k) {
-      _results.push((function() {
-        var _l, _ref3, _results1;
-        _results1 = [];
-        for (x = _l = 0, _ref3 = m[y].length; 0 <= _ref3 ? _l < _ref3 : _l > _ref3; x = 0 <= _ref3 ? ++_l : --_l) {
-          if (m[y][x]) {
-            if (m[y][x] === 1) {
-              ctx.fillStyle = 'orange';
-            }
-            if (m[y][x] === 2) {
-              ctx.fillStyle = 'lime';
-            }
-            if (m[y][x] !== 3) {
-              _results1.push(ctx.fillRect(x * size + 1, y * size + 1, size - 1, size - 1));
-            } else {
-              _results1.push(void 0);
-            }
-          } else {
-            _results1.push(void 0);
+      for (x = _l = 0, _ref3 = m[y].length; 0 <= _ref3 ? _l < _ref3 : _l > _ref3; x = 0 <= _ref3 ? ++_l : --_l) {
+        if (m[y][x]) {
+          if (m[y][x] === 1) {
+            ctx.fillStyle = 'orange';
+            ctx.fillRect(x * size + 1, y * size + 1, size - 1, size - 1);
+          }
+          if (m[y][x] === 2) {
+            ctx.drawImage(cakeSprite.image, Math.floor(cakeSprite.stage) * cakeSprite.tile, cakeSprite[cakeSprite.current].row * cakeSprite.tile, cakeSprite.tile, cakeSprite.tile, x * size, y * size, size, size);
           }
         }
-        return _results1;
-      })());
+      }
     }
-    return _results;
+    return null;
   },
   updateScore: function() {
     $('#score').text("Score: " + this.score);
@@ -574,25 +575,36 @@ module.exports = {
   },
   map: [[2, 2, 2, 0, 0, 0, 0, 1, 2, 2, 2, 2, 1, 0, 0, 0, 0, 2, 2, 2], [2, 2, 0, 0, 0, 0, 0, 1, 0, 2, 2, 0, 1, 0, 0, 0, 0, 0, 2, 2], [2, 0, 0, 0, 2, 0, 0, 1, 0, 2, 2, 0, 1, 0, 0, 2, 0, 0, 0, 2], [0, 0, 0, 0, 2, 2, 0, 0, 0, 0, 0, 0, 0, 0, 2, 2, 0, 0, 0, 0], [0, 0, 0, 0, 2, 2, 2, 0, 0, 0, 0, 0, 0, 2, 2, 2, 0, 0, 0, 0], [0, 0, 0, 1, 1, 1, 1, 1, 0, 0, 0, 0, 1, 1, 1, 1, 1, 0, 0, 0], [2, 2, 2, 0, 0, 0, 0, 0, 0, 2, 2, 0, 0, 0, 0, 0, 0, 2, 2, 2], [2, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2, 2], [2, 0, 0, 0, 0, 2, 2, 0, 0, 2, 2, 0, 0, 2, 2, 0, 0, 0, 0, 2], [0, 0, 0, 0, 0, 1, 0, 2, 2, 0, 0, 2, 2, 0, 1, 0, 0, 0, 0, 0], [0, 2, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 2, 0], [0, 2, 0, 2, 0, 1, 0, 0, 1, 1, 1, 1, 0, 0, 1, 0, 2, 0, 2, 0], [0, 2, 0, 2, 0, 1, 2, 0, 0, 0, 0, 0, 0, 2, 1, 0, 2, 0, 2, 0], [0, 0, 0, 2, 0, 1, 2, 2, 0, 0, 0, 0, 2, 2, 1, 0, 2, 0, 0, 0], [0, 0, 0, 0, 0, 1, 2, 2, 2, 0, 0, 2, 2, 2, 1, 0, 0, 0, 0, 0]],
   sprite: {
-    right: {
-      row: 0,
-      length: 4
+    player: {
+      right: {
+        row: 0,
+        length: 4
+      },
+      left: {
+        row: 1,
+        length: 4
+      },
+      up: {
+        row: 2,
+        length: 8
+      },
+      down: {
+        row: 3,
+        length: 4
+      },
+      current: 'down',
+      stage: 0,
+      tile: 32
     },
-    left: {
-      row: 1,
-      length: 4
-    },
-    up: {
-      row: 2,
-      length: 8
-    },
-    down: {
-      row: 3,
-      length: 4
-    },
-    current: 'down',
-    stage: 0,
-    tile: 32
+    cake: {
+      cake: {
+        row: 0,
+        length: 3
+      },
+      current: 'cake',
+      stage: 0,
+      tile: 32
+    }
   }
 };
 
@@ -604,7 +616,7 @@ window.require.define({"data/missions/templates/sample": function(exports, requi
   var foundHelper, self=this;
 
 
-  return "<canvas width=\"640\" height=\"480\"></canvas>\n<h3 id=\"remain\">Remaining:</h3>\n<h3 id=\"score\">Score:</h3>\n<img style=\"display: none;\" src=\"/missions/sample/ff.png\">";});
+  return "<canvas width=\"640\" height=\"480\"></canvas>\n<h3 id=\"remain\">Remaining:</h3>\n<h3 id=\"score\">Score:</h3>\n<img class=\"ff\" style=\"display: none;\" src=\"/missions/sample/ff.png\">\n<img class=\"cake\" style=\"display: none;\" src=\"/missions/sample/cake.png\">";});
 }});
 
 window.require.define({"initialize": function(exports, require, module) {
