@@ -263,21 +263,80 @@ module.exports = {
   name: "fox",
   version: 0,
   "extends": {
-    "js.math": 0
+    "friendly.js": 0
   },
   words: {
-    500: "fox",
-    501: ".look(",
-    504: ".touch(",
-    502: ".move(",
-    503: ".turn(",
+    500: {
+      word: "fox",
+      img: "http://i.imgur.com/yQTeT.png"
+    },
+    501: {
+      word: ".look(",
+      print: "look"
+    },
+    504: {
+      word: ".touch(",
+      print: "touch"
+    },
+    502: {
+      word: ".move(",
+      print: "move"
+    },
+    503: {
+      word: ".turn(",
+      print: "turn"
+    },
     510: "forward",
     511: "back",
     512: "left",
     513: "right",
     520: "empty",
-    521: "wall",
-    522: "cake"
+    521: {
+      word: "wall",
+      img: "http://i.imgur.com/CtDV3.png"
+    },
+    522: {
+      word: "cake",
+      img: "http://i.imgur.com/oUI2s.png"
+    },
+    525: {
+      word: "goblin",
+      img: "http://i.imgur.com/Tv4Kg.png"
+    }
+  }
+};
+
+}});
+
+window.require.define({"data/languages/friendly.js.lang": function(exports, require, module) {
+  
+module.exports = {
+  name: 'friendly.js',
+  version: 0,
+  "extends": {
+    'js': 0
+  },
+  words: {
+    38: {
+      word: ' === ',
+      print: 'is'
+    },
+    39: {
+      word: ' !== ',
+      print: "isn't"
+    },
+    44: {
+      word: ' && ',
+      print: 'and'
+    },
+    45: {
+      word: ' || ',
+      print: 'or'
+    },
+    46: {
+      word: ' ! ',
+      print: 'not'
+    }
   }
 };
 
