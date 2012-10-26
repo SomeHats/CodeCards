@@ -8,11 +8,13 @@ module.exports = class UserMedia extends Backbone.View
 
       console.log stream
 
-      if window.webkitURL and window.webkitURL.createObjectURL
-        video.src = window.webkitURL.createObjectURL stream
+      if navigator.mozGetUserMedia
+        video.mozSrcObject = stream
       else
-        console.log 'hello'
-        video.src = stream
+        vendorURL = window.URL or window.webkitURL
+        video.src = vendorURL.createObjectURL stream
+
+      video.play();
 
       $(document.body).append video  
       _ths.ctx = ctx = _ths.el.getContext '2d'

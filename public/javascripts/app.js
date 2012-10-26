@@ -1224,16 +1224,17 @@ module.exports = UserMedia = (function(_super) {
     var error, success, _ths;
     _ths = this;
     success = function(stream) {
-      var ctx, video;
+      var ctx, vendorURL, video;
       video = document.createElement('video');
       video.autoplay = true;
       console.log(stream);
-      if (window.webkitURL && window.webkitURL.createObjectURL) {
-        video.src = window.webkitURL.createObjectURL(stream);
+      if (navigator.mozGetUserMedia) {
+        video.mozSrcObject = stream;
       } else {
-        console.log('hello');
-        video.src = stream;
+        vendorURL = window.URL || window.webkitURL;
+        video.src = vendorURL.createObjectURL(stream);
       }
+      video.play();
       $(document.body).append(video);
       _ths.ctx = ctx = _ths.el.getContext('2d');
       return Util.on('animationFrame', function() {
