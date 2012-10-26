@@ -18,7 +18,7 @@ module.exports = class Loader extends Backbone.View
       }
 
       icons.each (index) ->
-        if index is 2
+        if index is 1
           $(this).animate {
             opacity: 1
             translateY: '0px'
@@ -49,7 +49,7 @@ module.exports = class Loader extends Backbone.View
     }
 
     icons.each (index) ->
-        if index is 2
+        if index is 1
           $(this).animate {
             opacity: 0
             translateY: '150px'

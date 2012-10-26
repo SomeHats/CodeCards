@@ -542,7 +542,7 @@ module.exports = {
     }
     ctx.fillStyle = 'white';
     ctx.fillRect(0, 0, width, height);
-    ctx.strokeStyle = 'rgba(0, 0, 0, 0.3)';
+    ctx.strokeStyle = 'rgba(0, 0, 0, 0.1)';
     ctx.beginPath();
     x = y = 0;
     for (x = _i = 0, _ref = width / size; 0 <= _ref ? _i <= _ref : _i >= _ref; x = 0 <= _ref ? ++_i : --_i) {
@@ -559,7 +559,7 @@ module.exports = {
         if (m[y][x]) {
           if (m[y][x] === 1) {
             ctx.fillStyle = 'orange';
-            ctx.fillRect(x * size + 1, y * size + 1, size - 1, size - 1);
+            ctx.fillRect(x * size + 1, y * size + 1, size, size);
           }
           if (m[y][x] === 2) {
             ctx.drawImage(cakeSprite.image, Math.floor(cakeSprite.stage) * cakeSprite.tile, cakeSprite[cakeSprite.current].row * cakeSprite.tile, cakeSprite.tile, cakeSprite.tile, x * size, y * size, size, size);
@@ -1540,7 +1540,7 @@ module.exports = Loader = (function(_super) {
         easing: 'ease'
       });
       return icons.each(function(index) {
-        if (index === 2) {
+        if (index === 1) {
           return $(this).animate({
             opacity: 1,
             translateY: '0px'
@@ -1584,7 +1584,7 @@ module.exports = Loader = (function(_super) {
       easing: 'ease-in'
     });
     return icons.each(function(index) {
-      if (index === 2) {
+      if (index === 1) {
         return $(this).animate({
           opacity: 0,
           translateY: '150px'
@@ -2061,7 +2061,7 @@ window.require.define({"templates/loader": function(exports, require, module) {
   var foundHelper, self=this;
 
 
-  return "<header class=\"logo\">\n  <h3 class=\"decoded\">Decoded</h3>\n  <h1><span>{</span>code<span>}</span>cards</h1>\n</header>\n\n<a class=\"icon source\" href=\"#CodeCards\">\n  <img src=\"/svg/source-code.svg\">\n  <h3>CodeCards</h3>\n</a>\n\n<a class=\"icon remote\" href=\"#remote\">\n  <img src=\"/svg/remote.svg\">\n  <h3>Remote Control</h3>\n</a>\n\n<a class=\"icon design\" href=\"#designer\">\n  <img src=\"/svg/design.svg\">\n  <h3>Scenario Designer</h3>\n</a>";});
+  return "<header class=\"logo\">\n  <h3 class=\"decoded\">Decoded</h3>\n  <h1><span>{</span>code<span>}</span>cards</h1>\n</header>\n\n<a class=\"icon source\" href=\"#CodeCards\">\n  <img src=\"/svg/source-code.svg\">\n  <h3>CodeCards</h3>\n</a>\n\n<a class=\"icon remote\" href=\"#remote\">\n  <img src=\"/svg/remote.svg\">\n  <h3>Remote Control</h3>\n</a>";});
 }});
 
 window.require.define({"templates/main": function(exports, require, module) {

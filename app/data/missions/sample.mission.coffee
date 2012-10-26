@@ -201,7 +201,7 @@ module.exports =
     ctx.fillStyle = 'white'
     ctx.fillRect 0, 0, width, height
 
-    ctx.strokeStyle = 'rgba(0, 0, 0, 0.3)'
+    ctx.strokeStyle = 'rgba(0, 0, 0, 0.1)'
     ctx.beginPath()
     x = y = 0
     for x in [0..width/size]
@@ -219,7 +219,7 @@ module.exports =
         if m[y][x]
           if m[y][x] is 1
             ctx.fillStyle = 'orange'
-            ctx.fillRect x*size + 1, y * size + 1, size-1, size-1
+            ctx.fillRect x*size + 1, y * size + 1, size, size
           if m[y][x] is 2
             ctx.drawImage cakeSprite.image,
               Math.floor(cakeSprite.stage) * cakeSprite.tile,
