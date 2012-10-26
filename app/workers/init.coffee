@@ -57,11 +57,13 @@ module.exports = class Init extends require('workers/worker')
         msg: 'No start marker found!'
         markers: markers
       @ready()
+      return null
     else if current.length > 1
       @send 'error', 
         msg: 'Too many start markers visible'
         markers: markers
-      @ready
+      @ready()
+      return null
     else
       current = current[0]
       current.colour = 'magenta'

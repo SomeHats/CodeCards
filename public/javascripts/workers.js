@@ -1609,13 +1609,15 @@ module.exports = Init = (function(_super) {
         msg: 'No start marker found!',
         markers: markers
       });
-      return this.ready();
+      this.ready();
+      return null;
     } else if (current.length > 1) {
       this.send('error', {
         msg: 'Too many start markers visible',
         markers: markers
       });
-      return this.ready;
+      this.ready();
+      return null;
     } else {
       current = current[0];
       current.colour = 'magenta';
