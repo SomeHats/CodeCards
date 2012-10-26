@@ -87,7 +87,7 @@ if (isWorker) {
 
 
 window.require.define({"CodeCards/CodeCards": function(exports, require, module) {
-  var App, Interpreter, Mission, Remote, Stats, template,
+  var CodeCards, Interpreter, Mission, Remote, Stats, template,
   __hasProp = {}.hasOwnProperty,
   __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
 
@@ -101,15 +101,15 @@ Mission = require('interpreter/mission');
 
 template = require('templates/main');
 
-module.exports = App = (function(_super) {
+module.exports = CodeCards = (function(_super) {
 
-  __extends(App, _super);
+  __extends(CodeCards, _super);
 
-  function App() {
-    return App.__super__.constructor.apply(this, arguments);
+  function CodeCards() {
+    return CodeCards.__super__.constructor.apply(this, arguments);
   }
 
-  App.prototype.start = function() {
+  CodeCards.prototype.start = function() {
     var $code, mission, _ths;
     $code = $('code');
     _ths = this;
@@ -129,15 +129,11 @@ module.exports = App = (function(_super) {
       }
     });
     this.interpreter.on('success', function(results) {
-      var code, result, _i, _len;
+      var code;
       if (_ths.play) {
         $('#alert').html('Running...');
         _ths.stats.tick();
-        code = "";
-        for (_i = 0, _len = results.length; _i < _len; _i++) {
-          result = results[_i];
-          code += language.words[result];
-        }
+        code = mission.language.build(results);
         code = js_beautify(code);
         $code.html(code);
         _ths.remote.send('tick', {
@@ -150,7 +146,7 @@ module.exports = App = (function(_super) {
         return _ths.trigger('code', code);
       }
     });
-    this.mission = mission = new Mission('sample');
+    this.mission = mission = new Mission('fox');
     return this.on('change:play', function() {
       this.interpreter.UserMedia.paused = !this.play;
       if (!this.play) {
@@ -162,7 +158,7 @@ module.exports = App = (function(_super) {
     });
   };
 
-  App.prototype.setupRemote = function() {
+  CodeCards.prototype.setupRemote = function() {
     var remote, _ths;
     _ths = this;
     remote = this.remote = new Remote({
@@ -179,7 +175,7 @@ module.exports = App = (function(_super) {
     });
   };
 
-  App.prototype.interact = function() {
+  CodeCards.prototype.interact = function() {
     var sec, toggler;
     sec = this.$('section');
     toggler = this.$('.toggler');
@@ -195,7 +191,7 @@ module.exports = App = (function(_super) {
     });
   };
 
-  App.prototype.render = function(callback, ctx) {
+  CodeCards.prototype.render = function(callback, ctx) {
     var nav, _ths;
     if (callback == null) {
       callback = (function() {
@@ -226,7 +222,7 @@ module.exports = App = (function(_super) {
     }, 25);
   };
 
-  App.prototype.unrender = function(callback, ctx) {
+  CodeCards.prototype.unrender = function(callback, ctx) {
     var nav;
     if (callback == null) {
       callback = (function() {
@@ -249,15 +245,41 @@ module.exports = App = (function(_super) {
     });
   };
 
-  App.prototype.name = 'main';
+  CodeCards.prototype.name = 'main';
 
-  App.prototype.play = true;
+  CodeCards.prototype.play = true;
 
-  App.prototype.code = "Util.alert('No code available.');";
+  CodeCards.prototype.code = "Util.alert('No code available.');";
 
-  return App;
+  return CodeCards;
 
 })(Backbone.View);
+
+}});
+
+window.require.define({"data/languages/fox.lang": function(exports, require, module) {
+  
+module.exports = {
+  name: "fox",
+  version: 0,
+  "extends": {
+    "js.math": 0
+  },
+  words: {
+    500: "fox",
+    501: ".look(",
+    504: ".touch(",
+    502: ".move(",
+    503: ".turn(",
+    510: "forward",
+    511: "back",
+    512: "left",
+    513: "right",
+    520: "empty",
+    521: "wall",
+    522: "cake"
+  }
+};
 
 }});
 
@@ -408,32 +430,6 @@ module.exports = {
 
 }});
 
-window.require.define({"data/languages/robot.lang": function(exports, require, module) {
-  
-module.exports = {
-  name: "robot",
-  version: 0,
-  "extends": {
-    "js.math": 0
-  },
-  words: {
-    500: "robot",
-    501: ".look(",
-    504: ".touch(",
-    502: ".move(",
-    503: ".turn(",
-    510: "forward",
-    511: "back",
-    512: "left",
-    513: "right",
-    520: "empty",
-    521: "wall",
-    522: "cake"
-  }
-};
-
-}});
-
 window.require.define({"data/languages/sample.lang": function(exports, require, module) {
   
 module.exports = {
@@ -456,12 +452,12 @@ module.exports = {
 
 }});
 
-window.require.define({"data/missions/sample.mission": function(exports, require, module) {
+window.require.define({"data/missions/fox.mission": function(exports, require, module) {
   
 module.exports = {
   view: 'fullscreen',
   language: {
-    robot: 1
+    fox: 0
   },
   initialize: function(el) {
     var $el, cake, ff, template, _ths;
@@ -506,7 +502,7 @@ module.exports = {
     });
   },
   run: function(str) {
-    var animator, back, cake, displayMap, empty, forward, gameMap, i, left, player, right, success, wall, _i, _ref, _results, _ths;
+    var animator, back, cake, displayMap, empty, forward, fox, gameMap, i, left, player, right, success, wall, _i, _ref, _results, _ths;
     this.reset();
     _ths = this;
     gameMap = Util.clone(this.map);
@@ -519,7 +515,7 @@ module.exports = {
     right = 1;
     left = 3;
     animator = this.animator;
-    player = {
+    fox = player = {
       look: function(direction) {
         var change, tile;
         if (direction == null) {
@@ -669,7 +665,6 @@ module.exports = {
       }
     });
     success = true;
-    str = str.replace('robot', 'player');
     try {
       eval("var fn = function () {\n " + str + " \n}");
     } catch (e) {
@@ -1069,7 +1064,7 @@ module.exports = Interpreter = (function(_super) {
       if (worker.ready) {
         data = {
           img: this.UserMedia.imageData,
-          blend: this.blend,
+          blend: 1,
           contrast: this.contrast,
           brightness: this.brightness,
           sharpen: this.sharpen,
@@ -1282,6 +1277,22 @@ module.exports = Language = (function() {
     return _results;
   };
 
+  Language.prototype.build = function(source) {
+    var item, out, word, words, _i, _len;
+    out = "";
+    words = this.words;
+    for (_i = 0, _len = source.length; _i < _len; _i++) {
+      item = source[_i];
+      word = words[item];
+      if (typeof word === 'string') {
+        out += word;
+      } else {
+        out += word.word;
+      }
+    }
+    return out;
+  };
+
   return Language;
 
 })();
@@ -1338,7 +1349,7 @@ module.exports = Mission = (function(_super) {
       $('#mainview').addClass('view-fullscreen');
     }
     m.initialize($('#mission')[0]);
-    return language = this.language = new Language(Mission.language);
+    return language = this.language = new Language(m.language);
   };
 
   Mission.prototype.run = function(data) {
@@ -1790,181 +1801,6 @@ module.exports = WebWorker = (function(_super) {
   return WebWorker;
 
 })(Backbone.Model);
-
-}});
-
-window.require.define({"main": function(exports, require, module) {
-  var App, Interpreter, Mission, Remote, Stats, template,
-  __hasProp = {}.hasOwnProperty,
-  __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
-
-Interpreter = require('interpreter');
-
-Remote = require('interpreter/remote');
-
-Stats = require('interpreter/stats');
-
-Mission = require('interpreter/mission');
-
-template = require('templates/main');
-
-module.exports = App = (function(_super) {
-
-  __extends(App, _super);
-
-  function App() {
-    return App.__super__.constructor.apply(this, arguments);
-  }
-
-  App.prototype.start = function() {
-    var $code, mission, _ths;
-    $code = $('code');
-    _ths = this;
-    this.interpreter = new Interpreter({
-      el: this.$('#canvas')
-    });
-    this.interpreter.on('error', function(error) {
-      if (_ths.play) {
-        $('#alert').html('Error: ' + error);
-        _ths.stats.tick();
-        return _ths.remote.send('tick', {
-          fps: _ths.stats.fps,
-          interval: _ths.stats.interval,
-          status: 'error',
-          message: error
-        });
-      }
-    });
-    this.interpreter.on('success', function(results) {
-      var code, result, _i, _len;
-      if (_ths.play) {
-        $('#alert').html('Running...');
-        _ths.stats.tick();
-        code = "";
-        for (_i = 0, _len = results.length; _i < _len; _i++) {
-          result = results[_i];
-          code += language.words[result];
-        }
-        code = js_beautify(code);
-        $code.html(code);
-        _ths.remote.send('tick', {
-          fps: _ths.stats.fps,
-          interval: _ths.stats.interval,
-          status: 'success',
-          code: code
-        });
-        _ths.code = code;
-        return _ths.trigger('code', code);
-      }
-    });
-    this.mission = mission = new Mission('sample');
-    return this.on('change:play', function() {
-      this.interpreter.UserMedia.paused = !this.play;
-      if (!this.play) {
-        this.mission.run(this.code);
-        return $('#alert').html('Paused.');
-      } else {
-        return this.mission.reset();
-      }
-    });
-  };
-
-  App.prototype.setupRemote = function() {
-    var remote, _ths;
-    _ths = this;
-    remote = this.remote = new Remote({
-      el: this.$('.pin-entry')
-    });
-    return remote.on('change-setting', function(data) {
-      if (data.concerns) {
-        _ths[data.concerns][data.setting] = data.value;
-        return _ths[data.concerns].trigger('change:' + data.setting);
-      } else {
-        _ths[data.setting] = data.value;
-        return _ths.trigger('change:' + data.setting);
-      }
-    });
-  };
-
-  App.prototype.interact = function() {
-    var sec, toggler;
-    sec = this.$('section');
-    toggler = this.$('.toggler');
-    toggler.on('click', function() {
-      return sec.toggleClass('extended');
-    });
-    return this.on('change:expandcamera', function() {
-      if (this.expandcamera) {
-        return sec.addClass('extended');
-      } else {
-        return sec.removeClass('extended');
-      }
-    });
-  };
-
-  App.prototype.render = function(callback, ctx) {
-    var nav, _ths;
-    if (callback == null) {
-      callback = (function() {
-        return null;
-      });
-    }
-    if (ctx == null) {
-      ctx = this;
-    }
-    _ths = this;
-    this.$el.html(template());
-    this.stats = new Stats;
-    this.interact();
-    this.setupRemote();
-    nav = this.$('nav');
-    return setTimeout(function() {
-      nav.animate({
-        opacity: 1,
-        translateY: '0px'
-      }, {
-        easing: 'ease-out',
-        duration: 250,
-        complete: function() {
-          return callback.apply(ctx);
-        }
-      });
-      return _ths.start();
-    }, 25);
-  };
-
-  App.prototype.unrender = function(callback, ctx) {
-    var nav;
-    if (callback == null) {
-      callback = (function() {
-        return null;
-      });
-    }
-    if (ctx == null) {
-      ctx = this;
-    }
-    nav = this.$('nav');
-    return nav.animate({
-      opacity: 0,
-      translateY: '70px'
-    }, {
-      easing: 'ease-in',
-      duration: 250,
-      complete: function() {
-        return callback.apply(ctx);
-      }
-    });
-  };
-
-  App.prototype.name = 'main';
-
-  App.prototype.play = true;
-
-  App.prototype.code = "Util.alert('No code available.');";
-
-  return App;
-
-})(Backbone.View);
 
 }});
 

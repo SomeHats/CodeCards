@@ -7,7 +7,7 @@ Mission = require 'interpreter/mission'
 
 template = require 'templates/main'
 
-module.exports = class App extends Backbone.View
+module.exports = class CodeCards extends Backbone.View
   start: ->
     $code = $ 'code'
     _ths = @
@@ -43,9 +43,8 @@ module.exports = class App extends Backbone.View
         # Update stats
         _ths.stats.tick()
 
-        # Composite the results into a string, according to the language file
-        code = ""
-        code += language.words[result] for result in results
+        # Build the results into a string, according to the language file
+        code = mission.language.build results
         
         # Make it look nice and render it to the page
         code = js_beautify code
@@ -63,7 +62,7 @@ module.exports = class App extends Backbone.View
         _ths.trigger 'code', code
 
     # Load up the mission. TODO:- missions other than sample
-    @mission = mission = new Mission 'sample'
+    @mission = mission = new Mission 'fox'
 
     # Run the mission when needed
     @on 'change:play', ->

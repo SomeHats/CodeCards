@@ -4,7 +4,7 @@ module.exports =
   # language: which language definitions are needed for your mission? Give them
   #           in the form name: version
   language: 
-    robot: 1
+    fox: 0
 
   # initialize: a function to be called when setting up your mission on screen.
   #             The function is passed a single DOM element. Put any HTML inside
@@ -71,7 +71,7 @@ module.exports =
 
     animator = @animator
 
-    player =
+    fox = player =
       look: (direction = forward) ->
         tile = empty
         direction = (@direction + direction) % 4
@@ -147,7 +147,6 @@ module.exports =
 
     # I feel dirty.
     success = yes
-    str = str.replace 'robot', 'player'
     try
       eval "var fn = function () {\n #{str} \n}"
     catch e

@@ -29,7 +29,7 @@ module.exports = class Interpreter extends Backbone.View
       if worker.ready
         data = 
           img: @UserMedia.imageData
-          blend: @blend
+          blend: 1
           contrast: @contrast
           brightness: @brightness
           sharpen: @sharpen

@@ -24,3 +24,16 @@ module.exports = class Language
   merge: (target, source) ->
     for key of source
       target[key] = source[key]
+
+  build: (source) ->
+    out = ""
+    words = @words
+
+    for item in source
+      word = words[item]
+      if typeof word is 'string'
+        out += word
+      else
+        out += word.word
+
+    out

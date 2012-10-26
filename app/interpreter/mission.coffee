@@ -37,7 +37,7 @@ module.exports = class Mission extends Backbone.View
 
     m.initialize $('#mission')[0]
 
-    language = @language = new Language Mission.language
+    language = @language = new Language m.language
 
   run: (data) ->
     @m.run data
