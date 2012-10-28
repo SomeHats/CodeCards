@@ -339,40 +339,71 @@ module.exports = {
   words: {
     500: {
       word: "fox",
-      img: "http://i.imgur.com/yQTeT.png"
+      img: "http://i.imgur.com/yQTeT.png",
+      group: "objects"
     },
     501: {
       word: ".look(",
-      print: "look"
+      print: "look",
+      group: "methods",
+      follows: 500
     },
     504: {
       word: ".touch(",
-      print: "touch"
+      print: "touch",
+      group: "methods",
+      follows: 500
     },
     502: {
       word: ".move(",
-      print: "move"
+      print: "move",
+      group: "methods",
+      follows: 500
     },
     503: {
       word: ".turn(",
-      print: "turn"
+      print: "turn",
+      group: "methods",
+      follows: 500
     },
-    510: "forward",
-    511: "back",
-    512: "left",
-    513: "right",
-    520: "empty",
+    510: {
+      word: "forward",
+      group: "arguments",
+      follows: "methods"
+    },
+    511: {
+      word: "back",
+      group: "arguments",
+      follows: "methods"
+    },
+    512: {
+      word: "left",
+      group: "arguments",
+      follows: "methods"
+    },
+    513: {
+      word: "right",
+      group: "arguments",
+      follows: "methods"
+    },
+    520: {
+      word: "empty",
+      group: "objects"
+    },
     521: {
       word: "wall",
-      img: "http://i.imgur.com/CtDV3.png"
+      img: "http://i.imgur.com/CtDV3.png",
+      group: "objects"
     },
     522: {
       word: "cake",
-      img: "http://i.imgur.com/oUI2s.png"
+      img: "http://i.imgur.com/oUI2s.png",
+      group: "objects"
     },
     525: {
       word: "goblin",
-      img: "http://i.imgur.com/Tv4Kg.png"
+      img: "http://i.imgur.com/Tv4Kg.png",
+      group: "objects"
     }
   }
 };
