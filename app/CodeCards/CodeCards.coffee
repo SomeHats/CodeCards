@@ -6,10 +6,14 @@ Stats = require 'lib/stats'
 Mission = require 'CodeCards/mission'
 
 template = require 'templates/CodeCards'
+codeTemplate = require 'CodeCards/templates/code'
+
+Handlebars.registerHelper 'safe', (html) ->
+  return new Handlebars.SafeString(html)
 
 module.exports = class CodeCards extends Backbone.View
   start: ->
-    $code = $ 'code'
+    $code = $ '#code>div'
     _ths = @
 
     # The interpreter object is responsible for retrieving and processing a stream from
@@ -21,7 +25,7 @@ module.exports = class CodeCards extends Backbone.View
     @interpreter.on 'error', (error) ->
       if _ths.play
         # Hacky displaying of error message
-        $('#alert').html 'Error: ' + error
+        $('#code-status').html 'Error: ' + error
 
         # Update stats
         _ths.stats.tick()
@@ -38,7 +42,7 @@ module.exports = class CodeCards extends Backbone.View
     @interpreter.on 'success', (results)->
       if _ths.play
         # Show a hacky success message
-        $('#alert').html 'Running...'
+        $('#code-status').html 'Running...'
 
         # Update stats
         _ths.stats.tick()
@@ -46,20 +50,19 @@ module.exports = class CodeCards extends Backbone.View
         # Build the results into a string, according to the language file
         code = mission.language.build results
         
-        # Make it look nice and render it to the page
-        code = js_beautify code
-        $code.html code
+        # Render the code and errors
+        $code.html codeTemplate code
 
         # Send stats and code to the remote control
         _ths.controller.send 'tick',
           fps: _ths.stats.fps
           interval: _ths.stats.interval
           status: 'success'
-          code: code
+          code: code.html
 
         # Tell the world
-        _ths.code = code
-        _ths.trigger 'code', code
+        _ths.code = code.string
+        _ths.trigger 'code', code.string
 
     # Load up the mission. TODO:- missions other than sample
     @mission = mission = new Mission 'fox'

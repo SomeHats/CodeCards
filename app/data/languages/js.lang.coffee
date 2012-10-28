@@ -2,6 +2,7 @@
 
 module.exports =
   name: 'js'
+  format: 'js_beautify'
   version: 0
   words:
     # Brackets

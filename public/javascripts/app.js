@@ -87,7 +87,7 @@ if (isWorker) {
 
 
 window.require.define({"CodeCards/CodeCards": function(exports, require, module) {
-  var CodeCards, Controller, Interpreter, Mission, Stats, template,
+  var CodeCards, Controller, Interpreter, Mission, Stats, codeTemplate, template,
   __hasProp = {}.hasOwnProperty,
   __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
 
@@ -101,6 +101,12 @@ Mission = require('CodeCards/mission');
 
 template = require('templates/CodeCards');
 
+codeTemplate = require('CodeCards/templates/code');
+
+Handlebars.registerHelper('safe', function(html) {
+  return new Handlebars.SafeString(html);
+});
+
 module.exports = CodeCards = (function(_super) {
 
   __extends(CodeCards, _super);
@@ -111,14 +117,14 @@ module.exports = CodeCards = (function(_super) {
 
   CodeCards.prototype.start = function() {
     var $code, mission, _ths;
-    $code = $('code');
+    $code = $('#code>div');
     _ths = this;
     this.interpreter = new Interpreter({
       el: this.$('#canvas')
     });
     this.interpreter.on('error', function(error) {
       if (_ths.play) {
-        $('#alert').html('Error: ' + error);
+        $('#code-status').html('Error: ' + error);
         _ths.stats.tick();
         return _ths.controller.send('tick', {
           fps: _ths.stats.fps,
@@ -131,19 +137,18 @@ module.exports = CodeCards = (function(_super) {
     this.interpreter.on('success', function(results) {
       var code;
       if (_ths.play) {
-        $('#alert').html('Running...');
+        $('#code-status').html('Running...');
         _ths.stats.tick();
         code = mission.language.build(results);
-        code = js_beautify(code);
-        $code.html(code);
+        $code.html(codeTemplate(code));
         _ths.controller.send('tick', {
           fps: _ths.stats.fps,
           interval: _ths.stats.interval,
           status: 'success',
-          code: code
+          code: code.html
         });
-        _ths.code = code;
-        return _ths.trigger('code', code);
+        _ths.code = code.string;
+        return _ths.trigger('code', code.string);
       }
     });
     this.mission = mission = new Mission('fox');
@@ -486,6 +491,7 @@ module.exports = Language = (function() {
       }
     };
     this.replace = [];
+    this.format = [];
     for (key in lang) {
       try {
         language = require('data/languages/' + key + '.lang');
@@ -499,9 +505,19 @@ module.exports = Language = (function() {
         if (language.replace) {
           this.replace = this.replace.concat(language.replace || []);
         }
+        if (language.format) {
+          if (typeof language.format === 'string') {
+            this.format.push(language.format);
+          } else if (typeof language.format === 'object') {
+            this.format = this.format.concat(language.format);
+          } else {
+            throw new TypeError("format can only be string or array, not " + (typeof language.format));
+          }
+        }
         if (language["extends"]) {
           language = new Language(language["extends"], false);
           this.replace = this.replace.concat(language.replace || []);
+          this.format = this.format.concat(language.format);
         }
         this.merge(this.words, language.words);
         this.merge(this.words, words);
@@ -523,24 +539,66 @@ module.exports = Language = (function() {
   };
 
   Language.prototype.build = function(source) {
-    var item, out, words, _i, _len;
+    var addError, css, eList, err, errors, format, html, i, item, line, lineList, lineNo, out, replace, tag, word, words, _i, _j, _k, _l, _len, _len1, _len2, _len3, _m, _ref, _ref1, _ref2;
+    tag = 'div';
     out = "";
     words = this.words;
     for (_i = 0, _len = source.length; _i < _len; _i++) {
       item = source[_i];
       out += this.getWord(item);
     }
-    return this.process(out);
-  };
-
-  Language.prototype.process = function(str) {
-    var replace, _i, _len, _ref;
     _ref = this.replace;
-    for (_i = 0, _len = _ref.length; _i < _len; _i++) {
-      replace = _ref[_i];
-      str = str.replace(replace.replace, replace["with"]);
+    for (_j = 0, _len1 = _ref.length; _j < _len1; _j++) {
+      replace = _ref[_j];
+      out = out.replace(replace.replace, replace["with"]);
     }
-    return str;
+    _ref1 = this.format;
+    for (_k = 0, _len2 = _ref1.length; _k < _len2; _k++) {
+      format = _ref1[_k];
+      if (this.formatters[format]) {
+        out = this.formatters[format](out);
+      }
+    }
+    lineNo = 0;
+    errors = [];
+    eList = {};
+    addError = function(msg) {
+      eList[lineNo] = true;
+      return errors.push("" + lineNo + ": " + msg);
+    };
+    for (i = _l = 0, _ref2 = source.length; 0 <= _ref2 ? _l <= _ref2 : _l >= _ref2; i = 0 <= _ref2 ? ++_l : --_l) {
+      if (source[i] === 0) {
+        lineNo += 1;
+      } else {
+        word = words[source[i]];
+        if (word && word.follows) {
+          err = false;
+          if (typeof word.follows === 'number' && source[i - 1] !== word.follows) {
+            addError("\"" + (this.getWord(source[i]).trim()) + "\" must follow \"" + (this.getWord(word.follows).trim()) + "\"");
+          } else if (typeof word.follows === 'string' && (typeof words[source[i - 1]].group === 'undefined' || words[source[i - 1]].group !== word.follows)) {
+            addError("\"" + (this.getWord(source[i]).trim()) + "\" can't follow \"" + (this.getWord(source[i - 1]).trim()) + "\"");
+          }
+        }
+      }
+    }
+    html = "";
+    lineNo = 0;
+    lineList = out.split("\n");
+    for (_m = 0, _len3 = lineList.length; _m < _len3; _m++) {
+      line = lineList[_m];
+      lineNo++;
+      css = eList[lineNo] ? 'line error' : 'line';
+      html += "<" + tag + " class=\"" + css + "\" data-line=\"" + lineNo + "\">" + line + "</" + tag + ">";
+    }
+    console.log({
+      string: out,
+      html: html
+    });
+    return {
+      string: out,
+      html: html,
+      errors: errors
+    };
   };
 
   Language.prototype.getWord = function(key) {
@@ -634,6 +692,10 @@ module.exports = Language = (function() {
     return str = str.replace('#', '\\#');
   };
 
+  Language.prototype.formatters = {
+    js_beautify: js_beautify
+  };
+
   return Language;
 
 })();
@@ -710,6 +772,59 @@ module.exports = Mission = (function(_super) {
 
 })(Backbone.View);
 
+}});
+
+window.require.define({"CodeCards/templates/code": function(exports, require, module) {
+  module.exports = Handlebars.template(function (Handlebars,depth0,helpers,partials,data) {
+  helpers = helpers || Handlebars.helpers;
+  var buffer = "", stack1, stack2, foundHelper, tmp1, self=this, functionType="function", helperMissing=helpers.helperMissing, undef=void 0, escapeExpression=this.escapeExpression;
+
+function program1(depth0,data) {
+  
+  
+  return "\n    <h4>Errors:</h4>\n  ";}
+
+function program3(depth0,data) {
+  
+  var buffer = "", stack1;
+  buffer += "\n    <div>";
+  stack1 = depth0;
+  if(typeof stack1 === functionType) { stack1 = stack1.call(depth0, { hash: {} }); }
+  else if(stack1=== undef) { stack1 = helperMissing.call(depth0, "this", { hash: {} }); }
+  buffer += escapeExpression(stack1) + "</div>\n  ";
+  return buffer;}
+
+  buffer += "<pre><code>";
+  foundHelper = helpers.html;
+  stack1 = foundHelper || depth0.html;
+  foundHelper = helpers.safe;
+  stack2 = foundHelper || depth0.safe;
+  if(typeof stack2 === functionType) { stack1 = stack2.call(depth0, stack1, { hash: {} }); }
+  else if(stack2=== undef) { stack1 = helperMissing.call(depth0, "safe", stack1, { hash: {} }); }
+  else { stack1 = stack2; }
+  buffer += escapeExpression(stack1) + "</code></pre>\n<div class=\"errors\">\n  ";
+  foundHelper = helpers.errors;
+  stack1 = foundHelper || depth0.errors;
+  stack1 = (stack1 === null || stack1 === undefined || stack1 === false ? stack1 : stack1.length);
+  stack2 = helpers['if'];
+  tmp1 = self.program(1, program1, data);
+  tmp1.hash = {};
+  tmp1.fn = tmp1;
+  tmp1.inverse = self.noop;
+  stack1 = stack2.call(depth0, stack1, tmp1);
+  if(stack1 || stack1 === 0) { buffer += stack1; }
+  buffer += "\n  ";
+  foundHelper = helpers.errors;
+  stack1 = foundHelper || depth0.errors;
+  stack2 = helpers.each;
+  tmp1 = self.program(3, program3, data);
+  tmp1.hash = {};
+  tmp1.fn = tmp1;
+  tmp1.inverse = self.noop;
+  stack1 = stack2.call(depth0, stack1, tmp1);
+  if(stack1 || stack1 === 0) { buffer += stack1; }
+  buffer += "\n</div>";
+  return buffer;});
 }});
 
 window.require.define({"CodeCards/templates/controller": function(exports, require, module) {
@@ -921,6 +1036,7 @@ window.require.define({"data/languages/js.lang": function(exports, require, modu
   
 module.exports = {
   name: 'js',
+  format: 'js_beautify',
   version: 0,
   words: {
     1: ")",
@@ -2275,7 +2391,7 @@ window.require.define({"templates/CodeCards": function(exports, require, module)
   var foundHelper, self=this;
 
 
-  return "<nav>\n  <a class=\"logo\" href=\"#\">\n    <h3 class=\"decoded\">Decoded</h3>\n    <h1><span>{</span>code<span>}</span>cards</h1>\n  </a>\n  <section class=\"pin-entry hide\"></section>\n</nav>\n<section>\n  <div id=\"camview\">\n    <div>\n      <canvas id=\"canvas\" width=\"640\" height=\"480\"></canvas>\n    </div>\n    <a class=\"toggler\"></a>\n  </div>\n  <div id=\"mainview\">\n    <div id=\"code\">\n      <h3 id=\"alert\">Please allow your webcam...</h3>\n      <pre><code class=\"language-js\"></code></pre>\n    </div>\n    <div id=\"mission\">\n    </div>\n  </div>\n</section>";});
+  return "<nav>\n  <a class=\"logo\" href=\"#\">\n    <h3 class=\"decoded\">Decoded</h3>\n    <h1><span>{</span>code<span>}</span>cards</h1>\n  </a>\n  <section class=\"pin-entry hide\"></section>\n</nav>\n<section>\n  <div id=\"camview\">\n    <div>\n      <canvas id=\"canvas\" width=\"640\" height=\"480\"></canvas>\n    </div>\n    <a class=\"toggler\"></a>\n  </div>\n  <div id=\"mainview\">\n    <div id=\"code\">\n      <h3 id=\"code-status\">Please allow your webcam...</h3>\n      <div></div>\n    </div>\n    <div id=\"mission\">\n    </div>\n  </div>\n</section>";});
 }});
 
 window.require.define({"templates/home": function(exports, require, module) {

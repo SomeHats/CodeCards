@@ -419,7 +419,6 @@ pre {
 .main #mainview > div {
   overflow: hidden;
   overflow-y: auto;
-  padding: 40px;
   padding-bottom: 90px;
   width: 50%;
   height: 100%;
@@ -461,6 +460,7 @@ pre {
 .main #code {
   z-index: 20;
   font-size: 28px;
+  padding: 0;
 }
 .main #code h3 {
   position: absolute;
@@ -477,12 +477,42 @@ pre {
   -webkit-box-shadow: 0 0 20px rgba(0,0,0,0.2);
   box-shadow: 0 0 20px rgba(0,0,0,0.2);
 }
+.main #code h4 {
+  margin-bottom: 0;
+}
+.main #code .line {
+  padding-right: 30px;
+  margin-bottom: -1px;
+}
+.main #code .line:before {
+  content: attr(data-line) ": ";
+  display: inline-block;
+  width: 50px;
+  position: relative;
+  margin-right: 10px;
+  color: rgba(0,0,0,0.4);
+  font-size: 0.8em;
+  text-align: right;
+}
+.main #code .error {
+  text-shadow: 0 0 3px #f00;
+  background-color: rgba(255,0,0,0.3);
+  border: 1px solid #f00;
+  border-left: none;
+  border-right: none;
+  font-style: italic;
+}
+.main #code .errors {
+  padding: 60px;
+  padding-top: 0;
+}
 .main .view-fullscreen #code {
   display: none;
 }
 .main #mission {
   z-index: 10;
   left: 50%;
+  padding: 20px;
 }
 .main .view-fullscreen #mission {
   margin: 0;

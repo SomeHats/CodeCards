@@ -1,0 +1,9 @@
+<pre><code>{{safe html}}</code></pre>
+<div class="errors">
+  {{#if errors/length}}
+    <h4>Errors:</h4>
+  {{/if}}
+  {{#each errors}}
+    <div>{{this}}</div>
+  {{/each}}
+</div>

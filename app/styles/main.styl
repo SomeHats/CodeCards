@@ -148,7 +148,6 @@
     > div
       overflow hidden
       overflow-y auto
-      padding 40px
       padding-bottom 90px
       width 50%
       height 100%
@@ -173,6 +172,7 @@
   #code
     z-index 20
     font-size 28px
+    padding 0
 
     h3
       position absolute
@@ -188,12 +188,43 @@
       border-top 1px solid black
       box-shadow 0 0 20px rgba(0, 0, 0, 0.2)
 
+    h4
+      margin-bottom 0
+
+    .line
+      padding-right 30px
+      margin-bottom -1px
+
+      &:before
+        content: attr(data-line) ": "
+        display inline-block
+        width 50px
+        position relative
+        //top -21px
+        margin-right 10px
+        color rgba(0, 0, 0, 0.4)
+        font-size 0.8em
+        text-align right
+
+    .error
+      text-shadow 0 0 3px red
+      background-color rgba(255, 0, 0, 0.3);
+      border 1px solid red
+      border-left none
+      border-right none
+      font-style italic
+
+    .errors
+      padding 60px
+      padding-top 0
+
   .view-fullscreen #code
     display none
 
   #mission
     z-index 10
     left 50%
+    padding 20px
 
   .view-fullscreen #mission
     margin 0

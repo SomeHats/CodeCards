@@ -5,6 +5,7 @@ module.exports = class Language
       print: "Start ->"
 
     @replace = []
+    @format = []
 
     for key of lang
       # Do we have the correct language file?
@@ -17,14 +18,30 @@ module.exports = class Language
         console.log 'Wrong language version for ' + key, language.version, lang[key]
       else
         # Success. We've found the correct language file
-
         words = language.words
+
+        # Get local replaces
         if language.replace
           @replace = @replace.concat(language.replace or [])
 
+        # Get local formatting
+        if language.format
+          if typeof language.format is 'string'
+            @format.push language.format
+          else if typeof language.format is 'object'
+            @format = @format.concat language.format
+          else
+            throw new TypeError "format can only be string or array, not #{typeof language.format}"
+
+        # Extend language
         if language.extends
           language = new Language language.extends, no
-          @replace = @replace.concat(language.replace or [])
+
+          # Extended replaces
+          @replace = @replace.concat language.replace or []
+
+          # Extended formatting
+          @format = @format.concat language.format
 
         @merge @words, language.words
         @merge @words, words
@@ -38,18 +55,60 @@ module.exports = class Language
       target[key] = source[key]
 
   build: (source) ->
+    tag = 'div'
     out = ""
     words = @words
 
     for item in source
       out += @getWord item
 
-    @process out
-
-  process: (str) ->
+    # Replace anything that needs to be
     for replace in @replace
-      str = str.replace replace.replace, replace.with
-    str
+      out = out.replace replace.replace, replace.with
+
+    # Run any formatters that need to be
+    for format in @format
+      if @formatters[format]
+        out = @formatters[format] out
+
+    # Error check according to the rules in the language
+    lineNo = 0
+    errors = []
+    eList = {}
+
+    addError = (msg) ->
+      eList[lineNo] = true
+      errors.push "#{lineNo}: #{msg}"
+
+    for i in [0..source.length]
+      if source[i] is 0
+        lineNo += 1
+      else
+        word = words[source[i]]
+        if word and word.follows
+          # Word must follow whatever's specified
+          err = no
+          if typeof word.follows is 'number' and source[i-1] isnt word.follows
+            # Follow a specific word
+            addError "\"#{@getWord(source[i]).trim()}\" must follow \"#{@getWord(word.follows).trim()}\""
+
+          else if typeof word.follows is 'string' and
+          (typeof words[source[i-1]].group is 'undefined' or words[source[i-1]].group isnt word.follows)
+            # Follow a group
+            addError "\"#{@getWord(source[i]).trim()}\" can't follow \"#{@getWord(source[i-1]).trim()}\""
+
+    # Split lines into separate HTML tags
+    html = ""
+    lineNo = 0
+    lineList = out.split("\n")
+    for line in lineList
+      lineNo++
+      css = if eList[lineNo] then 'line error' else 'line'
+      html += "<#{tag} class=\"#{css}\" data-line=\"#{lineNo}\">#{line}</#{tag}>"
+
+    console.log string: out, html: html
+
+    return string: out, html: html, errors: errors
 
   getWord: (key) ->
     word = @words[key]
@@ -128,3 +187,6 @@ module.exports = class Language
     str = str.replace '/', '\\/'
     str = str.replace '\'', '\\\''
     str = str.replace '#', '\\#'
+
+  formatters:
+    js_beautify: js_beautify
