@@ -155,9 +155,11 @@ module.exports = CodeCards = (function(_super) {
     return this.on('change:play', function() {
       this.interpreter.UserMedia.paused = !this.play;
       if (!this.play) {
+        $('#mainview').addClass('view-fullscreen');
         this.mission.run(this.code);
         return $('#alert').html('Paused.');
       } else {
+        $('#mainview').removeClass('view-fullscreen');
         return this.mission.reset();
       }
     });

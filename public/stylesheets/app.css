@@ -493,6 +493,7 @@ pre {
   color: rgba(0,0,0,0.4);
   font-size: 0.8em;
   text-align: right;
+  font-style: normal;
 }
 .main #code .error {
   text-shadow: 0 0 3px #f00;

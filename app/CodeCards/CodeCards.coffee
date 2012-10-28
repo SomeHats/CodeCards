@@ -72,9 +72,11 @@ module.exports = class CodeCards extends Backbone.View
       @interpreter.UserMedia.paused = !@play
 
       if !@play
+        $('#mainview').addClass 'view-fullscreen'
         @mission.run(@code)
         $('#alert').html 'Paused.'
       else
+        $('#mainview').removeClass 'view-fullscreen'
         @mission.reset()
 
   setupController: ->
