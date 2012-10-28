@@ -58,7 +58,7 @@ $(function() {
     $('#words').toggleClass('hidden');
   });
 
-  $('#lang').on('change keyup', function() {
+  $('#lang, #setall').on('change keyup', function() {
     var exists = true,
         lang
 
@@ -124,12 +124,13 @@ $(function() {
   function listWords() {
     var $words = $('#words'), $el, word;
     if (words) {
+      var dv = $('#setall').val();
       cards = [];
       $words.empty();
       for(key in words) {
         word = (typeof words[key] === 'string') ? words[key] : (words[key].print || words[key].word);
         $el = $('<label></label>');
-        $el.html('<span>' + key + ': ' + word + '</span><input data-key="' + key + '" type="number" value="0">');
+        $el.html('<span>' + key + ': ' + word + '</span><input data-key="' + key + '" type="number" value="'+dv+'">');
         $el.appendTo($words);
 
         if (words[key].img) {
@@ -161,7 +162,7 @@ $(function() {
           id: key,
           display: word,
           img: (words[key].img ? img : null),
-          n: 0,
+          n: dv,
           size: 1
         });
 
@@ -203,7 +204,8 @@ $(function() {
             back: $('#back_cb')[0].checked,
             print: $('#print_cb')[0].checked,
             cut: $('#cut_cb')[0].checked,
-            images: $('#images_cb')[0].checked
+            images: $('#images_cb')[0].checked,
+            blank: $('#blank_cb')[0].checked
           },
           $template = $('#template'),
           $cont = $('#cont'),
@@ -233,7 +235,7 @@ $(function() {
       // Bin pack cards. 1st fit descending. Fuck yeah D1!
       for (i = 0; i < cards.length; i++) {
         for (j = 0; j < cards[i].n; j++) {
-          if (cards[i].size.w > width - bleed * 2) {
+          if (cards[i].size.w > width - bleed * 4) {
             // Won't fit on a page.
             console.log(cards[i].display + ' is too big');
           } else {
@@ -249,7 +251,7 @@ $(function() {
 
             if(needNewBin) {
               bins.push({
-                remaining: width - bleed * 2,
+                remaining: width - (bleed * 4),
                 items: []
               });
 
@@ -280,12 +282,16 @@ $(function() {
               if(layers.front) {
 
                 if(layers.print) {
-                  if (layers.images && bin[k].img) {
-                    image(bin[k], soFar, (j * cHeight) + bleed, $svg);
+                  if (layers.blank && bin[k].id != 0) {
+                    littleText(bin[k].id, soFar, (j + 1) * cHeight + (bleed / 2), $svg);
                   } else {
-                    text(bin[k],
-                      centerx(soFar, soFar - bin[k].size.w, bin[k].size.width), 
-                      centery(j * cHeight + bleed, (j + 1) * cHeight + bleed, bin[k].size.h/2), $svg);
+                    if (layers.images && bin[k].img) {
+                      image(bin[k], soFar, (j * cHeight) + bleed, $svg);
+                    } else {
+                      text(bin[k],
+                        centerx(soFar, soFar - bin[k].size.w, bin[k].size.width), 
+                        centery(j * cHeight + bleed, (j + 1) * cHeight + bleed, bin[k].size.h/2), $svg);
+                    }
                   }
                 }
 
@@ -481,6 +487,19 @@ $(function() {
           x: x + padding,
           y: y,
           'font-size': font
+        });
+
+        $el.appendTo($svg);
+      }
+
+      function littleText(str, x, y, $svg) {
+        var $el = c('text');
+
+        $el[0].textContent = str;
+        $el.attr({
+          x: x,
+          y: y,
+          'font-size': font / 5
         });
 
         $el.appendTo($svg);

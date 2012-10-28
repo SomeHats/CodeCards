@@ -44,7 +44,8 @@
         <label><input type="radio" id="back_cb" name="fb">Back</label>
         <label><input type="checkbox" id="print_cb" checked>Print</label>
         <label><input type="checkbox" id="cut_cb">Cut lines</label>
-        <label><input type="checkbox" id="images_cb">Images</label>
+        <label><input type="checkbox" id="images_cb" checked>Images</label>
+        <label><input type="checkbox" id="blank_cb" checked>Blank cards?</label>
         <label><input type="checkbox" id="guides_cb" checked>Guides</label>
         | It is recommended that you adjust settings with &quot;front&quot; visible.
         | <button id="zoom">Zoom</button>
@@ -52,6 +53,7 @@
     </div>
     <h1>CodeCards card layout</h1>
     <label>Card set: <input type="text" id="lang" value="fox"></label><span id="notice"></span>
+    <p>Set all: <input type="number" id="setall" value="0"></p>
     <p><a href="javascript:void" id="toggleWords">Show/Hide words</a></p>
     <div id="words"></div>
     <div id="cont">
