@@ -1,11 +1,11 @@
-Interpreter = require 'interpreter'
+Interpreter = require 'CodeCards/interpreter'
 
-Remote = require 'interpreter/remote'
-Stats = require 'interpreter/stats'
+Controller = require 'CodeCards/controller'
+Stats = require 'lib/stats'
 
-Mission = require 'interpreter/mission'
+Mission = require 'CodeCards/mission'
 
-template = require 'templates/main'
+template = require 'templates/CodeCards'
 
 module.exports = class CodeCards extends Backbone.View
   start: ->
@@ -27,7 +27,7 @@ module.exports = class CodeCards extends Backbone.View
         _ths.stats.tick()
 
         # Send stats and error data to the remote control
-        _ths.remote.send 'tick',
+        _ths.controller.send 'tick',
           fps: _ths.stats.fps
           interval: _ths.stats.interval
           status: 'error'
@@ -51,7 +51,7 @@ module.exports = class CodeCards extends Backbone.View
         $code.html code
 
         # Send stats and code to the remote control
-        _ths.remote.send 'tick',
+        _ths.controller.send 'tick',
           fps: _ths.stats.fps
           interval: _ths.stats.interval
           status: 'success'
@@ -74,13 +74,13 @@ module.exports = class CodeCards extends Backbone.View
       else
         @mission.reset()
 
-  setupRemote: ->
+  setupController: ->
     _ths = @
-    remote = @remote = new Remote el: @$ '.pin-entry'
+    controller = @controller = new Controller el: @$ '.pin-entry'
 
     ## Receiving
     # Settings
-    remote.on 'change-setting', (data) ->
+    controller.on 'change-setting', (data) ->
       if data.concerns
         _ths[data.concerns][data.setting] = data.value
         _ths[data.concerns].trigger 'change:' + data.setting
@@ -109,7 +109,7 @@ module.exports = class CodeCards extends Backbone.View
 
     @interact()
 
-    @setupRemote()
+    @setupController()
 
     nav = @$ 'nav'
     setTimeout ->
