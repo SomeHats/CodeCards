@@ -1831,9 +1831,8 @@ module.exports = UserMedia = (function(_super) {
       return Util.on('animationFrame', function() {
         if (!_ths.paused) {
           if (video.readyState === video.HAVE_ENOUGH_DATA) {
-            ctx.drawImage(video, 0, 0, video.videoWidth, video.videoHeight);
             if (_ths.el.isSetUp) {
-              _ths.ctx.drawImage(video, 0, 0, video.videoWidth, video.videoHeight);
+              ctx.drawImage(video, 0, 0, video.videoWidth, video.videoHeight);
               _ths.imageData = _ths.ctx.getImageData(0, 0, _ths.el.width, _ths.el.height);
               return _ths.trigger('imageData');
             } else if (video.videoWidth) {

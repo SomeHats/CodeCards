@@ -22,9 +22,8 @@ module.exports = class UserMedia extends Backbone.View
       Util.on 'animationFrame', ->
         if !_ths.paused
           if video.readyState is video.HAVE_ENOUGH_DATA
-            ctx.drawImage video, 0, 0, video.videoWidth, video.videoHeight
             if _ths.el.isSetUp
-              _ths.ctx.drawImage video, 0, 0, video.videoWidth, video.videoHeight
+              ctx.drawImage video, 0, 0, video.videoWidth, video.videoHeight
               _ths.imageData = _ths.ctx.getImageData 0, 0, _ths.el.width, _ths.el.height
 
               _ths.trigger 'imageData'
