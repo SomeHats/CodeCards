@@ -22,3 +22,11 @@ module.exports =
     46:
       word: ' ! '
       print: 'not'
+
+  replace: [
+    replace: "{{methods}} *?{{not arguments}}"
+    with: "$1()"
+  ,
+    replace: "{{methods}} *?{{arguments}}"
+    with: "$1($2)"
+  ]

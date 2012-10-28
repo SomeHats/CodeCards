@@ -22,7 +22,7 @@ module.exports =
     # Fox can look straight in one direction, and report what
     # he can see. He can't tell how far away it is though.
     501:
-      word: ".look("
+      word: ".look"
       print: "look"
       group: "methods"
       follows: 500
@@ -30,21 +30,21 @@ module.exports =
     # Fox can reach out in a direction to touch what is in the
     # adjacent tile, and report back what it is.
     504:  
-      word: ".touch(" 
+      word: ".touch" 
       print: "touch"
       group: "methods"
       follows: 500
 
     # Fox can move one step at a time, forwards or backwards
     502:
-      word: ".move("
+      word: ".move"
       print: "move"
       group: "methods"
       follows: 500
 
     # Fox can turn left(-90), right(90), or backwards (180)
     503:
-      word: ".turn("
+      word: ".turn"
       print: "turn"
       group: "methods"
       follows: 500

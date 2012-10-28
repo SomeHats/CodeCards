@@ -343,25 +343,25 @@ module.exports = {
       group: "objects"
     },
     501: {
-      word: ".look(",
+      word: ".look",
       print: "look",
       group: "methods",
       follows: 500
     },
     504: {
-      word: ".touch(",
+      word: ".touch",
       print: "touch",
       group: "methods",
       follows: 500
     },
     502: {
-      word: ".move(",
+      word: ".move",
       print: "move",
       group: "methods",
       follows: 500
     },
     503: {
-      word: ".turn(",
+      word: ".turn",
       print: "turn",
       group: "methods",
       follows: 500
@@ -439,7 +439,16 @@ module.exports = {
       word: ' ! ',
       print: 'not'
     }
-  }
+  },
+  replace: [
+    {
+      replace: "{{methods}} *?{{not arguments}}",
+      "with": "$1()"
+    }, {
+      replace: "{{methods}} *?{{arguments}}",
+      "with": "$1($2)"
+    }
+  ]
 };
 
 }});
@@ -616,7 +625,6 @@ module.exports = {
 window.require.define({"data/missions/fox.mission": function(exports, require, module) {
   
 module.exports = {
-  view: 'fullscreen',
   language: {
     fox: 0
   },
@@ -1402,14 +1410,18 @@ window.require.define({"interpreter/language": function(exports, require, module
 
 module.exports = Language = (function() {
 
-  function Language(lang) {
+  function Language(lang, process) {
     var key, language, words;
+    if (process == null) {
+      process = true;
+    }
     this.words = {
       0: {
         word: "\n",
         print: "Start ->"
       }
     };
+    this.replace = [];
     for (key in lang) {
       try {
         language = require('data/languages/' + key + '.lang');
@@ -1420,12 +1432,20 @@ module.exports = Language = (function() {
         console.log('Wrong language version for ' + key, language.version, lang[key]);
       } else {
         words = language.words;
+        if (language.replace) {
+          this.replace = this.replace.concat(language.replace || []);
+        }
         if (language["extends"]) {
-          language = new Language(language["extends"]);
+          language = new Language(language["extends"], false);
+          this.replace = this.replace.concat(language.replace || []);
         }
         this.merge(this.words, language.words);
         this.merge(this.words, words);
       }
+    }
+    if (process) {
+      this.buildGroups();
+      this.buildReplacers();
     }
   }
 
@@ -1439,19 +1459,115 @@ module.exports = Language = (function() {
   };
 
   Language.prototype.build = function(source) {
-    var item, out, word, words, _i, _len;
+    var item, out, words, _i, _len;
     out = "";
     words = this.words;
     for (_i = 0, _len = source.length; _i < _len; _i++) {
       item = source[_i];
-      word = words[item];
-      if (typeof word === 'string') {
-        out += word;
-      } else {
-        out += word.word;
+      out += this.getWord(item);
+    }
+    return this.process(out);
+  };
+
+  Language.prototype.process = function(str) {
+    var replace, _i, _len, _ref;
+    _ref = this.replace;
+    for (_i = 0, _len = _ref.length; _i < _len; _i++) {
+      replace = _ref[_i];
+      str = str.replace(replace.replace, replace["with"]);
+    }
+    return str;
+  };
+
+  Language.prototype.getWord = function(key) {
+    var out, word;
+    word = this.words[key];
+    if (typeof word === 'string') {
+      return word;
+    }
+    if (typeof word === 'object') {
+      out = word.word || word.display || word.print || false;
+      if (out === false) {
+        throw new ReferenceError("Can't find a suitable property to return on word " + key);
+      }
+      return out;
+    }
+  };
+
+  Language.prototype.buildGroups = function() {
+    var group, groups, key, words, _i, _len, _ref;
+    groups = {};
+    words = this.words;
+    for (key in words) {
+      if (words[key].group) {
+        if (typeof words[key].group !== 'string') {
+          throw new TypeError("Group name must be string, not " + (typeof words[key].group) + " in " + key + ".");
+        } else {
+          _ref = words[key].group.split(' ');
+          for (_i = 0, _len = _ref.length; _i < _len; _i++) {
+            group = _ref[_i];
+            if (!groups[group]) {
+              groups[group] = [];
+            }
+            groups[group].push(key);
+          }
+        }
       }
     }
-    return out;
+    return this.groups = groups;
+  };
+
+  Language.prototype.buildReplacers = function() {
+    var data, group, groups, key, name, replace, template, _i, _j, _len, _len1, _ref, _ref1;
+    this.setupHandlebars();
+    groups = this.groups;
+    data = {};
+    for (name in groups) {
+      group = [];
+      _ref = groups[name];
+      for (_i = 0, _len = _ref.length; _i < _len; _i++) {
+        key = _ref[_i];
+        group.push(this.regexEscape(this.getWord(key)));
+      }
+      data[name] = "(" + (group.join('|')) + ")";
+    }
+    _ref1 = this.replace;
+    for (_j = 0, _len1 = _ref1.length; _j < _len1; _j++) {
+      replace = _ref1[_j];
+      if (typeof replace !== 'object') {
+        throw new TypeError("Replace should be object, not " + (typeof replace) + ".");
+      } else {
+        template = Handlebars.compile(replace.replace);
+        replace.replace = new RegExp(template(data), "g");
+      }
+    }
+    return console.log(this.replace);
+  };
+
+  Language.prototype.setupHandlebars = function() {
+    return Handlebars.registerHelper('not', function(str) {
+      return "(?!" + str + ")";
+    });
+  };
+
+  Language.prototype.regexEscape = function(str) {
+    str = str.replace('\\', '\\\\');
+    str = str.replace('.', '\\.');
+    str = str.replace('+', '\\+');
+    str = str.replace('*', '\\*');
+    str = str.replace('?', '\\?');
+    str = str.replace('^', '\\^');
+    str = str.replace('$', '\\$');
+    str = str.replace('[', '\\[');
+    str = str.replace(']', '\\]');
+    str = str.replace('(', '\\(');
+    str = str.replace(')', '\\)');
+    str = str.replace('|', '\\|');
+    str = str.replace('{', '\\}');
+    str = str.replace('}', '\\}');
+    str = str.replace('/', '\\/');
+    str = str.replace('\'', '\\\'');
+    return str = str.replace('#', '\\#');
   };
 
   return Language;
