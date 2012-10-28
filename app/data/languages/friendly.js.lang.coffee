@@ -1,5 +1,10 @@
 # Javascript with some of the syntax replaced.
 
+# Friendly.js lets javascript be used with a much more natural looking syntax.
+# Friendly.js only allows functions with 1 or 0 arguments. To use friendly.js in
+# your mission, add it in your extends and give all functions group "methods" and
+# all arguments group "arguments".
+
 module.exports =
   name: 'friendly.js'
   version: 0
