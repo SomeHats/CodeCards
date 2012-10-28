@@ -1,6 +1,6 @@
-template = require 'interpreter/templates/remote'
+template = require 'CodeCards/templates/controller'
 
-module.exports = class Remote extends Backbone.View
+module.exports = class Controller extends Backbone.View
   initialize: ->
     @render()
 

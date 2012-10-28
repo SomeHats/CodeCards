@@ -1,5 +1,5 @@
-UserMedia = require 'interpreter/usermedia'
-HighLighter = require 'interpreter/highlighter'
+UserMedia = require 'lib/usermedia'
+HighLighter = require 'lib/highlighter'
 
 WebWorker = require 'lib/worker'
 

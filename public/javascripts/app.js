@@ -87,19 +87,19 @@ if (isWorker) {
 
 
 window.require.define({"CodeCards/CodeCards": function(exports, require, module) {
-  var CodeCards, Interpreter, Mission, Remote, Stats, template,
+  var CodeCards, Controller, Interpreter, Mission, Stats, template,
   __hasProp = {}.hasOwnProperty,
   __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
 
-Interpreter = require('interpreter');
+Interpreter = require('CodeCards/interpreter');
 
-Remote = require('interpreter/remote');
+Controller = require('CodeCards/controller');
 
-Stats = require('interpreter/stats');
+Stats = require('lib/stats');
 
-Mission = require('interpreter/mission');
+Mission = require('CodeCards/mission');
 
-template = require('templates/main');
+template = require('templates/CodeCards');
 
 module.exports = CodeCards = (function(_super) {
 
@@ -120,7 +120,7 @@ module.exports = CodeCards = (function(_super) {
       if (_ths.play) {
         $('#alert').html('Error: ' + error);
         _ths.stats.tick();
-        return _ths.remote.send('tick', {
+        return _ths.controller.send('tick', {
           fps: _ths.stats.fps,
           interval: _ths.stats.interval,
           status: 'error',
@@ -136,7 +136,7 @@ module.exports = CodeCards = (function(_super) {
         code = mission.language.build(results);
         code = js_beautify(code);
         $code.html(code);
-        _ths.remote.send('tick', {
+        _ths.controller.send('tick', {
           fps: _ths.stats.fps,
           interval: _ths.stats.interval,
           status: 'success',
@@ -158,13 +158,13 @@ module.exports = CodeCards = (function(_super) {
     });
   };
 
-  CodeCards.prototype.setupRemote = function() {
-    var remote, _ths;
+  CodeCards.prototype.setupController = function() {
+    var controller, _ths;
     _ths = this;
-    remote = this.remote = new Remote({
+    controller = this.controller = new Controller({
       el: this.$('.pin-entry')
     });
-    return remote.on('change-setting', function(data) {
+    return controller.on('change-setting', function(data) {
       if (data.concerns) {
         _ths[data.concerns][data.setting] = data.value;
         return _ths[data.concerns].trigger('change:' + data.setting);
@@ -205,7 +205,7 @@ module.exports = CodeCards = (function(_super) {
     this.$el.html(template());
     this.stats = new Stats;
     this.interact();
-    this.setupRemote();
+    this.setupController();
     nav = this.$('nav');
     return setTimeout(function() {
       nav.animate({
@@ -255,6 +255,470 @@ module.exports = CodeCards = (function(_super) {
 
 })(Backbone.View);
 
+}});
+
+window.require.define({"CodeCards/controller": function(exports, require, module) {
+  var Controller, template,
+  __hasProp = {}.hasOwnProperty,
+  __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
+
+template = require('CodeCards/templates/controller');
+
+module.exports = Controller = (function(_super) {
+
+  __extends(Controller, _super);
+
+  function Controller() {
+    return Controller.__super__.constructor.apply(this, arguments);
+  }
+
+  Controller.prototype.initialize = function() {
+    return this.render();
+  };
+
+  Controller.prototype.render = function() {
+    var cancel, connect, open, pin, submit, _ths;
+    this.$el.html(template());
+    _ths = this;
+    open = this.$('.remote');
+    connect = this.$('.go');
+    cancel = this.$('.cancel');
+    pin = this.$('input');
+    open.on('click', function() {
+      _ths.$el.removeClass('hide');
+      return pin.focus();
+    });
+    cancel.on('click', function() {
+      return _ths.$el.addClass('hide');
+    });
+    submit = function() {
+      var val;
+      val = pin.val();
+      if (val.length === 4 && !isNaN(parseFloat(val)) && isFinite(val)) {
+        _ths.$el.addClass('hide');
+        pin.blur();
+        return _ths.connect(val);
+      } else {
+        return Util.alert('Sorry, that\s not valid. Please enter the pin shown on the remote.');
+      }
+    };
+    connect.on('click', function() {
+      return submit();
+    });
+    return pin.on('keypress', function(e) {
+      if (e.which === 13) {
+        return submit();
+      }
+    });
+  };
+
+  Controller.prototype.connect = function(pin) {
+    var socket, status, _ths;
+    _ths = this;
+    status = this.$('.status');
+    status.html('Connecting...');
+    socket = io.connect('http://' + window.location.host, {
+      'force new connection': true
+    });
+    socket.on('error', function(e) {
+      status.html('Could not connect.');
+      Util.alert('Could not establish connection :(');
+      return console.log(e);
+    });
+    socket.on('deny', function() {
+      status.html('Wrong pin.');
+      Util.alert('There wasn\'t a remote with that pin online. Are you sure it was correct?');
+      return _ths.$('.remote').trigger('click');
+    });
+    socket.on('accept', function() {
+      status.html('Connected: ' + pin);
+      socket.emit('client', {
+        event: 'join',
+        data: pin
+      });
+      socket.on('remote', function(data) {
+        return _ths.trigger(data.event, data.data);
+      });
+      return _ths.send = function(event, data) {
+        return socket.emit('client', {
+          event: event,
+          data: data
+        });
+      };
+    });
+    return socket.emit('new client', pin);
+  };
+
+  Controller.prototype.send = function(event, data) {
+    return null;
+  };
+
+  return Controller;
+
+})(Backbone.View);
+
+}});
+
+window.require.define({"CodeCards/interpreter": function(exports, require, module) {
+  var HighLighter, Interpreter, UserMedia, WebWorker,
+  __hasProp = {}.hasOwnProperty,
+  __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
+
+UserMedia = require('lib/usermedia');
+
+HighLighter = require('lib/highlighter');
+
+WebWorker = require('lib/worker');
+
+module.exports = Interpreter = (function(_super) {
+
+  __extends(Interpreter, _super);
+
+  function Interpreter() {
+    return Interpreter.__super__.constructor.apply(this, arguments);
+  }
+
+  Interpreter.prototype.imageData = [];
+
+  Interpreter.prototype.blend = 3;
+
+  Interpreter.prototype.contrast = 0;
+
+  Interpreter.prototype.brightness = 0;
+
+  Interpreter.prototype.sharpen = 0;
+
+  Interpreter.prototype.distanceLimit = 4.5;
+
+  Interpreter.prototype.initialize = function() {
+    var worker, _ths;
+    _ths = this;
+    this.render();
+    this.UserMedia = new UserMedia({
+      el: $('<canvas>')
+    });
+    this.UserMedia.p = this;
+    worker = this.worker = new WebWorker({
+      name: 'init'
+    });
+    worker.on('log', function(data) {
+      return console.log(data);
+    });
+    worker.send('start', 'workers/init');
+    this.UserMedia.on('imageData', function() {
+      var data;
+      if (worker.ready) {
+        data = {
+          img: this.UserMedia.imageData,
+          blend: 1,
+          contrast: this.contrast,
+          brightness: this.brightness,
+          sharpen: this.sharpen,
+          distanceLimit: this.distanceLimit,
+          mousex: Util.mouse.x,
+          mousey: Util.mouse.y
+        };
+        return worker.send('raw-image', data);
+      }
+    }, this);
+    worker.on('filtered-image', function(img) {
+      return this.imgData = img;
+    }, this);
+    worker.on('error', function(data) {
+      this.trigger('error', data.msg);
+      return this.draw(data.markers);
+    }, this);
+    worker.on('success', function(data) {
+      this.trigger('success', data.results);
+      return this.draw(data.markers);
+    }, this);
+    return worker.on('pause', function() {
+      return this.UserMedia.paused = true;
+    }, this);
+  };
+
+  Interpreter.prototype.set = function(attribute, value) {
+    this[attribute] = value;
+    return this.worker.send('set', {
+      attribute: attribute,
+      value: value
+    });
+  };
+
+  Interpreter.prototype.render = function() {
+    return HighLighter.context = this.ctx = this.el.getContext('2d');
+  };
+
+  Interpreter.prototype.draw = function(markers) {
+    this.ctx.putImageData(this.imgData, 0, 0);
+    HighLighter.drawCorners(markers);
+    return HighLighter.drawIDs(markers);
+  };
+
+  Interpreter.prototype.pause = function() {
+    return this.UserMedia.paused = true;
+  };
+
+  Interpreter.prototype.unpause = function() {
+    return this.UserMedia.paused = false;
+  };
+
+  return Interpreter;
+
+})(Backbone.View);
+
+}});
+
+window.require.define({"CodeCards/language": function(exports, require, module) {
+  var Language;
+
+module.exports = Language = (function() {
+
+  function Language(lang, process) {
+    var key, language, words;
+    if (process == null) {
+      process = true;
+    }
+    this.words = {
+      0: {
+        word: "\n",
+        print: "Start ->"
+      }
+    };
+    this.replace = [];
+    for (key in lang) {
+      try {
+        language = require('data/languages/' + key + '.lang');
+      } catch (e) {
+        console.log('Language definition ' + key + ' not found :(');
+      }
+      if (lang[key] !== '*' && language.version !== lang[key]) {
+        console.log('Wrong language version for ' + key, language.version, lang[key]);
+      } else {
+        words = language.words;
+        if (language.replace) {
+          this.replace = this.replace.concat(language.replace || []);
+        }
+        if (language["extends"]) {
+          language = new Language(language["extends"], false);
+          this.replace = this.replace.concat(language.replace || []);
+        }
+        this.merge(this.words, language.words);
+        this.merge(this.words, words);
+      }
+    }
+    if (process) {
+      this.buildGroups();
+      this.buildReplacers();
+    }
+  }
+
+  Language.prototype.merge = function(target, source) {
+    var key, _results;
+    _results = [];
+    for (key in source) {
+      _results.push(target[key] = source[key]);
+    }
+    return _results;
+  };
+
+  Language.prototype.build = function(source) {
+    var item, out, words, _i, _len;
+    out = "";
+    words = this.words;
+    for (_i = 0, _len = source.length; _i < _len; _i++) {
+      item = source[_i];
+      out += this.getWord(item);
+    }
+    return this.process(out);
+  };
+
+  Language.prototype.process = function(str) {
+    var replace, _i, _len, _ref;
+    _ref = this.replace;
+    for (_i = 0, _len = _ref.length; _i < _len; _i++) {
+      replace = _ref[_i];
+      str = str.replace(replace.replace, replace["with"]);
+    }
+    return str;
+  };
+
+  Language.prototype.getWord = function(key) {
+    var out, word;
+    word = this.words[key];
+    if (typeof word === 'string') {
+      return word;
+    }
+    if (typeof word === 'object') {
+      out = word.word || word.display || word.print || false;
+      if (out === false) {
+        throw new ReferenceError("Can't find a suitable property to return on word " + key);
+      }
+      return out;
+    }
+  };
+
+  Language.prototype.buildGroups = function() {
+    var group, groups, key, words, _i, _len, _ref;
+    groups = {};
+    words = this.words;
+    for (key in words) {
+      if (words[key].group) {
+        if (typeof words[key].group !== 'string') {
+          throw new TypeError("Group name must be string, not " + (typeof words[key].group) + " in " + key + ".");
+        } else {
+          _ref = words[key].group.split(' ');
+          for (_i = 0, _len = _ref.length; _i < _len; _i++) {
+            group = _ref[_i];
+            if (!groups[group]) {
+              groups[group] = [];
+            }
+            groups[group].push(key);
+          }
+        }
+      }
+    }
+    return this.groups = groups;
+  };
+
+  Language.prototype.buildReplacers = function() {
+    var data, group, groups, key, name, replace, template, _i, _j, _len, _len1, _ref, _ref1;
+    this.setupHandlebars();
+    groups = this.groups;
+    data = {};
+    for (name in groups) {
+      group = [];
+      _ref = groups[name];
+      for (_i = 0, _len = _ref.length; _i < _len; _i++) {
+        key = _ref[_i];
+        group.push(this.regexEscape(this.getWord(key)));
+      }
+      data[name] = "(" + (group.join('|')) + ")";
+    }
+    _ref1 = this.replace;
+    for (_j = 0, _len1 = _ref1.length; _j < _len1; _j++) {
+      replace = _ref1[_j];
+      if (typeof replace !== 'object') {
+        throw new TypeError("Replace should be object, not " + (typeof replace) + ".");
+      } else {
+        template = Handlebars.compile(replace.replace);
+        replace.replace = new RegExp(template(data), "g");
+      }
+    }
+    return console.log(this.replace);
+  };
+
+  Language.prototype.setupHandlebars = function() {
+    return Handlebars.registerHelper('not', function(str) {
+      return "(?!" + str + ")";
+    });
+  };
+
+  Language.prototype.regexEscape = function(str) {
+    str = str.replace('\\', '\\\\');
+    str = str.replace('.', '\\.');
+    str = str.replace('+', '\\+');
+    str = str.replace('*', '\\*');
+    str = str.replace('?', '\\?');
+    str = str.replace('^', '\\^');
+    str = str.replace('$', '\\$');
+    str = str.replace('[', '\\[');
+    str = str.replace(']', '\\]');
+    str = str.replace('(', '\\(');
+    str = str.replace(')', '\\)');
+    str = str.replace('|', '\\|');
+    str = str.replace('{', '\\}');
+    str = str.replace('}', '\\}');
+    str = str.replace('/', '\\/');
+    str = str.replace('\'', '\\\'');
+    return str = str.replace('#', '\\#');
+  };
+
+  return Language;
+
+})();
+
+}});
+
+window.require.define({"CodeCards/mission": function(exports, require, module) {
+  var Language, Mission,
+  __hasProp = {}.hasOwnProperty,
+  __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
+
+Language = require('CodeCards/language');
+
+module.exports = Mission = (function(_super) {
+
+  __extends(Mission, _super);
+
+  function Mission() {
+    return Mission.__super__.constructor.apply(this, arguments);
+  }
+
+  Mission.prototype.initialize = function(name) {
+    var language, m;
+    this.m = m = {
+      view: '2up',
+      interpreter: 'linear',
+      continuous: false
+    };
+    _.extend(m, require("data/missions/" + name + ".mission"));
+    if (typeof m.initialize !== 'function') {
+      throw new TypeError("mission.initialize should be a function not " + (typeof m.initialize) + ".");
+    }
+    if (typeof m.language !== 'object') {
+      throw new TypeError("mission.language should be an object not " + (typeof m.language) + ".");
+    }
+    if (typeof m.reset !== 'function') {
+      throw new TypeError("mission.reset should be a function not " + (typeof m.reset) + ".");
+    }
+    if (typeof m.run !== 'function') {
+      throw new TypeError("mission.run should be a function not " + (typeof m.run) + ".");
+    }
+    if (_.indexOf(this.accepted.view, m.view) === -1) {
+      throw new RangeError("mission.view should be " + (this.accepted.view.join(' or ')) + ", not " + m.view + ".");
+    }
+    if (_.indexOf(this.accepted.interpreter, m.interpreter) === -1) {
+      throw new RangeError("mission.interpreter should be " + (this.accepted.interpreter.join(' or ')) + ", not " + m.interpreter + ".");
+    }
+    if (typeof m.continuous !== 'boolean') {
+      throw new TypeError("mission.continuous should be boolean not " + (typeof m.continuous) + ".");
+    }
+    if (m.view === '2up') {
+      $('#mainview').removeClass('view-fullscreen');
+    } else {
+      $('#mainview').addClass('view-fullscreen');
+    }
+    m.initialize($('#mission')[0]);
+    return language = this.language = new Language(m.language);
+  };
+
+  Mission.prototype.run = function(data) {
+    return this.m.run(data);
+  };
+
+  Mission.prototype.reset = function() {
+    return this.m.reset();
+  };
+
+  Mission.prototype.accepted = {
+    view: ['2up', 'fullscreen'],
+    interpreter: ['linear']
+  };
+
+  return Mission;
+
+})(Backbone.View);
+
+}});
+
+window.require.define({"CodeCards/templates/controller": function(exports, require, module) {
+  module.exports = Handlebars.template(function (Handlebars,depth0,helpers,partials,data) {
+  helpers = helpers || Handlebars.helpers;
+  var foundHelper, self=this;
+
+
+  return "<div>\n  <h3>Enter your pin:</h3>\n  <input type=\"tel\" name=\"pin-number\" maxlength=\"4\" placeholder=\"****\">\n  <button class=\"go\">Connect</button>\n  <button class=\"cancel\">Cancel</button>\n</div>\n<a class=\"remote\">\n  <img src=\"/svg/remote-yellow.svg\" width=\"46\">\n</a>\n<p class=\"status\"></p>";});
 }});
 
 window.require.define({"data/languages/blank.lang": function(exports, require, module) {
@@ -1182,117 +1646,7 @@ module.exports = App = (function(_super) {
 
 }});
 
-window.require.define({"interpreter": function(exports, require, module) {
-  var HighLighter, Interpreter, UserMedia, WebWorker,
-  __hasProp = {}.hasOwnProperty,
-  __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
-
-UserMedia = require('interpreter/usermedia');
-
-HighLighter = require('interpreter/highlighter');
-
-WebWorker = require('lib/worker');
-
-module.exports = Interpreter = (function(_super) {
-
-  __extends(Interpreter, _super);
-
-  function Interpreter() {
-    return Interpreter.__super__.constructor.apply(this, arguments);
-  }
-
-  Interpreter.prototype.imageData = [];
-
-  Interpreter.prototype.blend = 3;
-
-  Interpreter.prototype.contrast = 0;
-
-  Interpreter.prototype.brightness = 0;
-
-  Interpreter.prototype.sharpen = 0;
-
-  Interpreter.prototype.distanceLimit = 4.5;
-
-  Interpreter.prototype.initialize = function() {
-    var worker, _ths;
-    _ths = this;
-    this.render();
-    this.UserMedia = new UserMedia({
-      el: $('<canvas>')
-    });
-    this.UserMedia.p = this;
-    worker = this.worker = new WebWorker({
-      name: 'init'
-    });
-    worker.on('log', function(data) {
-      return console.log(data);
-    });
-    worker.send('start', 'workers/init');
-    this.UserMedia.on('imageData', function() {
-      var data;
-      if (worker.ready) {
-        data = {
-          img: this.UserMedia.imageData,
-          blend: 1,
-          contrast: this.contrast,
-          brightness: this.brightness,
-          sharpen: this.sharpen,
-          distanceLimit: this.distanceLimit,
-          mousex: Util.mouse.x,
-          mousey: Util.mouse.y
-        };
-        return worker.send('raw-image', data);
-      }
-    }, this);
-    worker.on('filtered-image', function(img) {
-      return this.imgData = img;
-    }, this);
-    worker.on('error', function(data) {
-      this.trigger('error', data.msg);
-      return this.draw(data.markers);
-    }, this);
-    worker.on('success', function(data) {
-      this.trigger('success', data.results);
-      return this.draw(data.markers);
-    }, this);
-    return worker.on('pause', function() {
-      return this.UserMedia.paused = true;
-    }, this);
-  };
-
-  Interpreter.prototype.set = function(attribute, value) {
-    this[attribute] = value;
-    return this.worker.send('set', {
-      attribute: attribute,
-      value: value
-    });
-  };
-
-  Interpreter.prototype.render = function() {
-    return HighLighter.context = this.ctx = this.el.getContext('2d');
-  };
-
-  Interpreter.prototype.draw = function(markers) {
-    this.ctx.putImageData(this.imgData, 0, 0);
-    HighLighter.drawCorners(markers);
-    return HighLighter.drawIDs(markers);
-  };
-
-  Interpreter.prototype.pause = function() {
-    return this.UserMedia.paused = true;
-  };
-
-  Interpreter.prototype.unpause = function() {
-    return this.UserMedia.paused = false;
-  };
-
-  return Interpreter;
-
-})(Backbone.View);
-
-}});
-
-window.require.define({"interpreter/highlighter": function(exports, require, module) {
+window.require.define({"lib/highlighter": function(exports, require, module) {
   var Highlighter;
 
 Highlighter = (function() {
@@ -1405,352 +1759,7 @@ module.exports = new Highlighter;
 
 }});
 
-window.require.define({"interpreter/language": function(exports, require, module) {
-  var Language;
-
-module.exports = Language = (function() {
-
-  function Language(lang, process) {
-    var key, language, words;
-    if (process == null) {
-      process = true;
-    }
-    this.words = {
-      0: {
-        word: "\n",
-        print: "Start ->"
-      }
-    };
-    this.replace = [];
-    for (key in lang) {
-      try {
-        language = require('data/languages/' + key + '.lang');
-      } catch (e) {
-        console.log('Language definition ' + key + ' not found :(');
-      }
-      if (lang[key] !== '*' && language.version !== lang[key]) {
-        console.log('Wrong language version for ' + key, language.version, lang[key]);
-      } else {
-        words = language.words;
-        if (language.replace) {
-          this.replace = this.replace.concat(language.replace || []);
-        }
-        if (language["extends"]) {
-          language = new Language(language["extends"], false);
-          this.replace = this.replace.concat(language.replace || []);
-        }
-        this.merge(this.words, language.words);
-        this.merge(this.words, words);
-      }
-    }
-    if (process) {
-      this.buildGroups();
-      this.buildReplacers();
-    }
-  }
-
-  Language.prototype.merge = function(target, source) {
-    var key, _results;
-    _results = [];
-    for (key in source) {
-      _results.push(target[key] = source[key]);
-    }
-    return _results;
-  };
-
-  Language.prototype.build = function(source) {
-    var item, out, words, _i, _len;
-    out = "";
-    words = this.words;
-    for (_i = 0, _len = source.length; _i < _len; _i++) {
-      item = source[_i];
-      out += this.getWord(item);
-    }
-    return this.process(out);
-  };
-
-  Language.prototype.process = function(str) {
-    var replace, _i, _len, _ref;
-    _ref = this.replace;
-    for (_i = 0, _len = _ref.length; _i < _len; _i++) {
-      replace = _ref[_i];
-      str = str.replace(replace.replace, replace["with"]);
-    }
-    return str;
-  };
-
-  Language.prototype.getWord = function(key) {
-    var out, word;
-    word = this.words[key];
-    if (typeof word === 'string') {
-      return word;
-    }
-    if (typeof word === 'object') {
-      out = word.word || word.display || word.print || false;
-      if (out === false) {
-        throw new ReferenceError("Can't find a suitable property to return on word " + key);
-      }
-      return out;
-    }
-  };
-
-  Language.prototype.buildGroups = function() {
-    var group, groups, key, words, _i, _len, _ref;
-    groups = {};
-    words = this.words;
-    for (key in words) {
-      if (words[key].group) {
-        if (typeof words[key].group !== 'string') {
-          throw new TypeError("Group name must be string, not " + (typeof words[key].group) + " in " + key + ".");
-        } else {
-          _ref = words[key].group.split(' ');
-          for (_i = 0, _len = _ref.length; _i < _len; _i++) {
-            group = _ref[_i];
-            if (!groups[group]) {
-              groups[group] = [];
-            }
-            groups[group].push(key);
-          }
-        }
-      }
-    }
-    return this.groups = groups;
-  };
-
-  Language.prototype.buildReplacers = function() {
-    var data, group, groups, key, name, replace, template, _i, _j, _len, _len1, _ref, _ref1;
-    this.setupHandlebars();
-    groups = this.groups;
-    data = {};
-    for (name in groups) {
-      group = [];
-      _ref = groups[name];
-      for (_i = 0, _len = _ref.length; _i < _len; _i++) {
-        key = _ref[_i];
-        group.push(this.regexEscape(this.getWord(key)));
-      }
-      data[name] = "(" + (group.join('|')) + ")";
-    }
-    _ref1 = this.replace;
-    for (_j = 0, _len1 = _ref1.length; _j < _len1; _j++) {
-      replace = _ref1[_j];
-      if (typeof replace !== 'object') {
-        throw new TypeError("Replace should be object, not " + (typeof replace) + ".");
-      } else {
-        template = Handlebars.compile(replace.replace);
-        replace.replace = new RegExp(template(data), "g");
-      }
-    }
-    return console.log(this.replace);
-  };
-
-  Language.prototype.setupHandlebars = function() {
-    return Handlebars.registerHelper('not', function(str) {
-      return "(?!" + str + ")";
-    });
-  };
-
-  Language.prototype.regexEscape = function(str) {
-    str = str.replace('\\', '\\\\');
-    str = str.replace('.', '\\.');
-    str = str.replace('+', '\\+');
-    str = str.replace('*', '\\*');
-    str = str.replace('?', '\\?');
-    str = str.replace('^', '\\^');
-    str = str.replace('$', '\\$');
-    str = str.replace('[', '\\[');
-    str = str.replace(']', '\\]');
-    str = str.replace('(', '\\(');
-    str = str.replace(')', '\\)');
-    str = str.replace('|', '\\|');
-    str = str.replace('{', '\\}');
-    str = str.replace('}', '\\}');
-    str = str.replace('/', '\\/');
-    str = str.replace('\'', '\\\'');
-    return str = str.replace('#', '\\#');
-  };
-
-  return Language;
-
-})();
-
-}});
-
-window.require.define({"interpreter/mission": function(exports, require, module) {
-  var Language, Mission,
-  __hasProp = {}.hasOwnProperty,
-  __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
-
-Language = require('interpreter/language');
-
-module.exports = Mission = (function(_super) {
-
-  __extends(Mission, _super);
-
-  function Mission() {
-    return Mission.__super__.constructor.apply(this, arguments);
-  }
-
-  Mission.prototype.initialize = function(name) {
-    var language, m;
-    this.m = m = {
-      view: '2up',
-      interpreter: 'linear',
-      continuous: false
-    };
-    _.extend(m, require("data/missions/" + name + ".mission"));
-    if (typeof m.initialize !== 'function') {
-      throw new TypeError("mission.initialize should be a function not " + (typeof m.initialize) + ".");
-    }
-    if (typeof m.language !== 'object') {
-      throw new TypeError("mission.language should be an object not " + (typeof m.language) + ".");
-    }
-    if (typeof m.reset !== 'function') {
-      throw new TypeError("mission.reset should be a function not " + (typeof m.reset) + ".");
-    }
-    if (typeof m.run !== 'function') {
-      throw new TypeError("mission.run should be a function not " + (typeof m.run) + ".");
-    }
-    if (_.indexOf(this.accepted.view, m.view) === -1) {
-      throw new RangeError("mission.view should be " + (this.accepted.view.join(' or ')) + ", not " + m.view + ".");
-    }
-    if (_.indexOf(this.accepted.interpreter, m.interpreter) === -1) {
-      throw new RangeError("mission.interpreter should be " + (this.accepted.interpreter.join(' or ')) + ", not " + m.interpreter + ".");
-    }
-    if (typeof m.continuous !== 'boolean') {
-      throw new TypeError("mission.continuous should be boolean not " + (typeof m.continuous) + ".");
-    }
-    if (m.view === '2up') {
-      $('#mainview').removeClass('view-fullscreen');
-    } else {
-      $('#mainview').addClass('view-fullscreen');
-    }
-    m.initialize($('#mission')[0]);
-    return language = this.language = new Language(m.language);
-  };
-
-  Mission.prototype.run = function(data) {
-    return this.m.run(data);
-  };
-
-  Mission.prototype.reset = function() {
-    return this.m.reset();
-  };
-
-  Mission.prototype.accepted = {
-    view: ['2up', 'fullscreen'],
-    interpreter: ['linear']
-  };
-
-  return Mission;
-
-})(Backbone.View);
-
-}});
-
-window.require.define({"interpreter/remote": function(exports, require, module) {
-  var Remote, template,
-  __hasProp = {}.hasOwnProperty,
-  __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
-
-template = require('interpreter/templates/remote');
-
-module.exports = Remote = (function(_super) {
-
-  __extends(Remote, _super);
-
-  function Remote() {
-    return Remote.__super__.constructor.apply(this, arguments);
-  }
-
-  Remote.prototype.initialize = function() {
-    return this.render();
-  };
-
-  Remote.prototype.render = function() {
-    var cancel, connect, open, pin, submit, _ths;
-    this.$el.html(template());
-    _ths = this;
-    open = this.$('.remote');
-    connect = this.$('.go');
-    cancel = this.$('.cancel');
-    pin = this.$('input');
-    open.on('click', function() {
-      _ths.$el.removeClass('hide');
-      return pin.focus();
-    });
-    cancel.on('click', function() {
-      return _ths.$el.addClass('hide');
-    });
-    submit = function() {
-      var val;
-      val = pin.val();
-      if (val.length === 4 && !isNaN(parseFloat(val)) && isFinite(val)) {
-        _ths.$el.addClass('hide');
-        pin.blur();
-        return _ths.connect(val);
-      } else {
-        return Util.alert('Sorry, that\s not valid. Please enter the pin shown on the remote.');
-      }
-    };
-    connect.on('click', function() {
-      return submit();
-    });
-    return pin.on('keypress', function(e) {
-      if (e.which === 13) {
-        return submit();
-      }
-    });
-  };
-
-  Remote.prototype.connect = function(pin) {
-    var socket, status, _ths;
-    _ths = this;
-    status = this.$('.status');
-    status.html('Connecting...');
-    socket = io.connect('http://' + window.location.host, {
-      'force new connection': true
-    });
-    socket.on('error', function(e) {
-      status.html('Could not connect.');
-      Util.alert('Could not establish connection :(');
-      return console.log(e);
-    });
-    socket.on('deny', function() {
-      status.html('Wrong pin.');
-      Util.alert('There wasn\'t a remote with that pin online. Are you sure it was correct?');
-      return _ths.$('.remote').trigger('click');
-    });
-    socket.on('accept', function() {
-      status.html('Connected: ' + pin);
-      socket.emit('client', {
-        event: 'join',
-        data: pin
-      });
-      socket.on('remote', function(data) {
-        return _ths.trigger(data.event, data.data);
-      });
-      return _ths.send = function(event, data) {
-        return socket.emit('client', {
-          event: event,
-          data: data
-        });
-      };
-    });
-    return socket.emit('new client', pin);
-  };
-
-  Remote.prototype.send = function(event, data) {
-    return null;
-  };
-
-  return Remote;
-
-})(Backbone.View);
-
-}});
-
-window.require.define({"interpreter/stats": function(exports, require, module) {
+window.require.define({"lib/stats": function(exports, require, module) {
   var Stats,
   __hasProp = {}.hasOwnProperty,
   __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
@@ -1789,16 +1798,7 @@ module.exports = Stats = (function(_super) {
 
 }});
 
-window.require.define({"interpreter/templates/remote": function(exports, require, module) {
-  module.exports = Handlebars.template(function (Handlebars,depth0,helpers,partials,data) {
-  helpers = helpers || Handlebars.helpers;
-  var foundHelper, self=this;
-
-
-  return "<div>\n  <h3>Enter your pin:</h3>\n  <input type=\"tel\" name=\"pin-number\" maxlength=\"4\" placeholder=\"****\">\n  <button class=\"go\">Connect</button>\n  <button class=\"cancel\">Cancel</button>\n</div>\n<a class=\"remote\">\n  <img src=\"/svg/remote-yellow.svg\" width=\"46\">\n</a>\n<p class=\"status\"></p>";});
-}});
-
-window.require.define({"interpreter/usermedia": function(exports, require, module) {
+window.require.define({"lib/usermedia": function(exports, require, module) {
   var UserMedia,
   __hasProp = {}.hasOwnProperty,
   __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
@@ -1871,80 +1871,6 @@ module.exports = UserMedia = (function(_super) {
   return UserMedia;
 
 })(Backbone.View);
-
-}});
-
-window.require.define({"lib/mediator": function(exports, require, module) {
-  var Mediator;
-
-Mediator = (function() {
-
-  function Mediator() {}
-
-  Mediator.prototype.events = {};
-
-  Mediator.prototype.getCallbacksFor = function(keyString) {
-    var callbacks, getFrom, keys;
-    keys = keyString.split(':');
-    callbacks = [];
-    getFrom = function(events) {
-      var key;
-      key = keys.shift();
-      if (key) {
-        if (!events[key]) {
-          events[key] = [];
-        }
-        callbacks.push(events[key]);
-        return getFrom(events[key]);
-      }
-    };
-    getFrom(this.events);
-    return callbacks;
-  };
-
-  Mediator.prototype.on = function(keys, callback) {
-    var bind, name, self, _results;
-    self = this;
-    bind = function(key, callback) {
-      var callbacks;
-      callbacks = self.getCallbacksFor(key);
-      return callbacks[callbacks.length - 1].push(callback);
-    };
-    if (typeof keys === 'object' && keys instanceof Object) {
-      _results = [];
-      for (name in keys) {
-        _results.push(bind(name, keys[name]));
-      }
-      return _results;
-    } else if (typeof keys === 'string' || keys instanceof String) {
-      return bind(keys, callback);
-    }
-  };
-
-  Mediator.prototype.trigger = function(keyString, data) {
-    var call, callback, callbacks, _i, _len, _results;
-    callbacks = this.getCallbacksFor(keyString);
-    _results = [];
-    for (_i = 0, _len = callbacks.length; _i < _len; _i++) {
-      callback = callbacks[_i];
-      _results.push((function() {
-        var _j, _len1, _results1;
-        _results1 = [];
-        for (_j = 0, _len1 = callback.length; _j < _len1; _j++) {
-          call = callback[_j];
-          _results1.push(call(data));
-        }
-        return _results1;
-      })());
-    }
-    return _results;
-  };
-
-  return Mediator;
-
-})();
-
-module.exports = new Mediator;
 
 }});
 
@@ -2343,6 +2269,15 @@ module.exports = Router = (function(_super) {
 
 }});
 
+window.require.define({"templates/CodeCards": function(exports, require, module) {
+  module.exports = Handlebars.template(function (Handlebars,depth0,helpers,partials,data) {
+  helpers = helpers || Handlebars.helpers;
+  var foundHelper, self=this;
+
+
+  return "<nav>\n  <a class=\"logo\" href=\"#\">\n    <h3 class=\"decoded\">Decoded</h3>\n    <h1><span>{</span>code<span>}</span>cards</h1>\n  </a>\n  <section class=\"pin-entry hide\"></section>\n</nav>\n<section>\n  <div id=\"camview\">\n    <div>\n      <canvas id=\"canvas\" width=\"640\" height=\"480\"></canvas>\n    </div>\n    <a class=\"toggler\"></a>\n  </div>\n  <div id=\"mainview\">\n    <div id=\"code\">\n      <h3 id=\"alert\">Please allow your webcam...</h3>\n      <pre><code class=\"language-js\"></code></pre>\n    </div>\n    <div id=\"mission\">\n    </div>\n  </div>\n</section>";});
+}});
+
 window.require.define({"templates/home": function(exports, require, module) {
   module.exports = Handlebars.template(function (Handlebars,depth0,helpers,partials,data) {
   helpers = helpers || Handlebars.helpers;
@@ -2350,15 +2285,6 @@ window.require.define({"templates/home": function(exports, require, module) {
 
 
   return "<header class=\"logo\">\n  <h3 class=\"decoded\">Decoded</h3>\n  <h1><span>{</span>code<span>}</span>cards</h1>\n</header>\n\n<a class=\"icon source\" href=\"#CodeCards\">\n  <img src=\"/svg/source-code.svg\">\n  <h3>CodeCards</h3>\n</a>\n\n<a class=\"icon remote\" href=\"#remote\">\n  <img src=\"/svg/remote.svg\">\n  <h3>Remote Control</h3>\n</a>";});
-}});
-
-window.require.define({"templates/main": function(exports, require, module) {
-  module.exports = Handlebars.template(function (Handlebars,depth0,helpers,partials,data) {
-  helpers = helpers || Handlebars.helpers;
-  var foundHelper, self=this;
-
-
-  return "<nav>\n  <a class=\"logo\" href=\"#\">\n    <h3 class=\"decoded\">Decoded</h3>\n    <h1><span>{</span>code<span>}</span>cards</h1>\n  </a>\n  <section class=\"pin-entry hide\"></section>\n</nav>\n<section>\n  <div id=\"camview\">\n    <div>\n      <canvas id=\"canvas\" width=\"640\" height=\"480\"></canvas>\n    </div>\n    <a class=\"toggler\"></a>\n  </div>\n  <div id=\"mainview\">\n    <div id=\"code\">\n      <h3 id=\"alert\">Please allow your webcam...</h3>\n      <pre><code class=\"language-js\"></code></pre>\n    </div>\n    <div id=\"mission\">\n    </div>\n  </div>\n</section>";});
 }});
 
 window.require.define({"ui/slider": function(exports, require, module) {

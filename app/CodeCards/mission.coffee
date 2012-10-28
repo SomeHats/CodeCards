@@ -1,4 +1,4 @@
-Language = require 'interpreter/language'
+Language = require 'CodeCards/language'
 
 module.exports = class Mission extends Backbone.View
   initialize: (name) ->
