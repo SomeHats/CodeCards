@@ -151,16 +151,14 @@ module.exports = CodeCards = (function(_super) {
         return _ths.trigger('code', code.string);
       }
     });
-    this.mission = mission = new Mission('fox');
     this.setupController();
+    this.mission = mission = new Mission('fox');
     return this.on('change:play', function() {
       this.interpreter.UserMedia.paused = !this.play;
       if (!this.play) {
-        $('#mainview').addClass('view-fullscreen');
         this.mission.run(this.code);
         return $('#alert').html('Paused.');
       } else {
-        $('#mainview').removeClass('view-fullscreen');
         return this.mission.reset();
       }
     });
@@ -734,12 +732,13 @@ module.exports = Mission = (function(_super) {
   }
 
   Mission.prototype.initialize = function(name) {
-    var language, m;
+    var controller, language, m;
     this.m = m = {
       view: '2up',
       interpreter: 'linear',
       continuous: false
     };
+    controller = App.codeCards.controller;
     _.extend(m, require("data/missions/" + name + ".mission"));
     if (typeof m.initialize !== 'function') {
       throw new TypeError("mission.initialize should be a function not " + (typeof m.initialize) + ".");
@@ -762,8 +761,36 @@ module.exports = Mission = (function(_super) {
     if (typeof m.continuous !== 'boolean') {
       throw new TypeError("mission.continuous should be boolean not " + (typeof m.continuous) + ".");
     }
+    if (!m.continuous) {
+      controller.rc.options.add({
+        "with": App.codeCards,
+        property: 'play',
+        event: 'change:play',
+        label: 'Mission',
+        type: 'toggle-button',
+        "true": 'Play!',
+        "false": 'Reset',
+        value: true
+      });
+    }
     if (m.view === '2up') {
       $('#mainview').removeClass('view-fullscreen');
+      controller.rc.options.add({
+        "with": this,
+        event: 'fullscreen',
+        label: 'Fullscreen mode',
+        type: 'toggle-button',
+        "true": 'Turn off',
+        "false": 'Turn on',
+        value: false
+      });
+      this.on('fullscreen', function(fs) {
+        if (fs) {
+          return $('#mainview').addClass('view-fullscreen');
+        } else {
+          return $('#mainview').removeClass('view-fullscreen');
+        }
+      });
     } else {
       $('#mainview').addClass('view-fullscreen');
     }
@@ -2604,7 +2631,6 @@ module.exports = Option = (function(_super) {
   };
 
   Option.prototype.createView = function() {
-    console.log(this.toJSON());
     this.view = UI.createFrom(this.toJSON());
     if (this.view) {
       this.view.on('change', function(value) {

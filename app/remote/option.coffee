@@ -12,7 +12,6 @@ module.exports = class Option extends Backbone.Model
       @set 'group', 'General'
 
   createView: ->
-    console.log @toJSON()
     @view = UI.createFrom @toJSON()
     if @view
       @view.on 'change', (value) ->

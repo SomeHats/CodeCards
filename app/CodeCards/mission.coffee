@@ -7,6 +7,8 @@ module.exports = class Mission extends Backbone.View
       interpreter: 'linear'
       continuous: no
 
+    controller = App.codeCards.controller
+
     _.extend m, require "data/missions/#{name}.mission"
 
     if typeof m.initialize isnt 'function'
@@ -30,8 +32,31 @@ module.exports = class Mission extends Backbone.View
     if typeof m.continuous isnt 'boolean'
       throw new TypeError "mission.continuous should be boolean not #{typeof m.continuous}."
 
+    if !m.continuous
+      controller.rc.options.add
+        with: App.codeCards
+        property: 'play'
+        event: 'change:play'
+        label: 'Mission'
+        type: 'toggle-button'
+        true: 'Play!'
+        false: 'Reset'
+        value: true
+
     if m.view is '2up'
       $('#mainview').removeClass 'view-fullscreen'
+      controller.rc.options.add
+        with: @
+        event: 'fullscreen'
+        label: 'Fullscreen mode'
+        type: 'toggle-button'
+        true: 'Turn off'
+        false: 'Turn on'
+        value: false
+
+      @on 'fullscreen', (fs) ->
+        if fs then $('#mainview').addClass 'view-fullscreen' else $('#mainview').removeClass 'view-fullscreen'
+
     else
       $('#mainview').addClass 'view-fullscreen'
 

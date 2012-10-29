@@ -64,21 +64,19 @@ module.exports = class CodeCards extends Backbone.View
         _ths.code = code.string
         _ths.trigger 'code', code.string
 
+    @setupController()
+
     # Load up the mission. TODO:- missions other than sample
     @mission = mission = new Mission 'fox'
-
-    @setupController()
 
     # Run the mission when needed
     @on 'change:play', ->
       @interpreter.UserMedia.paused = !@play
 
       if !@play
-        $('#mainview').addClass 'view-fullscreen'
         @mission.run(@code)
         $('#alert').html 'Paused.'
       else
-        $('#mainview').removeClass 'view-fullscreen'
         @mission.reset()
 
   setupController: ->
