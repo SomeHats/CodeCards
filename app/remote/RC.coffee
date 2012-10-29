@@ -42,6 +42,8 @@ class RC extends Backbone.View
     @on 'client-update remote-update', (update) ->
       model = @options.where id: update.id
       model[0].silentUpdate update.value
+      if @type is 'local'
+        @update @options.where(id: update.id)[0].toJSON()
 
   update: (obj) ->
     if typeof obj.property isnt 'undefined'
@@ -119,7 +121,6 @@ module.exports.Local = class Local extends RC
 
     socket.on 'remote', (data) ->
       _ths.trigger "remote-#{data.event}", data.data
-      console.log data
 
   type: 'local'
 

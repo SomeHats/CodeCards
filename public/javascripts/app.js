@@ -169,18 +169,9 @@ module.exports = CodeCards = (function(_super) {
   CodeCards.prototype.setupController = function() {
     var controller, _ths;
     _ths = this;
-    controller = this.controller = new Controller({
+    return controller = this.controller = new Controller({
       el: this.$('.pin-entry'),
       CC: this
-    });
-    return controller.on('change-setting', function(data) {
-      if (data.concerns) {
-        _ths[data.concerns][data.setting] = data.value;
-        return _ths[data.concerns].trigger('change:' + data.setting);
-      } else {
-        _ths[data.setting] = data.value;
-        return _ths.trigger('change:' + data.setting);
-      }
     });
   };
 
@@ -191,8 +182,8 @@ module.exports = CodeCards = (function(_super) {
     toggler.on('click', function() {
       return sec.toggleClass('extended');
     });
-    this.on('change:expandcamera', function() {
-      if (this.expandcamera) {
+    this.on('toggle-camera', function(val) {
+      if (!val) {
         return sec.addClass('extended');
       } else {
         return sec.removeClass('extended');
@@ -310,7 +301,7 @@ module.exports = Controller = (function(_super) {
         type: 'range',
         min: -100,
         max: 100,
-        group: 'General'
+        group: 'Camera'
       }, {
         "with": CC.interpreter,
         property: 'contrast',
@@ -2420,7 +2411,12 @@ RC = (function(_super) {
       model = this.options.where({
         id: update.id
       });
-      return model[0].silentUpdate(update.value);
+      model[0].silentUpdate(update.value);
+      if (this.type === 'local') {
+        return this.update(this.options.where({
+          id: update.id
+        })[0].toJSON());
+      }
     });
   };
 
@@ -2517,8 +2513,7 @@ module.exports.Local = Local = (function(_super) {
       options: _ths.options.getExportable()
     });
     return socket.on('remote', function(data) {
-      _ths.trigger("remote-" + data.event, data.data);
-      return console.log(data);
+      return _ths.trigger("remote-" + data.event, data.data);
     });
   };
 
@@ -2578,12 +2573,6 @@ module.exports.Remote = Remote = (function(_super) {
   return Remote;
 
 })(RC);
-
-}});
-
-window.require.define({"remote/local": function(exports, require, module) {
-  
-
 
 }});
 
@@ -2707,29 +2696,6 @@ function program5(depth0,data) {
   if(stack1 || stack1 === 0) { buffer += stack1; }
   buffer += " id=\"groups\">\n</div>";
   return buffer;});
-}});
-
-window.require.define({"remote/view": function(exports, require, module) {
-  var RemoteView,
-  __hasProp = {}.hasOwnProperty,
-  __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
-
-module.exports = RemoteView = (function(_super) {
-
-  __extends(RemoteView, _super);
-
-  function RemoteView() {
-    return RemoteView.__super__.constructor.apply(this, arguments);
-  }
-
-  RemoteView.prototype.initialize = function() {
-    return console.log('hey');
-  };
-
-  return RemoteView;
-
-})(Backbone.View);
-
 }});
 
 window.require.define({"router": function(exports, require, module) {

@@ -23,7 +23,7 @@ module.exports = class Controller extends Backbone.View
       type: 'range'
       min: -100
       max: 100
-      group: 'General'
+      group: 'Camera'
     ,
       with: CC.interpreter
       property: 'contrast'

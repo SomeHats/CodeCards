@@ -85,16 +85,6 @@ module.exports = class CodeCards extends Backbone.View
     _ths = @
     controller = @controller = new Controller el: @$('.pin-entry'), CC: @
 
-    ## Receiving
-    # Settings
-    controller.on 'change-setting', (data) ->
-      if data.concerns
-        _ths[data.concerns][data.setting] = data.value
-        _ths[data.concerns].trigger 'change:' + data.setting
-      else
-        _ths[data.setting] = data.value
-        _ths.trigger 'change:' + data.setting
-
   interact: ->
     sec = @$ 'section'
     toggler = @$ '.toggler'
@@ -102,8 +92,8 @@ module.exports = class CodeCards extends Backbone.View
     toggler.on 'click', ->
       sec.toggleClass 'extended'
 
-    @on 'change:expandcamera', ->
-      if @expandcamera
+    @on 'toggle-camera', (val) ->
+      if !val
         sec.addClass 'extended'
       else
         sec.removeClass 'extended'
