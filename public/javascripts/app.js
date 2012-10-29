@@ -1252,22 +1252,24 @@ module.exports = {
     fox: 0
   },
   initialize: function(el) {
-    var $el, cake, ff, template, _ths;
+    var $el, getSprite, name, template, _i, _len, _ref, _ths;
     _ths = this;
     template = require('data/missions/templates/sample');
     $el = $(el);
     $el.addClass('sample');
     $el.html(template());
-    ff = $el.find('.ff');
-    ff.on('load', function() {
-      return _ths.reset();
-    });
-    this.sprite.player.image = ff[0];
-    cake = $el.find('.cake');
-    cake.on('load', function() {
-      return _ths.reset();
-    });
-    this.sprite.cake.image = cake[0];
+    getSprite = function(name) {
+      el = $el.find("." + name);
+      el.on('load', function() {
+        return _ths.reset();
+      });
+      return _ths.sprite[name].image = el[0];
+    };
+    _ref = ['player', 'cake', 'wall', 'bg'];
+    for (_i = 0, _len = _ref.length; _i < _len; _i++) {
+      name = _ref[_i];
+      getSprite(name);
+    }
     this.canvas = $el.find('canvas');
     this.ctx = this.canvas[0].getContext('2d');
     this.width = 640;
@@ -1491,13 +1493,15 @@ module.exports = {
     return ctx.drawImage(sprite.image, Math.floor(sprite.stage) * sprite.tile, sprite[sprite.current].row * sprite.tile, sprite.tile, sprite.tile, x * size, y * size, size, size);
   },
   drawScene: function() {
-    var cakeSprite, ctx, height, m, size, width, x, y, _i, _j, _k, _l, _ref, _ref1, _ref2, _ref3;
+    var bgSprite, cakeSprite, ctx, height, m, size, wallSprite, width, x, y, _i, _j, _k, _l, _ref, _ref1, _ref2, _ref3;
     width = this.width;
     height = this.height;
     size = this.size;
     ctx = this.ctx;
     m = this.displayMap || this.map;
     cakeSprite = this.sprite.cake;
+    wallSprite = this.sprite.wall;
+    bgSprite = this.sprite.bg;
     size = this.size;
     if ((cakeSprite.stage += 0.2) >= cakeSprite[cakeSprite.current].length) {
       cakeSprite.stage = 0;
@@ -1518,10 +1522,10 @@ module.exports = {
     ctx.stroke();
     for (y = _k = 0, _ref2 = m.length; 0 <= _ref2 ? _k < _ref2 : _k > _ref2; y = 0 <= _ref2 ? ++_k : --_k) {
       for (x = _l = 0, _ref3 = m[y].length; 0 <= _ref3 ? _l < _ref3 : _l > _ref3; x = 0 <= _ref3 ? ++_l : --_l) {
+        ctx.drawImage(bgSprite.image, x * size, y * size);
         if (m[y][x]) {
           if (m[y][x] === 1) {
-            ctx.fillStyle = 'orange';
-            ctx.fillRect(x * size + 1, y * size + 1, size, size);
+            ctx.drawImage(wallSprite.image, x * size, y * size);
           }
           if (m[y][x] === 2) {
             ctx.drawImage(cakeSprite.image, Math.floor(cakeSprite.stage) * cakeSprite.tile, cakeSprite[cakeSprite.current].row * cakeSprite.tile, cakeSprite.tile, cakeSprite.tile, x * size, y * size, size, size);
@@ -1566,6 +1570,12 @@ module.exports = {
       current: 'cake',
       stage: 0,
       tile: 32
+    },
+    wall: {
+      tile: 32
+    },
+    bg: {
+      tile: 32
     }
   }
 };
@@ -1578,7 +1588,7 @@ window.require.define({"data/missions/templates/sample": function(exports, requi
   var foundHelper, self=this;
 
 
-  return "<canvas width=\"640\" height=\"480\"></canvas>\n<h3 id=\"remain\">Remaining:</h3>\n<h3 id=\"score\">Score:</h3>\n<img class=\"ff\" style=\"display: none;\" src=\"/missions/sample/ff.png\">\n<img class=\"cake\" style=\"display: none;\" src=\"/missions/sample/cake.png\">";});
+  return "<canvas width=\"640\" height=\"480\"></canvas>\n<h3 id=\"remain\">Remaining:</h3>\n<h3 id=\"score\">Score:</h3>\n<p>Images and stuff lovingly &quot;borrowed&quot; from Mozilla's BrowserQuest.</p>\n<img class=\"player\" style=\"display: none;\" src=\"/missions/sample/ff.png\">\n<img class=\"cake\" style=\"display: none;\" src=\"/missions/sample/cake.png\">\n<img class=\"wall\" style=\"display: none;\" src=\"/missions/sample/wall.png\">\n<img class=\"bg\" style=\"display: none;\" src=\"/missions/sample/bg.png\">";});
 }});
 
 window.require.define({"home": function(exports, require, module) {

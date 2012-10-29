@@ -17,16 +17,13 @@ module.exports =
     $el.addClass 'sample'
     $el.html template()
 
-    ff = $el.find '.ff'
-    ff.on 'load', ->
-      _ths.reset()
-    @sprite.player.image = ff[0]
+    getSprite = (name) ->
+      el = $el.find ".#{name}"
+      el.on 'load', ->
+        _ths.reset()
+      _ths.sprite[name].image = el[0]
 
-    cake = $el.find '.cake'
-    cake.on 'load', ->
-      _ths.reset()
-    @sprite.cake.image = cake[0]
-
+    getSprite name for name in ['player', 'cake', 'wall', 'bg']
 
     @canvas = $el.find 'canvas'
     @ctx = @canvas[0].getContext '2d'
@@ -191,6 +188,8 @@ module.exports =
     ctx = @ctx
     m = @displayMap or @map
     cakeSprite = @sprite.cake
+    wallSprite = @sprite.wall
+    bgSprite = @sprite.bg
     size = @size
 
     if (cakeSprite.stage += 0.2) >= cakeSprite[cakeSprite.current].length
@@ -214,10 +213,10 @@ module.exports =
 
     for y in [0...m.length]
       for x in [0...m[y].length]
+        ctx.drawImage bgSprite.image, x * size, y * size
         if m[y][x]
           if m[y][x] is 1
-            ctx.fillStyle = 'orange'
-            ctx.fillRect x*size + 1, y * size + 1, size, size
+            ctx.drawImage wallSprite.image, x * size, y * size
           if m[y][x] is 2
             ctx.drawImage cakeSprite.image,
               Math.floor(cakeSprite.stage) * cakeSprite.tile,
@@ -277,4 +276,10 @@ module.exports =
 
       current: 'cake'
       stage: 0
+      tile: 32
+
+    wall:
+      tile: 32
+
+    bg:
       tile: 32
