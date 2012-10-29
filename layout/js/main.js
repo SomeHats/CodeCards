@@ -1,7 +1,7 @@
 $(function() {
   var $doc = $(document),
       $tmp = $('<div></div>'),
-      Language = require('interpreter/language'),
+      Language = require('CodeCards/language'),
       cards = [],
       words = {}, 
       images = {};
@@ -271,6 +271,8 @@ $(function() {
           .attr('id', 'page-' + i)
           .attr('download', 'cc-'+(layers.front?'front-':'back-')+(layers.print?'print-':'cut-')+'page-' + i + '.svg')
           .find('svg');
+
+        console.log($svg.find('#first').attr('class', layers.front ? 'front' : 'back'));
 
         $guides = $svg.find('.guides');
 

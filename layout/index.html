@@ -13,6 +13,7 @@
     <link rel="stylesheet" href="css/style.css">
 
     <script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/jquery/1.8.2/jquery.min.js"></script>
+    <script type="text/javascript" src="../public/javascripts/vendor.js"></script>
     <script type="text/javascript" src="../public/javascripts/app.js"></script>
     <script type="text/javascript" src="js/base64.js"></script>
     <script type="text/javascript" src="js/draw.js"></script>
@@ -45,7 +46,7 @@
         <label><input type="checkbox" id="print_cb" checked>Print</label>
         <label><input type="checkbox" id="cut_cb">Cut lines</label>
         <label><input type="checkbox" id="images_cb" checked>Images</label>
-        <label><input type="checkbox" id="blank_cb" checked>Blank cards?</label>
+        <label><input type="checkbox" id="blank_cb">Blank cards?</label>
         <label><input type="checkbox" id="guides_cb" checked>Guides</label>
         | It is recommended that you adjust settings with &quot;front&quot; visible.
         | <button id="zoom">Zoom</button>
@@ -95,6 +96,13 @@
             rect.aruco {
               stroke: none;
               fill: black;
+            }
+
+            #first.front {
+              fill: rgb(252, 247, 0);
+            }
+            #first.back {
+              fill: white;
             }
           </style>
 
