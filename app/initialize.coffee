@@ -3,7 +3,7 @@ Router = require 'router'
 
 Home = require 'home'
 CodeCards = require 'CodeCards/CodeCards'
-Remote = require 'remote/remote'
+Remote = require 'remote'
 
 module.exports = class App extends Backbone.View
   initialize: ->

@@ -1,7 +1,57 @@
 template = require 'CodeCards/templates/controller'
+RC = require 'remote/RC'
 
 module.exports = class Controller extends Backbone.View
   initialize: ->
+    rc = @rc = new RC.Local el: $ '#local-RC'
+
+    CC = @options.CC
+
+    rc.options.add [
+      with: CC
+      event: 'toggle-camera'
+      label: 'Camera'
+      type: 'toggle-button'
+      value: true
+      true: 'Show'
+      false: 'Hide'
+      group: 'Camera'
+    ,
+      with: CC.interpreter
+      property: 'brightness'
+      label: 'Brightness'
+      type: 'range'
+      min: -100
+      max: 100
+      group: 'General'
+    ,
+      with: CC.interpreter
+      property: 'contrast'
+      label: 'Contrast'
+      type: 'range'
+      min: -100
+      max: 100
+      group: 'Camera'
+    ,
+      with: CC.interpreter
+      property: 'sharpen'
+      label: 'Sharpen'
+      type: 'range'
+      float: true
+      min: 0
+      max: 5
+      group: 'Camera'
+    ,
+      with: CC.interpreter
+      property: 'distanceLimit'
+      label: 'Distance Limit'
+      type: 'range'
+      float: true
+      min: 0
+      max: 15
+      group: 'Camera'
+    ]
+
     @render()
 
   render: ->
@@ -12,6 +62,13 @@ module.exports = class Controller extends Backbone.View
     connect = @$ '.go'
     cancel = @$ '.cancel'
     pin = @$ 'input'
+    status = @$ '.status'
+
+    @rc.on 'status', (msg) ->
+      if msg is 'Wrong pin.'
+        open.trigger 'click'
+
+      status.html msg
 
     open.on 'click', ->
       _ths.$el.removeClass 'hide'
@@ -24,45 +81,12 @@ module.exports = class Controller extends Backbone.View
       if val.length is 4 and !isNaN(parseFloat(val)) and isFinite(val)
         _ths.$el.addClass 'hide'
         pin.blur()
-        _ths.connect val
+        _ths.rc.connect val
       else
         Util.alert 'Sorry, that\s not valid. Please enter the pin shown on the remote.'
 
     connect.on 'click', -> submit()
     pin.on 'keypress', (e) -> if e.which is 13 then submit()
 
-  connect: (pin) ->
-    _ths = @
-
-    status = @$ '.status'
-    status.html 'Connecting...'
-
-    socket = io.connect 'http://' + window.location.host, 'force new connection':true
-
-    socket.on 'error', (e) ->
-      status.html 'Could not connect.'
-      Util.alert 'Could not establish connection :('
-      console.log e
-
-    socket.on 'deny', ->
-      status.html 'Wrong pin.'
-      Util.alert 'There wasn\'t a remote with that pin online. Are you sure it was correct?'
-      _ths.$('.remote').trigger 'click'
-
-    socket.on 'accept', ->
-      status.html 'Connected: ' + pin
-
-      socket.emit 'client', 
-        event: 'join'
-        data: pin
-      socket.on 'remote', (data) ->
-        _ths.trigger data.event, data.data
-
-      _ths.send = (event, data) ->
-        socket.emit 'client',
-          event: event
-          data: data
-
-    socket.emit 'new client', pin
-
-  send: (event, data) -> null
+  send: (event, data) ->
+    @rc.send event, data

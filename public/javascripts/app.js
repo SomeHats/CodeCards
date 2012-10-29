@@ -152,6 +152,7 @@ module.exports = CodeCards = (function(_super) {
       }
     });
     this.mission = mission = new Mission('fox');
+    this.setupController();
     return this.on('change:play', function() {
       this.interpreter.UserMedia.paused = !this.play;
       if (!this.play) {
@@ -169,7 +170,8 @@ module.exports = CodeCards = (function(_super) {
     var controller, _ths;
     _ths = this;
     controller = this.controller = new Controller({
-      el: this.$('.pin-entry')
+      el: this.$('.pin-entry'),
+      CC: this
     });
     return controller.on('change-setting', function(data) {
       if (data.concerns) {
@@ -183,18 +185,23 @@ module.exports = CodeCards = (function(_super) {
   };
 
   CodeCards.prototype.interact = function() {
-    var sec, toggler;
+    var camView, canCont, sec, toggler;
     sec = this.$('section');
     toggler = this.$('.toggler');
     toggler.on('click', function() {
       return sec.toggleClass('extended');
     });
-    return this.on('change:expandcamera', function() {
+    this.on('change:expandcamera', function() {
       if (this.expandcamera) {
         return sec.addClass('extended');
       } else {
         return sec.removeClass('extended');
       }
+    });
+    canCont = this.$('#camview .cnvs');
+    camView = this.$('#camview');
+    return canCont.on('click', function() {
+      return camView.toggleClass('hide-cnvs');
     });
   };
 
@@ -212,7 +219,6 @@ module.exports = CodeCards = (function(_super) {
     this.$el.html(template());
     this.stats = new Stats;
     this.interact();
-    this.setupController();
     nav = this.$('nav');
     return setTimeout(function() {
       nav.animate({
@@ -265,11 +271,13 @@ module.exports = CodeCards = (function(_super) {
 }});
 
 window.require.define({"CodeCards/controller": function(exports, require, module) {
-  var Controller, template,
+  var Controller, RC, template,
   __hasProp = {}.hasOwnProperty,
   __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
 
 template = require('CodeCards/templates/controller');
+
+RC = require('remote/RC');
 
 module.exports = Controller = (function(_super) {
 
@@ -280,17 +288,75 @@ module.exports = Controller = (function(_super) {
   }
 
   Controller.prototype.initialize = function() {
+    var CC, rc;
+    rc = this.rc = new RC.Local({
+      el: $('#local-RC')
+    });
+    CC = this.options.CC;
+    rc.options.add([
+      {
+        "with": CC,
+        event: 'toggle-camera',
+        label: 'Camera',
+        type: 'toggle-button',
+        value: true,
+        "true": 'Show',
+        "false": 'Hide',
+        group: 'Camera'
+      }, {
+        "with": CC.interpreter,
+        property: 'brightness',
+        label: 'Brightness',
+        type: 'range',
+        min: -100,
+        max: 100,
+        group: 'General'
+      }, {
+        "with": CC.interpreter,
+        property: 'contrast',
+        label: 'Contrast',
+        type: 'range',
+        min: -100,
+        max: 100,
+        group: 'Camera'
+      }, {
+        "with": CC.interpreter,
+        property: 'sharpen',
+        label: 'Sharpen',
+        type: 'range',
+        float: true,
+        min: 0,
+        max: 5,
+        group: 'Camera'
+      }, {
+        "with": CC.interpreter,
+        property: 'distanceLimit',
+        label: 'Distance Limit',
+        type: 'range',
+        float: true,
+        min: 0,
+        max: 15,
+        group: 'Camera'
+      }
+    ]);
     return this.render();
   };
 
   Controller.prototype.render = function() {
-    var cancel, connect, open, pin, submit, _ths;
+    var cancel, connect, open, pin, status, submit, _ths;
     this.$el.html(template());
     _ths = this;
     open = this.$('.remote');
     connect = this.$('.go');
     cancel = this.$('.cancel');
     pin = this.$('input');
+    status = this.$('.status');
+    this.rc.on('status', function(msg) {
+      if (msg === 'Wrong pin.') {
+        open.trigger('click');
+      }
+      return status.html(msg);
+    });
     open.on('click', function() {
       _ths.$el.removeClass('hide');
       return pin.focus();
@@ -304,7 +370,7 @@ module.exports = Controller = (function(_super) {
       if (val.length === 4 && !isNaN(parseFloat(val)) && isFinite(val)) {
         _ths.$el.addClass('hide');
         pin.blur();
-        return _ths.connect(val);
+        return _ths.rc.connect(val);
       } else {
         return Util.alert('Sorry, that\s not valid. Please enter the pin shown on the remote.');
       }
@@ -319,45 +385,8 @@ module.exports = Controller = (function(_super) {
     });
   };
 
-  Controller.prototype.connect = function(pin) {
-    var socket, status, _ths;
-    _ths = this;
-    status = this.$('.status');
-    status.html('Connecting...');
-    socket = io.connect('http://' + window.location.host, {
-      'force new connection': true
-    });
-    socket.on('error', function(e) {
-      status.html('Could not connect.');
-      Util.alert('Could not establish connection :(');
-      return console.log(e);
-    });
-    socket.on('deny', function() {
-      status.html('Wrong pin.');
-      Util.alert('There wasn\'t a remote with that pin online. Are you sure it was correct?');
-      return _ths.$('.remote').trigger('click');
-    });
-    socket.on('accept', function() {
-      status.html('Connected: ' + pin);
-      socket.emit('client', {
-        event: 'join',
-        data: pin
-      });
-      socket.on('remote', function(data) {
-        return _ths.trigger(data.event, data.data);
-      });
-      return _ths.send = function(event, data) {
-        return socket.emit('client', {
-          event: event,
-          data: data
-        });
-      };
-    });
-    return socket.emit('new client', pin);
-  };
-
   Controller.prototype.send = function(event, data) {
-    return null;
+    return this.rc.send(event, data);
   };
 
   return Controller;
@@ -386,8 +415,6 @@ module.exports = Interpreter = (function(_super) {
   }
 
   Interpreter.prototype.imageData = [];
-
-  Interpreter.prototype.blend = 3;
 
   Interpreter.prototype.contrast = 0;
 
@@ -592,10 +619,6 @@ module.exports = Language = (function() {
       css = eList[lineNo] ? 'line error' : 'line';
       html += "<" + tag + " class=\"" + css + "\" data-line=\"" + lineNo + "\">" + line + "</" + tag + ">";
     }
-    console.log({
-      string: out,
-      html: html
-    });
     return {
       string: out,
       html: html,
@@ -665,7 +688,7 @@ module.exports = Language = (function() {
         replace.replace = new RegExp(template(data), "g");
       }
     }
-    return console.log(this.replace);
+    return null;
   };
 
   Language.prototype.setupHandlebars = function() {
@@ -920,7 +943,7 @@ module.exports = {
   words: {
     500: {
       word: "fox",
-      img: "http://i.imgur.com/yQTeT.png",
+      img: "http://i.imgur.com/mIkYE.png",
       group: "objects"
     },
     501: {
@@ -973,17 +996,17 @@ module.exports = {
     },
     521: {
       word: "wall",
-      img: "http://i.imgur.com/CtDV3.png",
+      img: "http://i.imgur.com/3nZae.png",
       group: "objects"
     },
     522: {
       word: "cake",
-      img: "http://i.imgur.com/oUI2s.png",
+      img: "http://i.imgur.com/uS9s8.png",
       group: "objects"
     },
     525: {
       word: "goblin",
-      img: "http://i.imgur.com/Tv4Kg.png",
+      img: "http://i.imgur.com/g3Mix.png",
       group: "objects"
     }
   }
@@ -1668,7 +1691,7 @@ Home = require('home');
 
 CodeCards = require('CodeCards/CodeCards');
 
-Remote = require('remote/remote');
+Remote = require('remote');
 
 module.exports = App = (function(_super) {
 
@@ -2124,14 +2147,14 @@ module.exports = WebWorker = (function(_super) {
 
 }});
 
-window.require.define({"remote/remote": function(exports, require, module) {
-  var Remote, UI, template,
+window.require.define({"remote": function(exports, require, module) {
+  var RC, Remote, UI,
   __hasProp = {}.hasOwnProperty,
   __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
 
 UI = require('ui/ui');
 
-template = require('remote/template');
+RC = require('remote/RC');
 
 module.exports = Remote = (function(_super) {
 
@@ -2142,30 +2165,16 @@ module.exports = Remote = (function(_super) {
   }
 
   Remote.prototype.initialize = function() {
-    var socket, _ths;
-    this.connected = false;
-    _ths = this;
-    socket = io.connect('http://' + window.location.host, {
-      'force new connection': true
+    var rc;
+    rc = this.rc = new RC.Remote({
+      el: this.el
     });
-    socket.on('connect', function() {
-      return this.connected = true;
-    });
-    socket.on('error', function(e) {
-      Util.alert('Could not connect to remote server.');
-      return router.navigate('/', {
-        trigger: true
-      });
-    });
-    socket.on('client', function(data) {
-      return _ths.trigger(data.event, data.data);
-    });
-    this.on('join', this.connectionEstablished);
-    return this.socket = socket;
+    rc.connect();
+    return rc.on('client-join', this.connectionEstablished, this);
   };
 
-  Remote.prototype.connectionEstablished = function() {
-    var navItems, pages, pin;
+  Remote.prototype.connectionEstablished = function(data) {
+    var pin;
     pin = this.$('.pin');
     pin.animate({
       opacity: 0,
@@ -2177,9 +2186,14 @@ module.exports = Remote = (function(_super) {
         return pin.css('display', 'none');
       }
     });
-    this.$('.hide').removeClass('hide');
+    return this.$('.hide').removeClass('hide');
+  };
+
+  Remote.prototype.setupNavBehaviour = function() {
+    var navItems, pages;
     navItems = this.$('nav li');
     pages = this.$('section');
+    navItems.off('click');
     return navItems.on('click', function() {
       var el;
       el = $(this);
@@ -2193,7 +2207,7 @@ module.exports = Remote = (function(_super) {
   };
 
   Remote.prototype.render = function(callback, ctx) {
-    var socket, _ths;
+    var rc, showThings, _ths;
     if (callback == null) {
       callback = (function() {
         return null;
@@ -2202,14 +2216,10 @@ module.exports = Remote = (function(_super) {
     if (ctx == null) {
       ctx = this;
     }
-    socket = this.socket;
+    rc = this.rc;
     _ths = this;
-    socket.emit('new remote');
-    return socket.on('accept', function(pin) {
-      _ths.$el.html(template({
-        pin: pin
-      }));
-      _ths.setupUI();
+    showThings = function(pin) {
+      rc.render(pin);
       return setTimeout(function() {
         return _ths.$('.pin').animate({
           opacity: 1,
@@ -2221,7 +2231,12 @@ module.exports = Remote = (function(_super) {
           }
         });
       }, 25);
-    });
+    };
+    if (rc.hasPin) {
+      return showThings(rc.pin);
+    } else {
+      return rc.on('pin', showThings);
+    }
   };
 
   Remote.prototype.unrender = function(callback, ctx) {
@@ -2233,7 +2248,7 @@ module.exports = Remote = (function(_super) {
     if (ctx == null) {
       ctx = this;
     }
-    this.socket.disconnect();
+    this.rc.socket.disconnect();
     return this.$('.pin').animate({
       opacity: 0,
       translateY: '200px'
@@ -2346,19 +2361,375 @@ module.exports = Remote = (function(_super) {
 
 }});
 
+window.require.define({"remote/RC": function(exports, require, module) {
+  var Local, Option, RC, Remote, template,
+  __hasProp = {}.hasOwnProperty,
+  __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
+
+Option = require('remote/option');
+
+template = require('remote/template');
+
+module.exports = {};
+
+RC = (function(_super) {
+
+  __extends(RC, _super);
+
+  function RC() {
+    return RC.__super__.constructor.apply(this, arguments);
+  }
+
+  RC.prototype.initialize = function() {
+    var _ths;
+    this.groups = {};
+    _ths = this;
+    if (this.type === 'local') {
+      this.render(false);
+    }
+    this.options = new Backbone.Collection;
+    this.options.model = Option;
+    this.options.getExportable = function() {
+      return this.map(function(val) {
+        return val.getExportable();
+      });
+    };
+    this.options.on('add', function(added) {
+      var group, id, model, view;
+      id = added.attributes.id;
+      model = this.where({
+        id: id
+      })[0];
+      group = model.get('group');
+      view = model.createView();
+      if (view) {
+        if (!_ths.groups[group]) {
+          _ths.createGroup(group);
+        }
+        return _ths.groups[group].append(view.el);
+      }
+    });
+    this.options.on('change', function(change) {
+      this.send('update', change.getExportable());
+      if (this.type === 'local') {
+        return this.update(change.toJSON());
+      }
+    }, this);
+    return this.on('client-update remote-update', function(update) {
+      var model;
+      model = this.options.where({
+        id: update.id
+      });
+      return model[0].silentUpdate(update.value);
+    });
+  };
+
+  RC.prototype.update = function(obj) {
+    if (typeof obj.property !== 'undefined') {
+      obj["with"][obj.property] = obj.value;
+    }
+    if (typeof obj.event !== 'undefined') {
+      return obj["with"].trigger(obj.event, obj.value);
+    }
+  };
+
+  RC.prototype.createGroup = function(name) {
+    var el, li, safeName;
+    safeName = name.toLowerCase().replace(' ', '-');
+    li = $('<li></li>').text(name).attr('title', safeName);
+    li.appendTo(this.$('nav ul'));
+    el = $('<section></section>').attr('id', safeName);
+    el.append($('<h2></h2>').text(name));
+    el.appendTo(this.$('#groups'));
+    this.groups[name] = el;
+    this.setupNavBehaviour();
+    if (_.keys(this.groups).length === 1) {
+      return li.trigger('click');
+    }
+  };
+
+  RC.prototype.render = function(pin) {
+    this.$el.html(template({
+      pin: pin
+    }));
+    return this.createGroup('General');
+  };
+
+  RC.prototype.setupNavBehaviour = function() {
+    var navItems, pages;
+    navItems = this.$('nav li');
+    pages = this.$('section');
+    navItems.off('click');
+    return navItems.on('click', function() {
+      var el;
+      el = $(this);
+      if (!el.hasClass('active')) {
+        navItems.filter('.active').removeClass('active');
+        el.addClass('active');
+        pages.filter('.active').removeClass('active');
+        return pages.filter('#' + el.attr('title')).addClass('active');
+      }
+    });
+  };
+
+  RC.prototype.send = function() {
+    return null;
+  };
+
+  return RC;
+
+})(Backbone.View);
+
+module.exports.Local = Local = (function(_super) {
+
+  __extends(Local, _super);
+
+  function Local() {
+    return Local.__super__.constructor.apply(this, arguments);
+  }
+
+  Local.prototype.connect = function(pin) {
+    var socket, _ths;
+    _ths = this;
+    this.trigger('status', 'Connecting...');
+    socket = io.connect("http://" + window.location.host, {
+      'force new connection': true
+    });
+    socket.on('error', function(e) {
+      _ths.trigger('status', 'Could not connect.');
+      return Util.alert('Could note establish a connection :(');
+    });
+    socket.on('deny', function() {
+      _ths.trigger('status', 'Wrong pin.');
+      return Util.alert('There wasn\'t a remote with that pin online. Are you sure it was correct?');
+    });
+    socket.on('accept', function() {
+      _ths.trigger('status', 'Connected: ' + pin);
+      return _ths.send = function(event, data) {
+        return socket.emit('client', {
+          event: event,
+          data: data
+        });
+      };
+    });
+    socket.emit('new client', {
+      pin: pin,
+      options: _ths.options.getExportable()
+    });
+    return socket.on('remote', function(data) {
+      _ths.trigger("remote-" + data.event, data.data);
+      return console.log(data);
+    });
+  };
+
+  Local.prototype.type = 'local';
+
+  return Local;
+
+})(RC);
+
+module.exports.Remote = Remote = (function(_super) {
+
+  __extends(Remote, _super);
+
+  function Remote() {
+    return Remote.__super__.constructor.apply(this, arguments);
+  }
+
+  Remote.prototype.connect = function() {
+    var socket, _ths;
+    this.connected = false;
+    this.hasPin = false;
+    _ths = this;
+    socket = io.connect('http://' + window.location.host, {
+      'force new connection': true
+    });
+    socket.on('connect', function() {
+      return this.connected = true;
+    });
+    socket.on('error', function() {
+      Util.alert('Could not connect to remote server');
+      return router.navigate('/', {
+        trigger: true
+      });
+    });
+    socket.on('client', function(data) {
+      return _ths.trigger("client-" + data.event, data.data);
+    });
+    this.on('client-join', function(data) {
+      return this.options.add(data.options);
+    });
+    this.send = function(event, data) {
+      return socket.emit('remote', {
+        event: event,
+        data: data
+      });
+    };
+    socket.emit('new remote');
+    return socket.on('accept', function(pin) {
+      _ths.pin = pin;
+      _ths.trigger('pin', pin);
+      return _ths.hasPin = true;
+    });
+  };
+
+  Remote.prototype.type = 'remote';
+
+  return Remote;
+
+})(RC);
+
+}});
+
+window.require.define({"remote/local": function(exports, require, module) {
+  
+
+
+}});
+
+window.require.define({"remote/option": function(exports, require, module) {
+  var Option, UI,
+  __hasProp = {}.hasOwnProperty,
+  __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
+
+UI = require('ui/ui');
+
+module.exports = Option = (function(_super) {
+
+  __extends(Option, _super);
+
+  function Option() {
+    return Option.__super__.constructor.apply(this, arguments);
+  }
+
+  Option.prototype.initialize = function() {
+    if (!this.has('id')) {
+      this.set('id', this.cid);
+    }
+    if ((!this.has('value')) && (this.has('with')) && (this.has('property'))) {
+      this.set('value', this.get('with')[this.get('property')]);
+    }
+    if (!this.has('group')) {
+      return this.set('group', 'General');
+    }
+  };
+
+  Option.prototype.createView = function() {
+    console.log(this.toJSON());
+    this.view = UI.createFrom(this.toJSON());
+    if (this.view) {
+      this.view.on('change', function(value) {
+        return this.set('value', value);
+      }, this);
+      return this.view;
+    } else {
+      return false;
+    }
+  };
+
+  Option.prototype.getExportable = function() {
+    var val;
+    val = this.toJSON();
+    val["with"] = void 0;
+    val.view = void 0;
+    return val;
+  };
+
+  Option.prototype.silentUpdate = function(val) {
+    this.set('value', val, {
+      silent: true
+    });
+    if (this.view) {
+      return this.view.silentUpdate(val);
+    }
+  };
+
+  return Option;
+
+})(Backbone.Model);
+
+}});
+
 window.require.define({"remote/template": function(exports, require, module) {
   module.exports = Handlebars.template(function (Handlebars,depth0,helpers,partials,data) {
   helpers = helpers || Handlebars.helpers;
-  var buffer = "", stack1, foundHelper, self=this, functionType="function", helperMissing=helpers.helperMissing, undef=void 0, escapeExpression=this.escapeExpression;
+  var buffer = "", stack1, stack2, foundHelper, tmp1, self=this, functionType="function", helperMissing=helpers.helperMissing, undef=void 0, escapeExpression=this.escapeExpression;
 
-
-  buffer += "<div class=\"pin\">\n  <p>Here's your pin!</p>\n  <h3>";
+function program1(depth0,data) {
+  
+  var buffer = "", stack1;
+  buffer += "\n<div class=\"pin\">\n  <p>Here's your pin!</p>\n  <h3>";
   foundHelper = helpers.pin;
   stack1 = foundHelper || depth0.pin;
   if(typeof stack1 === functionType) { stack1 = stack1.call(depth0, { hash: {} }); }
   else if(stack1=== undef) { stack1 = helperMissing.call(depth0, "pin", { hash: {} }); }
-  buffer += escapeExpression(stack1) + "</h3>\n  <span>Enter it on the device you wish to control.</span>\n  <p class=\"minor\">Waiting for connection...</p>\n</div>\n<nav class=\"hide\">\n  <ul>\n    <li class=\"active\" title=\"general\">General</li>\n    <li title=\"camera\">Camera</li>\n    <li title=\"stats\">Statistics</li>\n    <li title=\"codepreview\">Preview</li>\n    <li>Another Item</li>\n  </ul>\n</nav>\n<div class=\"hide\">\n  <section class=\"active\" id=\"general\">\n    <h2>General</h2>\n    <div class=\"toggle\" id=\"play\"\n      data-label=\"Play\"\n      data-true=\"Go!\"\n      data-false=\"Resume Reader\"\n      data-value=\"1\"></div>\n  </section>\n  <section id=\"camera\">\n    <h2>Camera</h2>\n    <div class=\"toggle\" id=\"expandcamera\"\n      data-label=\"Camera\"\n      data-true=\"Hide\"\n      data-false=\"Show\"\n      data-value=\"0\"></div>\n    <div class=\"slider\" id=\"brightness\" \n      data-label=\"Brightness\"\n      data-min=\"-100\"\n      data-max=\"100\"\n      data-value=\"0\"\n      data-concerns=\"interpreter\"></div>\n    <div class=\"slider\" id=\"contrast\" \n      data-label=\"Contrast\"\n      data-min=\"-100\"\n      data-max=\"100\"\n      data-value=\"0\"\n      data-concerns=\"interpreter\"></div>\n    <div class=\"slider\" id=\"blend\" \n      data-label=\"Blend Frames\"\n      data-min=\"1\"\n      data-max=\"25\"\n      data-value=\"3\"\n      data-concerns=\"interpreter\"></div>\n    <div class=\"slider\" id=\"sharpen\" \n      data-label=\"Sharpen\"\n      data-min=\"0\"\n      data-max=\"5\"\n      data-value=\"0\"\n      data-float=\"true\"\n      data-concerns=\"interpreter\"></div>\n  </section>\n  <section id=\"stats\">\n    <h2>Statistics</h2>\n    <div class=\"graph\" id=\"fps\">\n      <canvas height=\"100\"></canvas>\n      <span></span>\n    </div>\n  </section>\n  <section id=\"codepreview\">\n    <h2>Code Preview</h2>\n    <pre><code id=\"preview\"></code></pre>\n  </section>\n</div>";
+  buffer += escapeExpression(stack1) + "</h3>\n  <span>Enter it on the device you wish to control.</span>\n  <p class=\"minor\">Waiting for connection...</p>\n</div>\n";
+  return buffer;}
+
+function program3(depth0,data) {
+  
+  
+  return " class=\"hide\"";}
+
+function program5(depth0,data) {
+  
+  
+  return " class=\"hide\"";}
+
+  foundHelper = helpers.pin;
+  stack1 = foundHelper || depth0.pin;
+  stack2 = helpers['if'];
+  tmp1 = self.program(1, program1, data);
+  tmp1.hash = {};
+  tmp1.fn = tmp1;
+  tmp1.inverse = self.noop;
+  stack1 = stack2.call(depth0, stack1, tmp1);
+  if(stack1 || stack1 === 0) { buffer += stack1; }
+  buffer += "\n<nav";
+  foundHelper = helpers.pin;
+  stack1 = foundHelper || depth0.pin;
+  stack2 = helpers['if'];
+  tmp1 = self.program(3, program3, data);
+  tmp1.hash = {};
+  tmp1.fn = tmp1;
+  tmp1.inverse = self.noop;
+  stack1 = stack2.call(depth0, stack1, tmp1);
+  if(stack1 || stack1 === 0) { buffer += stack1; }
+  buffer += ">\n  <ul>\n  </ul>\n</nav>\n<div";
+  foundHelper = helpers.pin;
+  stack1 = foundHelper || depth0.pin;
+  stack2 = helpers['if'];
+  tmp1 = self.program(5, program5, data);
+  tmp1.hash = {};
+  tmp1.fn = tmp1;
+  tmp1.inverse = self.noop;
+  stack1 = stack2.call(depth0, stack1, tmp1);
+  if(stack1 || stack1 === 0) { buffer += stack1; }
+  buffer += " id=\"groups\">\n</div>";
   return buffer;});
+}});
+
+window.require.define({"remote/view": function(exports, require, module) {
+  var RemoteView,
+  __hasProp = {}.hasOwnProperty,
+  __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
+
+module.exports = RemoteView = (function(_super) {
+
+  __extends(RemoteView, _super);
+
+  function RemoteView() {
+    return RemoteView.__super__.constructor.apply(this, arguments);
+  }
+
+  RemoteView.prototype.initialize = function() {
+    return console.log('hey');
+  };
+
+  return RemoteView;
+
+})(Backbone.View);
+
 }});
 
 window.require.define({"router": function(exports, require, module) {
@@ -2393,7 +2764,7 @@ window.require.define({"templates/CodeCards": function(exports, require, module)
   var foundHelper, self=this;
 
 
-  return "<nav>\n  <a class=\"logo\" href=\"#\">\n    <h3 class=\"decoded\">Decoded</h3>\n    <h1><span>{</span>code<span>}</span>cards</h1>\n  </a>\n  <section class=\"pin-entry hide\"></section>\n</nav>\n<section>\n  <div id=\"camview\">\n    <div>\n      <canvas id=\"canvas\" width=\"640\" height=\"480\"></canvas>\n    </div>\n    <a class=\"toggler\"></a>\n  </div>\n  <div id=\"mainview\">\n    <div id=\"code\">\n      <h3 id=\"code-status\">Please allow your webcam...</h3>\n      <div></div>\n    </div>\n    <div id=\"mission\">\n    </div>\n  </div>\n</section>";});
+  return "<nav>\n  <a class=\"logo\" href=\"#\">\n    <h3 class=\"decoded\">Decoded</h3>\n    <h1><span>{</span>code<span>}</span>cards</h1>\n  </a>\n  <section class=\"pin-entry hide\"></section>\n</nav>\n<section>\n  <div id=\"camview\">\n    <div class=\"cnvs\">\n      <canvas id=\"canvas\" width=\"640\" height=\"480\"></canvas>\n    </div>\n    <a class=\"toggler\"></a>\n    <div id=\"local-RC\" class=\"remote local\"></div>\n  </div>\n  <div id=\"mainview\">\n    <div id=\"code\">\n      <h3 id=\"code-status\">Please allow your webcam...</h3>\n      <div></div>\n    </div>\n    <div id=\"mission\">\n    </div>\n  </div>\n</section>";});
 }});
 
 window.require.define({"templates/home": function(exports, require, module) {
@@ -2420,16 +2791,20 @@ module.exports = Slider = (function(_super) {
     return Slider.__super__.constructor.apply(this, arguments);
   }
 
+  Slider.prototype.tagName = "div";
+
+  Slider.prototype.className = "slider";
+
   Slider.prototype.initialize = function() {
     var el, o, _ths;
     _ths = this;
     o = this.options;
     el = this.$el;
     this.model = new Backbone.Model({
-      label: o.label || el.data('label' || 'Label'),
-      max: o.max || parseFloat(el.data('max' || 100)),
-      min: o.min || parseFloat(el.data('min' || 0)),
-      value: o.value || parseFloat(el.data('value' || 50)),
+      label: typeof o.label !== void 0 ? o.label : el.data('label' || 'Label'),
+      max: typeof o.max !== void 0 ? o.max : parseFloat(el.data('max' || 100)),
+      min: typeof o.min !== void 0 ? o.min : parseFloat(el.data('min' || 0)),
+      value: typeof o.value !== void 0 ? o.value : parseFloat(el.data('value' || 50)),
       float: o.float || el.data('float' || false)
     });
     this.o = this.model.toJSON();
@@ -2440,6 +2815,14 @@ module.exports = Slider = (function(_super) {
       return _ths.update();
     });
     return this.render();
+  };
+
+  Slider.prototype.silentUpdate = function(val) {
+    this.model.set('value', val, {
+      silent: true
+    });
+    this.o = this.model.toJSON();
+    return this.update(false);
   };
 
   Slider.prototype.render = function() {
@@ -2508,13 +2891,18 @@ module.exports = Slider = (function(_super) {
     });
   };
 
-  Slider.prototype.update = function() {
+  Slider.prototype.update = function(tellTheWord) {
     var o, v;
+    if (tellTheWord == null) {
+      tellTheWord = true;
+    }
     o = this.o;
     v = this.model.get('value');
     this.thumb.css('left', ((v - o.min) / (o.max - o.min)) * 100 + '%');
     this.input.val(v);
-    return this.trigger('change', v);
+    if (tellTheWord) {
+      return this.trigger('change', v);
+    }
   };
 
   Slider.prototype.setValue = function(v) {
@@ -2623,12 +3011,24 @@ module.exports = Toggle = (function(_super) {
     });
     this.o = this.model.toJSON();
     this.model.on('change', function() {
-      _ths.o = this.toJSON();
-      _ths.o.text = _ths.o.value ? _ths.o["true"] : _ths.o["false"];
+      _ths.update();
       return _ths.trigger('change', _ths.o.value);
     });
     this.model.trigger('change');
     return this.render();
+  };
+
+  Toggle.prototype.silentUpdate = function(val) {
+    this.model.set('value', val, {
+      silent: true
+    });
+    return this.update();
+  };
+
+  Toggle.prototype.update = function() {
+    this.o = this.model.toJSON();
+    this.o.text = this.o.value ? this.o["true"] : this.o["false"];
+    return this.$('button').text(this.o.text);
   };
 
   Toggle.prototype.render = function() {
@@ -2657,7 +3057,19 @@ window.require.define({"ui/ui": function(exports, require, module) {
 
 module.exports = UI = {
   Slider: require('ui/slider'),
-  Toggle: require('ui/toggle')
+  Toggle: require('ui/toggle'),
+  createFrom: function(model) {
+    var el;
+    el = null;
+    switch (model.type) {
+      case 'range':
+        el = new this.Slider(model);
+        break;
+      case 'toggle-button':
+        el = new this.Toggle(model);
+    }
+    return el;
+  }
 };
 
 }});

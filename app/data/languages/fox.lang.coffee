@@ -13,7 +13,7 @@ module.exports =
     # The player's fox character. The fox is called Fox. Obviously.
     500:  
       word: "fox"
-      img: "http://i.imgur.com/yQTeT.png"
+      img: "http://i.imgur.com/mIkYE.png"
       group: "objects"
     
     # Fox's methods
@@ -79,19 +79,19 @@ module.exports =
     # Walls. Fox can't pass through these.
     521:  
       word: "wall"
-      img: "http://i.imgur.com/CtDV3.png"
+      img: "http://i.imgur.com/3nZae.png"
       group: "objects"
 
     # Fox loves to eat cake. When Fox enters a tile with cake in it, he eats 
     # it and you gain a point. Try to get Fox as much cake as you can.
     522:  
       word: "cake"  
-      img: "http://i.imgur.com/oUI2s.png" 
+      img: "http://i.imgur.com/uS9s8.png" 
       group: "objects"
 
     # Goblin. Goblin chases Fox because he's jealous of Fox's glorious 
     # ginger hair. Watch out for him!
     525:
       word:"goblin" 
-      img: "http://i.imgur.com/Tv4Kg.png"
+      img: "http://i.imgur.com/g3Mix.png"
       group: "objects"

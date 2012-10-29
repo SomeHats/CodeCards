@@ -16,13 +16,21 @@ module.exports = class Toggle extends Backbone.View
     @o = @model.toJSON()
 
     @model.on 'change', -> 
-      _ths.o = @toJSON()
-      _ths.o.text = if _ths.o.value then _ths.o.true else _ths.o.false
+      _ths.update()
       _ths.trigger 'change', _ths.o.value
 
     @model.trigger 'change'
 
     @render()
+
+  silentUpdate: (val) ->
+    @model.set 'value', val, silent: true
+    @update()
+
+  update: ->
+    @o = @model.toJSON()
+    @o.text = if @o.value then @o.true else @o.false
+    @$('button').text @o.text
 
   render: ->
     _ths = @

@@ -106,8 +106,6 @@ module.exports = class Language
       css = if eList[lineNo] then 'line error' else 'line'
       html += "<#{tag} class=\"#{css}\" data-line=\"#{lineNo}\">#{line}</#{tag}>"
 
-    console.log string: out, html: html
-
     return string: out, html: html, errors: errors
 
   getWord: (key) ->
@@ -162,7 +160,7 @@ module.exports = class Language
         template = Handlebars.compile replace.replace
         replace.replace = new RegExp template(data), "g"
 
-    console.log @replace
+    null
 
 
   setupHandlebars: ->

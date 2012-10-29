@@ -1,6 +1,8 @@
 template = require 'ui/templates/slider'
 
 module.exports = class Slider extends Backbone.View
+  tagName: "div"
+  className: "slider"
   initialize: ->
     _ths = @
 
@@ -8,10 +10,10 @@ module.exports = class Slider extends Backbone.View
     el = @$el
 
     @model = new Backbone.Model
-      label: o.label or el.data 'label' or 'Label'
-      max: o.max or parseFloat el.data 'max' or 100
-      min: o.min or parseFloat el.data 'min' or 0
-      value: o.value or parseFloat el.data 'value' or 50
+      label: if typeof o.label isnt undefined then o.label else el.data 'label' or 'Label'
+      max: if typeof o.max isnt undefined then o.max else parseFloat el.data 'max' or 100
+      min: if typeof o.min isnt undefined then o.min else parseFloat el.data 'min' or 0
+      value: if typeof o.value isnt undefined then o.value else parseFloat el.data 'value' or 50
       float: o.float or el.data 'float' or no
 
     @o = @model.toJSON()
@@ -21,6 +23,11 @@ module.exports = class Slider extends Backbone.View
     @model.on 'change:value', -> _ths.update()
 
     @render()
+
+  silentUpdate: (val) ->
+    @model.set 'value', val, silent: true
+    @o = @model.toJSON()
+    @update false
 
   render: ->
     model = @model.toJSON()
@@ -73,12 +80,12 @@ module.exports = class Slider extends Backbone.View
             _ths.setFromCoord touch.pageX
             doc.off 'touchmove.slider' + tracking
 
-  update: ->
+  update: (tellTheWord = true) ->
     o = @o
     v = @model.get 'value'
     @thumb.css 'left', ((v - o.min) / (o.max - o.min)) * 100 + '%'
     @input.val v
-    @trigger 'change', v
+    if tellTheWord then @trigger 'change', v
 
   setValue: (v) ->
     o = @o

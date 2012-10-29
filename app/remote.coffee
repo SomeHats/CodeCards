@@ -1,27 +1,14 @@
 UI = require 'ui/ui'
-
-template = require 'remote/template'
+RC = require 'remote/RC'
 
 module.exports = class Remote extends Backbone.View
   initialize: ->
-    @connected = false
-    _ths = @
+    rc = @rc = new RC.Remote el: @el
+    rc.connect()
 
-    socket = io.connect 'http://' + window.location.host, 'force new connection':true
-    socket.on 'connect', ->
-      @connected = true
-    socket.on 'error', (e) ->
-      Util.alert 'Could not connect to remote server.'
-      router.navigate '/', trigger: on
+    rc.on 'client-join', @connectionEstablished, @
 
-    socket.on 'client', (data) ->
-      _ths.trigger data.event, data.data
-
-    @on 'join', @connectionEstablished
-
-    @socket = socket
-
-  connectionEstablished: ->
+  connectionEstablished: (data) ->
     pin = @$ '.pin'
 
     pin.animate {
@@ -36,8 +23,12 @@ module.exports = class Remote extends Backbone.View
 
     @$('.hide').removeClass 'hide'
 
+  setupNavBehaviour: ->
     navItems = @$ 'nav li'
     pages = @$ 'section'
+
+    navItems.off 'click'
+
     navItems.on 'click', ->
       el = $ @
       if ! el.hasClass 'active'
@@ -47,15 +38,12 @@ module.exports = class Remote extends Backbone.View
         pages.filter('#' + el.attr 'title').addClass 'active'
 
 
-
   render: (callback= (-> null), ctx = @) ->
-    socket = @socket
-    _ths = @
-    socket.emit 'new remote'
-    socket.on 'accept', (pin) ->
-      _ths.$el.html template pin: pin
+    rc = @rc
+    _ths = @ 
 
-      _ths.setupUI()
+    showThings = (pin) ->
+      rc.render pin
 
       setTimeout ->
         _ths.$('.pin').animate {
@@ -67,8 +55,13 @@ module.exports = class Remote extends Backbone.View
         }
       , 25
 
+    if rc.hasPin
+      showThings rc.pin
+    else
+      rc.on 'pin', showThings
+
   unrender: (callback= (-> null), ctx = @) ->
-    @socket.disconnect()
+    @rc.socket.disconnect()
     @$('.pin').animate {
       opacity: 0
       translateY: '200px'

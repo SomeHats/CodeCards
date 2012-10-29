@@ -10,7 +10,7 @@ var app = require('http').createServer(handler)
 app.listen(80);
 
 // Tell socket.io to shut up
-io.set('log level', 1);
+//io.set('log level', 1);
 
 // A simple http server
 function handler(req, res) {
@@ -110,13 +110,17 @@ io.sockets.on('connection', function(socket) {
   });
 
   // For clients
-  socket.on('new client', function(pin) {
+  socket.on('new client', function(info) {
     log.info('Client attempting to connect to ' + pin);
-    if(io.sockets.manager.rooms['/' + pin] && io.sockets.manager.rooms['/' + pin].length !== 0) {
+    if(io.sockets.manager.rooms['/' + info.pin] && io.sockets.manager.rooms['/' + info.pin].length !== 0) {
       socket.emit('accept');
-      socket.join(pin);
+      socket.join(info.pin);
+
+      var pin = info.pin;
 
       log.info('Connected');
+
+      io.sockets.in(pin).emit('client', {event: 'join', 'data':info});
 
       socket.on('client', function(data) {
         io.sockets.in(pin).emit('client', data);

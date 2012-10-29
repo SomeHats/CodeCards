@@ -356,7 +356,7 @@ pre {
   height: 100%;
   border-right: 1px solid #000;
   background-color: #fcf700;
-  z-index: 50;
+  z-index: 200;
   padding-bottom: 90px;
   -webkit-box-shadow: 0 0 40px rgba(0,0,0,0.4);
   box-shadow: 0 0 40px rgba(0,0,0,0.4);
@@ -369,6 +369,21 @@ pre {
 .main #camview > div {
   position: relative;
   z-index: 50;
+}
+.main #camview .cnvs {
+  height: 480px;
+  overflow: hidden;
+  margin-top: 0;
+  -webkit-transition: all 0.3s ease;
+  -moz-transition: all 0.3s ease;
+  -o-transition: all 0.3s ease;
+  -ms-transition: all 0.3s ease;
+  transition: all 0.3s ease;
+  cursor: pointer;
+}
+.main #camview.hide-cnvs .cnvs {
+  height: 255px;
+  margin-top: -225px;
 }
 .main #camview .toggler {
   display: block;
@@ -520,6 +535,27 @@ pre {
   left: 0%;
   width: 100%;
 }
+.local.remote {
+  height: -webkit-calc(100% - 460px);
+  height: -moz-calc(100% - 460px);
+  height: calc(100% - 460px);
+  -webkit-transition: all 0.3s ease;
+  -moz-transition: all 0.3s ease;
+  -o-transition: all 0.3s ease;
+  -ms-transition: all 0.3s ease;
+  transition: all 0.3s ease;
+}
+.hide-cnvs .local.remote {
+  height: -webkit-calc(100% - 10px);
+  height: -moz-calc(100% - 10px);
+  height: calc(100% - 10px);
+}
+.remote #groups {
+  height: -webkit-calc(100% + 20px);
+  height: -moz-calc(100% + 20px);
+  height: calc(100% + 20px);
+  overflow: auto;
+}
 .remote .pin {
   font-size: 30px;
   text-align: center;
@@ -570,6 +606,14 @@ pre {
   -o-transition: all 0.4s ease;
   -ms-transition: all 0.4s ease;
   transition: all 0.4s ease;
+}
+.local.remote nav {
+  bottom: 0px;
+  position: absolute;
+  z-index: 200;
+  opacity: 1;
+  -ms-filter: none;
+  filter: none;
 }
 .remote nav.hide {
   opacity: 0;
@@ -701,6 +745,13 @@ pre {
     left: 0;
     right: 0;
   }
+  .local.remote section {
+    padding-top: 0;
+  }
+  .local.remote section h2 {
+    margin: 0;
+    position: static;
+  }
 }
 .ui,
 .button {
@@ -709,41 +760,6 @@ pre {
   height: 100px;
   padding: 9px 0 10px 0;
   float: left;
-  border-bottom: 1px solid rgba(0,0,0,0.3);
-}
-@media (min-width: 780px) {
-  .ui,
-  .button {
-    width: 50%;
-    padding: 9px 10px 10px 10px;
-    border-left: 1px solid rgba(0,0,0,0.3);
-  }
-}
-@media (min-width: 780px) and (max-width: 1200px) {
-  .ui:nth-child(2n),
-  .button:nth-child(2n) {
-    border-left: none;
-    padding-left: 0;
-  }
-  .ui:nth-child(2n+1),
-  .button:nth-child(2n+1) {
-    padding-right: 0;
-  }
-}
-@media (min-width: 1200px) {
-  .ui,
-  .button {
-    width: 33.333%;
-  }
-  .ui:nth-child(3n-1),
-  .button:nth-child(3n-1) {
-    border-left: none;
-    padding-left: 0;
-  }
-  .ui:nth-child(3n+1),
-  .button:nth-child(3n+1) {
-    padding-right: 0;
-  }
 }
 .ui .label,
 .button .label {
@@ -774,41 +790,6 @@ pre {
   height: 100px;
   padding: 9px 0 10px 0;
   float: left;
-  border-bottom: 1px solid rgba(0,0,0,0.3);
-}
-@media (min-width: 780px) {
-  .ui,
-  .slider {
-    width: 50%;
-    padding: 9px 10px 10px 10px;
-    border-left: 1px solid rgba(0,0,0,0.3);
-  }
-}
-@media (min-width: 780px) and (max-width: 1200px) {
-  .ui:nth-child(2n),
-  .slider:nth-child(2n) {
-    border-left: none;
-    padding-left: 0;
-  }
-  .ui:nth-child(2n+1),
-  .slider:nth-child(2n+1) {
-    padding-right: 0;
-  }
-}
-@media (min-width: 1200px) {
-  .ui,
-  .slider {
-    width: 33.333%;
-  }
-  .ui:nth-child(3n-1),
-  .slider:nth-child(3n-1) {
-    border-left: none;
-    padding-left: 0;
-  }
-  .ui:nth-child(3n+1),
-  .slider:nth-child(3n+1) {
-    padding-right: 0;
-  }
 }
 .ui .label,
 .slider .label {
@@ -887,47 +868,6 @@ pre {
   height: 100px;
   padding: 9px 0 10px 0;
   float: left;
-  border-bottom: 1px solid rgba(0,0,0,0.3);
-}
-@media (min-width: 780px) {
-  .ui,
-  .button,
-  .toggle {
-    width: 50%;
-    padding: 9px 10px 10px 10px;
-    border-left: 1px solid rgba(0,0,0,0.3);
-  }
-}
-@media (min-width: 780px) and (max-width: 1200px) {
-  .ui:nth-child(2n),
-  .button:nth-child(2n),
-  .toggle:nth-child(2n) {
-    border-left: none;
-    padding-left: 0;
-  }
-  .ui:nth-child(2n+1),
-  .button:nth-child(2n+1),
-  .toggle:nth-child(2n+1) {
-    padding-right: 0;
-  }
-}
-@media (min-width: 1200px) {
-  .ui,
-  .button,
-  .toggle {
-    width: 33.333%;
-  }
-  .ui:nth-child(3n-1),
-  .button:nth-child(3n-1),
-  .toggle:nth-child(3n-1) {
-    border-left: none;
-    padding-left: 0;
-  }
-  .ui:nth-child(3n+1),
-  .button:nth-child(3n+1),
-  .toggle:nth-child(3n+1) {
-    padding-right: 0;
-  }
 }
 .ui .label,
 .button .label,

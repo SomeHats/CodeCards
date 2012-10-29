@@ -1,69 +1,14 @@
+{{#if pin}}
 <div class="pin">
   <p>Here's your pin!</p>
   <h3>{{pin}}</h3>
   <span>Enter it on the device you wish to control.</span>
   <p class="minor">Waiting for connection...</p>
 </div>
-<nav class="hide">
+{{/if}}
+<nav{{#if pin}} class="hide"{{/if}}>
   <ul>
-    <li class="active" title="general">General</li>
-    <li title="camera">Camera</li>
-    <li title="stats">Statistics</li>
-    <li title="codepreview">Preview</li>
-    <li>Another Item</li>
   </ul>
 </nav>
-<div class="hide">
-  <section class="active" id="general">
-    <h2>General</h2>
-    <div class="toggle" id="play"
-      data-label="Play"
-      data-true="Go!"
-      data-false="Resume Reader"
-      data-value="1"></div>
-  </section>
-  <section id="camera">
-    <h2>Camera</h2>
-    <div class="toggle" id="expandcamera"
-      data-label="Camera"
-      data-true="Hide"
-      data-false="Show"
-      data-value="0"></div>
-    <div class="slider" id="brightness" 
-      data-label="Brightness"
-      data-min="-100"
-      data-max="100"
-      data-value="0"
-      data-concerns="interpreter"></div>
-    <div class="slider" id="contrast" 
-      data-label="Contrast"
-      data-min="-100"
-      data-max="100"
-      data-value="0"
-      data-concerns="interpreter"></div>
-    <div class="slider" id="blend" 
-      data-label="Blend Frames"
-      data-min="1"
-      data-max="25"
-      data-value="3"
-      data-concerns="interpreter"></div>
-    <div class="slider" id="sharpen" 
-      data-label="Sharpen"
-      data-min="0"
-      data-max="5"
-      data-value="0"
-      data-float="true"
-      data-concerns="interpreter"></div>
-  </section>
-  <section id="stats">
-    <h2>Statistics</h2>
-    <div class="graph" id="fps">
-      <canvas height="100"></canvas>
-      <span></span>
-    </div>
-  </section>
-  <section id="codepreview">
-    <h2>Code Preview</h2>
-    <pre><code id="preview"></code></pre>
-  </section>
+<div{{#if pin}} class="hide"{{/if}} id="groups">
 </div>

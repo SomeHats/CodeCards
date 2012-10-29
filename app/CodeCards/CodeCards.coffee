@@ -67,6 +67,8 @@ module.exports = class CodeCards extends Backbone.View
     # Load up the mission. TODO:- missions other than sample
     @mission = mission = new Mission 'fox'
 
+    @setupController()
+
     # Run the mission when needed
     @on 'change:play', ->
       @interpreter.UserMedia.paused = !@play
@@ -81,7 +83,7 @@ module.exports = class CodeCards extends Backbone.View
 
   setupController: ->
     _ths = @
-    controller = @controller = new Controller el: @$ '.pin-entry'
+    controller = @controller = new Controller el: @$('.pin-entry'), CC: @
 
     ## Receiving
     # Settings
@@ -105,6 +107,12 @@ module.exports = class CodeCards extends Backbone.View
         sec.addClass 'extended'
       else
         sec.removeClass 'extended'
+
+    canCont = @$ '#camview .cnvs'
+    camView = @$ '#camview'
+    canCont.on 'click', ->
+      camView.toggleClass 'hide-cnvs'
+
       
   render: (callback= (-> null), ctx = @) ->
     _ths = @
@@ -113,8 +121,6 @@ module.exports = class CodeCards extends Backbone.View
     @stats = new Stats
 
     @interact()
-
-    @setupController()
 
     nav = @$ 'nav'
     setTimeout ->
