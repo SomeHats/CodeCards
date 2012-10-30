@@ -26,6 +26,15 @@ module.exports =
       true: "Turn off Goblin"
       false: "Turn on Goblin"###
 
+    mission.rc.options.add
+      with: @
+      callback: @toggleMap
+      label: "Map"
+      type: 'toggle-button'
+      value: @isMaze
+      true: "Cakes"
+      false: "Maze"
+
     getSprite = (name) ->
       el = $el.find ".#{name}"
       el.on 'load', ->
@@ -50,10 +59,14 @@ module.exports =
     @remaining = 100
     @updateScore()
 
-    @displayMap = Util.clone @map
+    @displayMap = Util.clone if @isMaze then @maze else @map
 
     @animator.reset()
-    @drawSprite {x: 2, y: 2, rot: 1}, 'player'
+    if @isMaze
+      @drawSprite {x: 1, y: 1, rot: 1}, 'player'
+    else
+      @drawSprite {x: 2, y: 2, rot: 1}, 'player'
+
     if @goblin then @drawSprite {x: 17, y: 12, rot: 1}, 'goblin'
 
   # run: This function is called when it is triggered by the remote. It is 
@@ -63,8 +76,8 @@ module.exports =
     @reset()
 
     _ths = @
-    gameMap = Util.clone @map
-    displayMap = @displayMap = Util.clone @map
+    gameMap = Util.clone if @isMaze then @maze else @map
+    displayMap = @displayMap = Util.clone if @isMaze then @maze else @map
 
     animator = @animator
 
@@ -150,7 +163,8 @@ module.exports =
         animator.animate @name, 1, rot: direction
         @direction = direction
 
-    fox = player = new Character 'player', {x: 2, y: 2}, 0, yes
+    ps = if @isMaze then 1 else 2
+    fox = player = new Character 'player', {x: ps, y: ps}, 0, yes
     goblin = new Character 'goblin', {x: 17, y: 2}, 2
 
     animator.register 'player',
@@ -159,7 +173,8 @@ module.exports =
       rot: 0
       draw: (geom) -> _ths.drawSprite geom, 'player'
 
-    animator.register 'goblin',
+
+    if @goblin then animator.register 'goblin',
       x: 17
       y: 2
       rot: 0
@@ -279,6 +294,10 @@ module.exports =
     @goblin = val
     @reset()
 
+  toggleMap: (val) ->
+    @isMaze = val
+    @reset()
+
   map:[
     [2,2,2,0,0,0,0,1,2,2,2,2,1,0,0,0,0,2,2,2],
     [2,2,0,0,0,0,0,1,0,2,2,0,1,0,0,0,0,0,2,2],
@@ -295,6 +314,23 @@ module.exports =
     [0,2,0,2,0,1,2,0,0,0,0,0,0,2,1,0,2,0,2,0],
     [0,0,0,2,0,1,2,2,0,0,0,0,2,2,1,0,2,0,0,0],
     [0,0,0,0,0,1,2,2,2,0,0,2,2,2,1,0,0,0,0,0]]
+
+  maze:[
+    [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
+    [1,0,0,0,0,0,1,0,0,0,0,0,0,1,0,0,0,0,0,1],
+    [1,1,1,1,1,0,1,0,1,0,1,1,0,1,0,1,1,1,1,1],
+    [1,0,0,2,1,0,0,0,1,2,2,1,0,0,0,1,2,0,0,1],
+    [1,0,1,1,1,0,1,0,1,1,0,1,0,1,0,1,1,1,0,1],
+    [1,0,0,0,0,0,1,0,0,0,0,0,0,1,0,0,0,0,0,1],
+    [1,1,1,1,1,1,1,0,1,1,1,1,0,1,1,1,1,1,1,1],
+    [1,0,2,1,2,0,1,0,0,0,0,0,0,1,0,2,1,2,0,1],
+    [1,0,1,1,1,0,1,0,1,0,1,1,0,1,0,1,1,1,0,1],
+    [1,0,1,2,1,0,1,0,1,2,2,1,0,1,0,1,2,1,0,1],
+    [1,0,1,0,1,0,1,0,1,1,1,1,0,1,0,1,0,1,0,1],
+    [1,0,0,0,0,0,0,0,1,2,2,1,0,0,0,0,0,0,0,1],
+    [1,1,0,1,1,1,1,0,1,1,0,1,0,1,1,1,1,0,1,1],
+    [1,2,0,2,1,2,0,0,2,1,0,0,0,0,2,1,2,0,2,1],
+    [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1]]
 
   sprite:
     player:
@@ -355,3 +391,4 @@ module.exports =
       tile: 32
 
   goblin: no
+  isMaze: yes

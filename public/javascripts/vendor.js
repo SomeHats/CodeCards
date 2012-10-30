@@ -4130,7 +4130,7 @@ Animator = (function() {
 
   Animator.prototype.tick = function() {
     var actor, current, name, now, progress, property, queue;
-    if (this.running || true) {
+    if (this.running) {
       for (name in this.queue) {
         queue = this.queue[name];
         if (queue.length !== 0) {
@@ -4176,7 +4176,8 @@ Animator = (function() {
         }
       }
       this.clear();
-      return this.draw();
+      this.draw();
+      return this.start();
     }
   };
 
@@ -4205,11 +4206,14 @@ Animator = (function() {
 
 
   Animator.prototype.start = function() {
-    if (!this.running && this.queue.length !== 0) {
-      return this.running = true;
-    } else if (this.queue.length === 0) {
-      return this.running = false;
+    var name, run;
+    run = false;
+    for (name in this.queue) {
+      if (this.queue[name].length !== 0) {
+        run = true;
+      }
     }
+    return this.running = run;
   };
 
   /*
@@ -4221,12 +4225,11 @@ Animator = (function() {
 
 
   Animator.prototype.reset = function() {
-    while (this.queue.length) {
-      this.queue.shift();
-    }
+    this.queue = {};
     this.actors = {};
     this.clear();
     this.draw();
+    this.start();
     return this;
   };
 

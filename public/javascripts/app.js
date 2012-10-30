@@ -1271,6 +1271,15 @@ module.exports = {
       false: "Turn on Goblin"
     */
 
+    mission.rc.options.add({
+      "with": this,
+      callback: this.toggleMap,
+      label: "Map",
+      type: 'toggle-button',
+      value: this.isMaze,
+      "true": "Cakes",
+      "false": "Maze"
+    });
     getSprite = function(name) {
       var el;
       el = $el.find("." + name);
@@ -1301,13 +1310,21 @@ module.exports = {
     this.score = 0;
     this.remaining = 100;
     this.updateScore();
-    this.displayMap = Util.clone(this.map);
+    this.displayMap = Util.clone(this.isMaze ? this.maze : this.map);
     this.animator.reset();
-    this.drawSprite({
-      x: 2,
-      y: 2,
-      rot: 1
-    }, 'player');
+    if (this.isMaze) {
+      this.drawSprite({
+        x: 1,
+        y: 1,
+        rot: 1
+      }, 'player');
+    } else {
+      this.drawSprite({
+        x: 2,
+        y: 2,
+        rot: 1
+      }, 'player');
+    }
     if (this.goblin) {
       return this.drawSprite({
         x: 17,
@@ -1317,11 +1334,11 @@ module.exports = {
     }
   },
   run: function(str) {
-    var Character, animator, back, cake, characters, displayMap, empty, forward, fox, gameMap, goblin, i, left, lookGoblin, moveGoblin, player, right, success, wall, _i, _ref, _results, _ths;
+    var Character, animator, back, cake, characters, displayMap, empty, forward, fox, gameMap, goblin, i, left, lookGoblin, moveGoblin, player, ps, right, success, wall, _i, _ref, _results, _ths;
     this.reset();
     _ths = this;
-    gameMap = Util.clone(this.map);
-    displayMap = this.displayMap = Util.clone(this.map);
+    gameMap = Util.clone(this.isMaze ? this.maze : this.map);
+    displayMap = this.displayMap = Util.clone(this.isMaze ? this.maze : this.map);
     animator = this.animator;
     empty = 0;
     wall = 1;
@@ -1490,9 +1507,10 @@ module.exports = {
       return Character;
 
     })();
+    ps = this.isMaze ? 1 : 2;
     fox = player = new Character('player', {
-      x: 2,
-      y: 2
+      x: ps,
+      y: ps
     }, 0, true);
     goblin = new Character('goblin', {
       x: 17,
@@ -1506,14 +1524,16 @@ module.exports = {
         return _ths.drawSprite(geom, 'player');
       }
     });
-    animator.register('goblin', {
-      x: 17,
-      y: 2,
-      rot: 0,
-      draw: function(geom) {
-        return _ths.drawSprite(geom, 'goblin');
-      }
-    });
+    if (this.goblin) {
+      animator.register('goblin', {
+        x: 17,
+        y: 2,
+        rot: 0,
+        draw: function(geom) {
+          return _ths.drawSprite(geom, 'goblin');
+        }
+      });
+    }
     moveGoblin = function() {
       lookGoblin();
       goblin.move();
@@ -1631,7 +1651,12 @@ module.exports = {
     this.goblin = val;
     return this.reset();
   },
+  toggleMap: function(val) {
+    this.isMaze = val;
+    return this.reset();
+  },
   map: [[2, 2, 2, 0, 0, 0, 0, 1, 2, 2, 2, 2, 1, 0, 0, 0, 0, 2, 2, 2], [2, 2, 0, 0, 0, 0, 0, 1, 0, 2, 2, 0, 1, 0, 0, 0, 0, 0, 2, 2], [2, 0, 0, 0, 2, 0, 0, 1, 0, 2, 2, 0, 1, 0, 0, 2, 0, 0, 0, 2], [0, 0, 0, 0, 2, 2, 0, 0, 0, 0, 0, 0, 0, 0, 2, 2, 0, 0, 0, 0], [0, 0, 0, 0, 2, 2, 2, 0, 0, 0, 0, 0, 0, 2, 2, 2, 0, 0, 0, 0], [0, 0, 0, 1, 1, 1, 1, 1, 0, 0, 0, 0, 1, 1, 1, 1, 1, 0, 0, 0], [2, 2, 2, 0, 0, 0, 0, 0, 0, 2, 2, 0, 0, 0, 0, 0, 0, 2, 2, 2], [2, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2, 2], [2, 0, 0, 0, 0, 2, 2, 0, 0, 2, 2, 0, 0, 2, 2, 0, 0, 0, 0, 2], [0, 0, 0, 0, 0, 1, 0, 2, 2, 0, 0, 2, 2, 0, 1, 0, 0, 0, 0, 0], [0, 2, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 2, 0], [0, 2, 0, 2, 0, 1, 0, 0, 1, 1, 1, 1, 0, 0, 1, 0, 2, 0, 2, 0], [0, 2, 0, 2, 0, 1, 2, 0, 0, 0, 0, 0, 0, 2, 1, 0, 2, 0, 2, 0], [0, 0, 0, 2, 0, 1, 2, 2, 0, 0, 0, 0, 2, 2, 1, 0, 2, 0, 0, 0], [0, 0, 0, 0, 0, 1, 2, 2, 2, 0, 0, 2, 2, 2, 1, 0, 0, 0, 0, 0]],
+  maze: [[1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1], [1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1], [1, 1, 1, 1, 1, 0, 1, 0, 1, 0, 1, 1, 0, 1, 0, 1, 1, 1, 1, 1], [1, 0, 0, 2, 1, 0, 0, 0, 1, 2, 2, 1, 0, 0, 0, 1, 2, 0, 0, 1], [1, 0, 1, 1, 1, 0, 1, 0, 1, 1, 0, 1, 0, 1, 0, 1, 1, 1, 0, 1], [1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1], [1, 1, 1, 1, 1, 1, 1, 0, 1, 1, 1, 1, 0, 1, 1, 1, 1, 1, 1, 1], [1, 0, 2, 1, 2, 0, 1, 0, 0, 0, 0, 0, 0, 1, 0, 2, 1, 2, 0, 1], [1, 0, 1, 1, 1, 0, 1, 0, 1, 0, 1, 1, 0, 1, 0, 1, 1, 1, 0, 1], [1, 0, 1, 2, 1, 0, 1, 0, 1, 2, 2, 1, 0, 1, 0, 1, 2, 1, 0, 1], [1, 0, 1, 0, 1, 0, 1, 0, 1, 1, 1, 1, 0, 1, 0, 1, 0, 1, 0, 1], [1, 0, 0, 0, 0, 0, 0, 0, 1, 2, 2, 1, 0, 0, 0, 0, 0, 0, 0, 1], [1, 1, 0, 1, 1, 1, 1, 0, 1, 1, 0, 1, 0, 1, 1, 1, 1, 0, 1, 1], [1, 2, 0, 2, 1, 2, 0, 0, 2, 1, 0, 0, 0, 0, 2, 1, 2, 0, 2, 1], [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1]],
   sprite: {
     player: {
       right: {
@@ -1691,7 +1716,8 @@ module.exports = {
       tile: 32
     }
   },
-  goblin: false
+  goblin: false,
+  isMaze: true
 };
 
 }});
