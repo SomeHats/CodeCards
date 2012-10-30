@@ -17,14 +17,14 @@ module.exports =
     $el.addClass 'sample'
     $el.html template()
 
-    mission.rc.options.add
+    ###mission.rc.options.add
       with: @
       callback: @toggleGoblin
       label: "Goblin"
       type: 'toggle-button'
       value: @goblin
       true: "Turn off Goblin"
-      false: "Turn on Goblin"
+      false: "Turn on Goblin"###
 
     getSprite = (name) ->
       el = $el.find ".#{name}"
@@ -102,7 +102,7 @@ module.exports =
 
           for char in characters
             if change.x is char.pos.x and change.y is char.pos.y
-              tile = char
+              tile = char.name
 
         tile
 
@@ -151,7 +151,7 @@ module.exports =
         @direction = direction
 
     fox = player = new Character 'player', {x: 2, y: 2}, 0, yes
-    goblin = new Character 'goblin', {x: 17, y: 14}, 2
+    goblin = new Character 'goblin', {x: 17, y: 2}, 2
 
     animator.register 'player',
       x: player.pos.x
@@ -161,7 +161,7 @@ module.exports =
 
     animator.register 'goblin',
       x: 17
-      y: 14
+      y: 2
       rot: 0
       draw: (geom) -> _ths.drawSprite geom, 'goblin'
 
@@ -171,10 +171,9 @@ module.exports =
       lookGoblin()
 
     lookGoblin = ->
-      console.log goblin.look left
-      if goblin.look(left) is player
+      if goblin.look(left) is 'player'
         goblin.turn left
-      if goblin.look(right) is player
+      if goblin.look(right) is 'player'
         goblin.turn right
       if goblin.touch() is wall
         str = "#{goblin.direction} #{goblin.pos.x < player.pos.x} #{goblin.pos.y < player.pos.y}"
@@ -355,4 +354,4 @@ module.exports =
     bg:
       tile: 32
 
-  goblin: yes
+  goblin: no

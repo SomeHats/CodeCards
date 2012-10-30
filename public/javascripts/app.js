@@ -1261,15 +1261,16 @@ module.exports = {
     $el = $(mission.el);
     $el.addClass('sample');
     $el.html(template());
-    mission.rc.options.add({
-      "with": this,
-      callback: this.toggleGoblin,
-      label: "Goblin",
-      type: 'toggle-button',
-      value: this.goblin,
-      "true": "Turn off Goblin",
-      "false": "Turn on Goblin"
-    });
+    /*mission.rc.options.add
+      with: @
+      callback: @toggleGoblin
+      label: "Goblin"
+      type: 'toggle-button'
+      value: @goblin
+      true: "Turn off Goblin"
+      false: "Turn on Goblin"
+    */
+
     getSprite = function(name) {
       var el;
       el = $el.find("." + name);
@@ -1383,7 +1384,7 @@ module.exports = {
           for (_i = 0, _len = characters.length; _i < _len; _i++) {
             char = characters[_i];
             if (change.x === char.pos.x && change.y === char.pos.y) {
-              tile = char;
+              tile = char.name;
             }
           }
         }
@@ -1495,7 +1496,7 @@ module.exports = {
     }, 0, true);
     goblin = new Character('goblin', {
       x: 17,
-      y: 14
+      y: 2
     }, 2);
     animator.register('player', {
       x: player.pos.x,
@@ -1507,7 +1508,7 @@ module.exports = {
     });
     animator.register('goblin', {
       x: 17,
-      y: 14,
+      y: 2,
       rot: 0,
       draw: function(geom) {
         return _ths.drawSprite(geom, 'goblin');
@@ -1519,11 +1520,10 @@ module.exports = {
       return lookGoblin();
     };
     lookGoblin = function() {
-      console.log(goblin.look(left));
-      if (goblin.look(left) === player) {
+      if (goblin.look(left) === 'player') {
         goblin.turn(left);
       }
-      if (goblin.look(right) === player) {
+      if (goblin.look(right) === 'player') {
         goblin.turn(right);
       }
       if (goblin.touch() === wall) {
@@ -1691,7 +1691,7 @@ module.exports = {
       tile: 32
     }
   },
-  goblin: true
+  goblin: false
 };
 
 }});
