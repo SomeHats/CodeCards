@@ -60,7 +60,9 @@ module.exports = class Mission extends Backbone.View
     else
       $('#mainview').addClass 'view-fullscreen'
 
-    m.initialize $('#mission')[0]
+    m.initialize
+      rc: controller.rc
+      el: $('#mission')[0]
 
     language = @language = new Language m.language
 

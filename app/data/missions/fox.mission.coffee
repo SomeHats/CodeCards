@@ -8,14 +8,23 @@ module.exports =
   # initialize: a function to be called when setting up your mission on screen.
   #             The function is passed a single DOM element. Put any HTML inside
   #             this element, but try not to modify the element itself.
-  initialize: (el) ->
+  initialize: (mission) ->
     _ths = @
 
     template = require 'data/missions/templates/sample'
-    $el = $ el
+    $el = $ mission.el
 
     $el.addClass 'sample'
     $el.html template()
+
+    mission.rc.options.add
+      with: @
+      callback: @toggleGoblin
+      label: "Goblin"
+      type: 'toggle-button'
+      value: @goblin
+      true: "Turn off Goblin"
+      false: "Turn on Goblin"
 
     getSprite = (name) ->
       el = $el.find ".#{name}"
@@ -23,7 +32,7 @@ module.exports =
         _ths.reset()
       _ths.sprite[name].image = el[0]
 
-    getSprite name for name in ['player', 'cake', 'wall', 'bg']
+    getSprite name for name in ['player', 'cake', 'wall', 'bg', 'goblin']
 
     @canvas = $el.find 'canvas'
     @ctx = @canvas[0].getContext '2d'
@@ -44,7 +53,8 @@ module.exports =
     @displayMap = Util.clone @map
 
     @animator.reset()
-    @drawPlayer x: 2, y: 2, rot: 1
+    @drawSprite {x: 2, y: 2, rot: 1}, 'player'
+    if @goblin then @drawSprite {x: 17, y: 12, rot: 1}, 'goblin'
 
   # run: This function is called when it is triggered by the remote. It is 
   #      passed a single string, which is made from reading the IDs from the 
@@ -56,6 +66,8 @@ module.exports =
     gameMap = Util.clone @map
     displayMap = @displayMap = Util.clone @map
 
+    animator = @animator
+
     # Set up the environment for our game.
     empty = 0
     wall = 1
@@ -65,9 +77,13 @@ module.exports =
     right = 1
     left = 3
 
-    animator = @animator
+    characters = []
 
-    fox = player =
+    class Character
+      constructor: (@name, @pos, @direction = 0, @player = no) ->
+        characters.push @
+        @
+
       look: (direction = forward) ->
         tile = empty
         direction = (@direction + direction) % 4
@@ -83,6 +99,10 @@ module.exports =
             wall
           else
             gameMap[change.y][change.x]
+
+          for char in characters
+            if change.x is char.pos.x and change.y is char.pos.y
+              tile = char
 
         tile
 
@@ -102,11 +122,11 @@ module.exports =
           gameMap[change.y][change.x] isnt 1
             @pos.x = change.x
             @pos.y = change.y
-            animator.animate 'player', 200, change
+            animator.animate @name, 200, change
 
-            if gameMap[change.y][change.x] is cake
+            if @player and gameMap[change.y][change.x] is cake
               gameMap[change.y][change.x] = empty
-              animator.callback ->
+              animator.callback @name, ->
                 displayMap[change.y][change.x] = empty
                 _ths.score++
                 _ths.updateScore()
@@ -127,19 +147,43 @@ module.exports =
 
       turn: (direction) ->
         direction = (@direction + direction) % 4
-        animator.animate 'player', 200, rot: direction
+        animator.animate @name, 1, rot: direction
         @direction = direction
 
-      direction: 0
-      pos:
-        x: 2
-        y: 2
+    fox = player = new Character 'player', {x: 2, y: 2}, 0, yes
+    goblin = new Character 'goblin', {x: 17, y: 14}, 2
 
     animator.register 'player',
       x: player.pos.x
       y: player.pos.y
       rot: 0
-      draw: (geom) -> _ths.drawPlayer geom
+      draw: (geom) -> _ths.drawSprite geom, 'player'
+
+    animator.register 'goblin',
+      x: 17
+      y: 14
+      rot: 0
+      draw: (geom) -> _ths.drawSprite geom, 'goblin'
+
+    moveGoblin = ->
+      lookGoblin()
+      goblin.move()
+      lookGoblin()
+
+    lookGoblin = ->
+      console.log goblin.look left
+      if goblin.look(left) is player
+        goblin.turn left
+      if goblin.look(right) is player
+        goblin.turn right
+      if goblin.touch() is wall
+        str = "#{goblin.direction} #{goblin.pos.x < player.pos.x} #{goblin.pos.y < player.pos.y}"
+        switch str
+          when "0 true false", "0 false false", "1 true true", "1 true false", "2 true true", "2 false true", "3 false true", "3 false false"
+            goblin.turn left
+          else
+            goblin.turn right
+
 
     # I feel dirty.
     success = yes
@@ -152,17 +196,19 @@ module.exports =
     if success
       for i in [0...@remaining]
         fn()
-        animator.callback ->
+        if @goblin then moveGoblin()
+
+        animator.callback 'player', ->
           _ths.remaining--
           _ths.updateScore()
 
   # Other functions and objects, used with the three above
   animator: new Animator false
 
-  drawPlayer: (geom) ->
+  drawSprite: (geom, name) ->
     size = @size
     ctx = @ctx
-    sprite = @sprite.player
+    sprite = @sprite[name]
 
     x = geom.x
     y = geom.y
@@ -230,6 +276,10 @@ module.exports =
     $('#score').text "Score: #{@score}"
     $('#remain').text "Remaining: #{@remaining}"
 
+  toggleGoblin: (val) ->
+    @goblin = val
+    @reset()
+
   map:[
     [2,2,2,0,0,0,0,1,2,2,2,2,1,0,0,0,0,2,2,2],
     [2,2,0,0,0,0,0,1,0,2,2,0,1,0,0,0,0,0,2,2],
@@ -269,6 +319,27 @@ module.exports =
       stage: 0
       tile: 32
 
+    goblin:
+      right:
+        row: 0
+        length: 3
+
+      left: 
+        row: 1
+        length: 3
+
+      up: 
+        row: 2
+        length: 4
+
+      down: 
+        row: 3
+        length: 4
+
+      current: 'left'
+      stage: 0
+      tile: 32
+
     cake:
       cake:
         row: 0
@@ -283,3 +354,5 @@ module.exports =
 
     bg:
       tile: 32
+
+  goblin: yes

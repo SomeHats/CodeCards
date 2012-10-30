@@ -52,6 +52,12 @@ class RC extends Backbone.View
     if typeof obj.event isnt 'undefined'
       obj.with.trigger obj.event, obj.value
 
+    if typeof obj.callback is 'function'
+      if typeof obj.with isnt 'undefined'
+        obj.callback.apply obj.with, [obj.value]
+      else
+        obj.callback obj.value
+
   createGroup: (name) ->
     safeName = name.toLowerCase().replace ' ', '-'
 

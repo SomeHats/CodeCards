@@ -794,7 +794,10 @@ module.exports = Mission = (function(_super) {
     } else {
       $('#mainview').addClass('view-fullscreen');
     }
-    m.initialize($('#mission')[0]);
+    m.initialize({
+      rc: controller.rc,
+      el: $('#mission')[0]
+    });
     return language = this.language = new Language(m.language);
   };
 
@@ -1251,21 +1254,31 @@ module.exports = {
   language: {
     fox: 0
   },
-  initialize: function(el) {
+  initialize: function(mission) {
     var $el, getSprite, name, template, _i, _len, _ref, _ths;
     _ths = this;
     template = require('data/missions/templates/sample');
-    $el = $(el);
+    $el = $(mission.el);
     $el.addClass('sample');
     $el.html(template());
+    mission.rc.options.add({
+      "with": this,
+      callback: this.toggleGoblin,
+      label: "Goblin",
+      type: 'toggle-button',
+      value: this.goblin,
+      "true": "Turn off Goblin",
+      "false": "Turn on Goblin"
+    });
     getSprite = function(name) {
+      var el;
       el = $el.find("." + name);
       el.on('load', function() {
         return _ths.reset();
       });
       return _ths.sprite[name].image = el[0];
     };
-    _ref = ['player', 'cake', 'wall', 'bg'];
+    _ref = ['player', 'cake', 'wall', 'bg', 'goblin'];
     for (_i = 0, _len = _ref.length; _i < _len; _i++) {
       name = _ref[_i];
       getSprite(name);
@@ -1289,18 +1302,26 @@ module.exports = {
     this.updateScore();
     this.displayMap = Util.clone(this.map);
     this.animator.reset();
-    return this.drawPlayer({
+    this.drawSprite({
       x: 2,
       y: 2,
       rot: 1
-    });
+    }, 'player');
+    if (this.goblin) {
+      return this.drawSprite({
+        x: 17,
+        y: 12,
+        rot: 1
+      }, 'goblin');
+    }
   },
   run: function(str) {
-    var animator, back, cake, displayMap, empty, forward, fox, gameMap, i, left, player, right, success, wall, _i, _ref, _results, _ths;
+    var Character, animator, back, cake, characters, displayMap, empty, forward, fox, gameMap, goblin, i, left, lookGoblin, moveGoblin, player, right, success, wall, _i, _ref, _results, _ths;
     this.reset();
     _ths = this;
     gameMap = Util.clone(this.map);
     displayMap = this.displayMap = Util.clone(this.map);
+    animator = this.animator;
     empty = 0;
     wall = 1;
     cake = 2;
@@ -1308,10 +1329,21 @@ module.exports = {
     back = 2;
     right = 1;
     left = 3;
-    animator = this.animator;
-    fox = player = {
-      look: function(direction) {
-        var change, tile;
+    characters = [];
+    Character = (function() {
+
+      function Character(name, pos, direction, player) {
+        this.name = name;
+        this.pos = pos;
+        this.direction = direction != null ? direction : 0;
+        this.player = player != null ? player : false;
+        characters.push(this);
+        this;
+
+      }
+
+      Character.prototype.look = function(direction) {
+        var change, char, tile, _i, _len;
         if (direction == null) {
           direction = forward;
         }
@@ -1348,10 +1380,17 @@ module.exports = {
               };
           }
           tile = gameMap[change.y] === void 0 || gameMap[change.y][change.x] === void 0 ? wall : gameMap[change.y][change.x];
+          for (_i = 0, _len = characters.length; _i < _len; _i++) {
+            char = characters[_i];
+            if (change.x === char.pos.x && change.y === char.pos.y) {
+              tile = char;
+            }
+          }
         }
         return tile;
-      },
-      move: function(direction) {
+      };
+
+      Character.prototype.move = function(direction) {
         var change;
         if (direction == null) {
           direction = forward;
@@ -1389,18 +1428,19 @@ module.exports = {
         if (gameMap[change.y] !== void 0 && gameMap[change.y][change.x] !== void 0 && gameMap[change.y][change.x] !== 1) {
           this.pos.x = change.x;
           this.pos.y = change.y;
-          animator.animate('player', 200, change);
-          if (gameMap[change.y][change.x] === cake) {
+          animator.animate(this.name, 200, change);
+          if (this.player && gameMap[change.y][change.x] === cake) {
             gameMap[change.y][change.x] = empty;
-            return animator.callback(function() {
+            return animator.callback(this.name, function() {
               displayMap[change.y][change.x] = empty;
               _ths.score++;
               return _ths.updateScore();
             });
           }
         }
-      },
-      touch: function(direction) {
+      };
+
+      Character.prototype.touch = function(direction) {
         var change;
         if (direction == null) {
           direction = forward;
@@ -1436,28 +1476,73 @@ module.exports = {
         } else {
           return gameMap[change.y][change.x];
         }
-      },
-      turn: function(direction) {
+      };
+
+      Character.prototype.turn = function(direction) {
         direction = (this.direction + direction) % 4;
-        animator.animate('player', 200, {
+        animator.animate(this.name, 1, {
           rot: direction
         });
         return this.direction = direction;
-      },
-      direction: 0,
-      pos: {
-        x: 2,
-        y: 2
-      }
-    };
+      };
+
+      return Character;
+
+    })();
+    fox = player = new Character('player', {
+      x: 2,
+      y: 2
+    }, 0, true);
+    goblin = new Character('goblin', {
+      x: 17,
+      y: 14
+    }, 2);
     animator.register('player', {
       x: player.pos.x,
       y: player.pos.y,
       rot: 0,
       draw: function(geom) {
-        return _ths.drawPlayer(geom);
+        return _ths.drawSprite(geom, 'player');
       }
     });
+    animator.register('goblin', {
+      x: 17,
+      y: 14,
+      rot: 0,
+      draw: function(geom) {
+        return _ths.drawSprite(geom, 'goblin');
+      }
+    });
+    moveGoblin = function() {
+      lookGoblin();
+      goblin.move();
+      return lookGoblin();
+    };
+    lookGoblin = function() {
+      console.log(goblin.look(left));
+      if (goblin.look(left) === player) {
+        goblin.turn(left);
+      }
+      if (goblin.look(right) === player) {
+        goblin.turn(right);
+      }
+      if (goblin.touch() === wall) {
+        str = "" + goblin.direction + " " + (goblin.pos.x < player.pos.x) + " " + (goblin.pos.y < player.pos.y);
+        switch (str) {
+          case "0 true false":
+          case "0 false false":
+          case "1 true true":
+          case "1 true false":
+          case "2 true true":
+          case "2 false true":
+          case "3 false true":
+          case "3 false false":
+            return goblin.turn(left);
+          default:
+            return goblin.turn(right);
+        }
+      }
+    };
     success = true;
     try {
       eval("var fn = function () {\n " + str + " \n}");
@@ -1469,7 +1554,10 @@ module.exports = {
       _results = [];
       for (i = _i = 0, _ref = this.remaining; 0 <= _ref ? _i < _ref : _i > _ref; i = 0 <= _ref ? ++_i : --_i) {
         fn();
-        _results.push(animator.callback(function() {
+        if (this.goblin) {
+          moveGoblin();
+        }
+        _results.push(animator.callback('player', function() {
           _ths.remaining--;
           return _ths.updateScore();
         }));
@@ -1478,11 +1566,11 @@ module.exports = {
     }
   },
   animator: new Animator(false),
-  drawPlayer: function(geom) {
+  drawSprite: function(geom, name) {
     var ctx, rot, size, sprite, x, y;
     size = this.size;
     ctx = this.ctx;
-    sprite = this.sprite.player;
+    sprite = this.sprite[name];
     x = geom.x;
     y = geom.y;
     rot = Math.round(geom.rot);
@@ -1539,6 +1627,10 @@ module.exports = {
     $('#score').text("Score: " + this.score);
     return $('#remain').text("Remaining: " + this.remaining);
   },
+  toggleGoblin: function(val) {
+    this.goblin = val;
+    return this.reset();
+  },
   map: [[2, 2, 2, 0, 0, 0, 0, 1, 2, 2, 2, 2, 1, 0, 0, 0, 0, 2, 2, 2], [2, 2, 0, 0, 0, 0, 0, 1, 0, 2, 2, 0, 1, 0, 0, 0, 0, 0, 2, 2], [2, 0, 0, 0, 2, 0, 0, 1, 0, 2, 2, 0, 1, 0, 0, 2, 0, 0, 0, 2], [0, 0, 0, 0, 2, 2, 0, 0, 0, 0, 0, 0, 0, 0, 2, 2, 0, 0, 0, 0], [0, 0, 0, 0, 2, 2, 2, 0, 0, 0, 0, 0, 0, 2, 2, 2, 0, 0, 0, 0], [0, 0, 0, 1, 1, 1, 1, 1, 0, 0, 0, 0, 1, 1, 1, 1, 1, 0, 0, 0], [2, 2, 2, 0, 0, 0, 0, 0, 0, 2, 2, 0, 0, 0, 0, 0, 0, 2, 2, 2], [2, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2, 2], [2, 0, 0, 0, 0, 2, 2, 0, 0, 2, 2, 0, 0, 2, 2, 0, 0, 0, 0, 2], [0, 0, 0, 0, 0, 1, 0, 2, 2, 0, 0, 2, 2, 0, 1, 0, 0, 0, 0, 0], [0, 2, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 2, 0], [0, 2, 0, 2, 0, 1, 0, 0, 1, 1, 1, 1, 0, 0, 1, 0, 2, 0, 2, 0], [0, 2, 0, 2, 0, 1, 2, 0, 0, 0, 0, 0, 0, 2, 1, 0, 2, 0, 2, 0], [0, 0, 0, 2, 0, 1, 2, 2, 0, 0, 0, 0, 2, 2, 1, 0, 2, 0, 0, 0], [0, 0, 0, 0, 0, 1, 2, 2, 2, 0, 0, 2, 2, 2, 1, 0, 0, 0, 0, 0]],
   sprite: {
     player: {
@@ -1562,6 +1654,27 @@ module.exports = {
       stage: 0,
       tile: 32
     },
+    goblin: {
+      right: {
+        row: 0,
+        length: 3
+      },
+      left: {
+        row: 1,
+        length: 3
+      },
+      up: {
+        row: 2,
+        length: 4
+      },
+      down: {
+        row: 3,
+        length: 4
+      },
+      current: 'left',
+      stage: 0,
+      tile: 32
+    },
     cake: {
       cake: {
         row: 0,
@@ -1577,7 +1690,8 @@ module.exports = {
     bg: {
       tile: 32
     }
-  }
+  },
+  goblin: true
 };
 
 }});
@@ -1588,7 +1702,7 @@ window.require.define({"data/missions/templates/sample": function(exports, requi
   var foundHelper, self=this;
 
 
-  return "<canvas width=\"640\" height=\"480\"></canvas>\n<h3 id=\"remain\">Remaining:</h3>\n<h3 id=\"score\">Score:</h3>\n<p>Images and stuff lovingly &quot;borrowed&quot; from Mozilla's BrowserQuest.</p>\n<img class=\"player\" style=\"display: none;\" src=\"/missions/sample/ff.png\">\n<img class=\"cake\" style=\"display: none;\" src=\"/missions/sample/cake.png\">\n<img class=\"wall\" style=\"display: none;\" src=\"/missions/sample/wall.png\">\n<img class=\"bg\" style=\"display: none;\" src=\"/missions/sample/bg.png\">";});
+  return "<canvas width=\"640\" height=\"480\"></canvas>\n<h3 id=\"remain\">Remaining:</h3>\n<h3 id=\"score\">Score:</h3>\n<p>Images and stuff lovingly &quot;borrowed&quot; from Mozilla's BrowserQuest.</p>\n<img class=\"player\" style=\"display: none;\" src=\"/missions/sample/ff.png\">\n<img class=\"cake\" style=\"display: none;\" src=\"/missions/sample/cake.png\">\n<img class=\"wall\" style=\"display: none;\" src=\"/missions/sample/wall.png\">\n<img class=\"bg\" style=\"display: none;\" src=\"/missions/sample/bg.png\">\n<img class=\"goblin\" style=\"display: none;\" src=\"/missions/sample/goblin.png\">";});
 }});
 
 window.require.define({"home": function(exports, require, module) {
@@ -2462,7 +2576,14 @@ RC = (function(_super) {
       obj["with"][obj.property] = obj.value;
     }
     if (typeof obj.event !== 'undefined') {
-      return obj["with"].trigger(obj.event, obj.value);
+      obj["with"].trigger(obj.event, obj.value);
+    }
+    if (typeof obj.callback === 'function') {
+      if (typeof obj["with"] !== 'undefined') {
+        return obj.callback.apply(obj["with"], [obj.value]);
+      } else {
+        return obj.callback(obj.value);
+      }
     }
   };
 
