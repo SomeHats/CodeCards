@@ -2,9 +2,9 @@ define.language({
 	name: 'alphabet',
 	version: 0,
 	words:{
-		601: 'a',
-		602: 'c',
-		603: 't',
+		1: 'a',
+		2: 'c',
+		3: 't',
 		604: 'r',
 		605: 'o',
 		606: 'n',

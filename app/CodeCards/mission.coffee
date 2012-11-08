@@ -67,6 +67,7 @@ module.exports = class Mission extends Backbone.View
     m.reset()
 
     language = @language = new Language m.language
+    console.log language
 
   run: (data) ->
     @m.run data

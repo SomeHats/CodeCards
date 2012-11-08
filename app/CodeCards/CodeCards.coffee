@@ -6,7 +6,6 @@ Stats = require 'lib/stats'
 MissionControl = require 'CodeCards/mission-control'
 
 template = require 'templates/CodeCards'
-codeTemplate = require 'CodeCards/templates/code'
 
 Handlebars.registerHelper 'safe', (html) ->
   return new Handlebars.SafeString(html)
@@ -47,22 +46,17 @@ module.exports = class CodeCards extends Backbone.View
         # Update stats
         _ths.stats.tick()
 
-        # Build the results into a string, according to the language file
-        code = mission.language.build results
-        
-        # Render the code and errors
-        $code.html codeTemplate code
+        mission.trigger 'data', results
 
         # Send stats and code to the remote control
         _ths.controller.send 'tick',
           fps: _ths.stats.fps
           interval: _ths.stats.interval
           status: 'success'
-          code: code.html
 
         # Tell the world
-        _ths.code = code.string
-        _ths.trigger 'code', code.string
+        #_ths.code = code.string
+        #_ths.trigger 'code', code.string
 
     @setupController()
 

@@ -87,7 +87,7 @@ if (isWorker) {
 
 
 window.require.define({"CodeCards/CodeCards": function(exports, require, module) {
-  var CodeCards, Controller, Interpreter, MissionControl, Stats, codeTemplate, template,
+  var CodeCards, Controller, Interpreter, MissionControl, Stats, template,
   __hasProp = {}.hasOwnProperty,
   __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
 
@@ -100,8 +100,6 @@ Stats = require('lib/stats');
 MissionControl = require('CodeCards/mission-control');
 
 template = require('templates/CodeCards');
-
-codeTemplate = require('CodeCards/templates/code');
 
 Handlebars.registerHelper('safe', function(html) {
   return new Handlebars.SafeString(html);
@@ -135,20 +133,15 @@ module.exports = CodeCards = (function(_super) {
       }
     });
     this.interpreter.on('success', function(results) {
-      var code;
       if (_ths.play) {
         $('#code-status').html('Running...');
         _ths.stats.tick();
-        code = mission.language.build(results);
-        $code.html(codeTemplate(code));
-        _ths.controller.send('tick', {
+        mission.trigger('data', results);
+        return _ths.controller.send('tick', {
           fps: _ths.stats.fps,
           interval: _ths.stats.interval,
-          status: 'success',
-          code: code.html
+          status: 'success'
         });
-        _ths.code = code.string;
-        return _ths.trigger('code', code.string);
       }
     });
     this.setupController();
@@ -722,11 +715,13 @@ module.exports = Language = (function() {
 }});
 
 window.require.define({"CodeCards/mission-control": function(exports, require, module) {
-  var Mission, MissionControl,
+  var Mission, MissionControl, codeTemplate,
   __hasProp = {}.hasOwnProperty,
   __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
 
 Mission = require('CodeCards/mission');
+
+codeTemplate = require('CodeCards/templates/code');
 
 module.exports = MissionControl = (function(_super) {
 
@@ -759,6 +754,24 @@ module.exports = MissionControl = (function(_super) {
     this.on('select-mission', function(name) {
       return this.mission = new Mission(name);
     }, this);
+    this.on('data', function(results) {
+      var $code, code, mission;
+      $code = $('#code>div');
+      if (this.mission) {
+        mission = this.mission;
+        switch (mission.m.interpreter) {
+          case "text":
+            code = mission.language.build(results);
+            $code.html(codeTemplate(code));
+            if (mission.m.continuous) {
+              return mission.run(code.string);
+            }
+            break;
+          case "none":
+            return null;
+        }
+      }
+    });
     window.define = {
       mission: function(name, data) {
         var def;
@@ -809,6 +822,14 @@ module.exports = MissionControl = (function(_super) {
       _results.push(Util.loadJS(host + 'CodeCards-data.js'));
     }
     return _results;
+  };
+
+  MissionControl.prototype.reset = function() {
+    return this.mission.reset();
+  };
+
+  MissionControl.prototype.run = function(data) {
+    return this.mission.run(data);
   };
 
   MissionControl.prototype.hosts = ["http://localhost:3000/", "http://codecards.decoded.co/"];
@@ -902,7 +923,8 @@ module.exports = Mission = (function(_super) {
       el: $('#mission')[0]
     });
     m.reset();
-    return language = this.language = new Language(m.language);
+    language = this.language = new Language(m.language);
+    return console.log(language);
   };
 
   Mission.prototype.run = function(data) {

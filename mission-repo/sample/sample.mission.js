@@ -34,7 +34,7 @@ define.mission("sample", {
 		this.reset();
 
 		// As you can see, this mission does very little of interest.
-		if (spelling === 'cat') {
+		if (spelling.trim() === 'cat') {
 			this.el.innerHTML += "<h2>Correct!</h2>"
 		} else {
 			this.el.innerHTML += "<h2>No, not " + spelling + "!</h2>"

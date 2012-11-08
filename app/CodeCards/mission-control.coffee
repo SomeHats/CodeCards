@@ -1,66 +1,92 @@
 Mission = require 'CodeCards/mission'
 
+codeTemplate = require 'CodeCards/templates/code'
+
 module.exports = class MissionControl extends Backbone.Model
-	initialize: ->
-		_ths = @
+  initialize: ->
+    _ths = @
 
-		@resources =
-			missions: {}
-			languages: []
+    @resources =
+      missions: {}
+      languages: []
 
-		@selector = new Mission 'selector'
+    @selector = new Mission 'selector'
 
-		@on 'new-resources', (data) ->
-			for name of data.missions
-				Util.loadJS data.missions[name].root + data.missions[name].source
+    @on 'new-resources', (data) ->
+      for name of data.missions
+        Util.loadJS data.missions[name].root + data.missions[name].source
 
-			for lang in data.languages
-				Util.loadJS lang
+      for lang in data.languages
+        Util.loadJS lang
 
-			@selector.run data.missions
-		, @
+      @selector.run data.missions
+    , @
 
-		@on 'select-mission', (name) ->
-			@mission = new Mission name
-		, @
+    @on 'select-mission', (name) ->
+      @mission = new Mission name
+    , @
 
-		window.define = 
-			mission: (name, data) ->
-				def = {}
-				def["data/missions/#{name}.mission"] = (exports, require, module) ->
-					module.exports = data
+    @on 'data', (results) ->
 
-				window.require.define def
+      $code = $ '#code>div'
+      if @mission
+        mission = @mission
+        switch mission.m.interpreter
+          when "text"
+            # Build the results into a string, according to the language file
+            code = mission.language.build results
 
-			language: (data) ->
-				def = {}
-				def["data/languages/#{data.name}.lang"] = (exports, require, module) ->
-					module.exports = data
+            # Render the code and errors
+            $code.html codeTemplate code
 
-				window.require.define def
+            if mission.m.continuous
+              mission.run code.string
+          when "none"
+            # Nothing
+           null
 
-			resources: (data) ->
-				for name of data.missions
-					if _ths.resources.missions[name]
-						delete data.missions[name]
-					else
-					  data.missions[name].root = data.root
+    window.define = 
+      mission: (name, data) ->
+        def = {}
+        def["data/missions/#{name}.mission"] = (exports, require, module) ->
+          module.exports = data
 
-				data.languages = data.languages.map (name) ->
-					return data.root + name
+        window.require.define def
 
-				if data.missions
-					_.extend _ths.resources.missions, data.missions
+      language: (data) ->
+        def = {}
+        def["data/languages/#{data.name}.lang"] = (exports, require, module) ->
+          module.exports = data
 
-				if data.languages
-					_ths.resources.languages.concat data.languages
+        window.require.define def
 
-				_ths.trigger 'new-resources', data
+      resources: (data) ->
+        for name of data.missions
+          if _ths.resources.missions[name]
+            delete data.missions[name]
+          else
+            data.missions[name].root = data.root
 
-		@loadResources()
+        data.languages = data.languages.map (name) ->
+          return data.root + name
 
-	loadResources: ->
-		for host in @hosts
-			Util.loadJS host + 'CodeCards-data.js'
+        if data.missions
+          _.extend _ths.resources.missions, data.missions
 
-	hosts: ["http://localhost:3000/", "http://codecards.decoded.co/"]
+        if data.languages
+          _ths.resources.languages.concat data.languages
+
+        _ths.trigger 'new-resources', data
+
+    @loadResources()
+
+  loadResources: ->
+    for host in @hosts
+      Util.loadJS host + 'CodeCards-data.js'
+
+  reset: ->
+    @mission.reset()
+  run: (data) ->
+    @mission.run data
+
+  hosts: ["http://localhost:3000/", "http://codecards.decoded.co/"]
