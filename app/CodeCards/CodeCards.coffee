@@ -3,7 +3,7 @@ Interpreter = require 'CodeCards/interpreter'
 Controller = require 'CodeCards/controller'
 Stats = require 'lib/stats'
 
-Mission = require 'CodeCards/mission'
+MissionControl = require 'CodeCards/mission-control'
 
 template = require 'templates/CodeCards'
 codeTemplate = require 'CodeCards/templates/code'
@@ -66,8 +66,7 @@ module.exports = class CodeCards extends Backbone.View
 
     @setupController()
 
-    # Load up the mission. TODO:- missions other than sample
-    @mission = mission = new Mission 'fox'
+    @mission = mission = new MissionControl
 
     # Run the mission when needed
     @on 'change:play', ->

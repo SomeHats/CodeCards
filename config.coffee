@@ -60,7 +60,7 @@ if (typeof window === 'undefined') {
 }
 (function(/*! Brunch !*/) {
   'use strict';
-
+  //hello
   var globals = typeof window !== 'undefined' ? window : global;
   if (typeof globals.require === 'function') return;
 

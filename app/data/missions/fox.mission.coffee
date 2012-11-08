@@ -1,5 +1,9 @@
 module.exports =
 
+  # view: Defaults to "fullscreen". 2up is for showing the input from CodeCards
+  #       next to your mission
+  view: "2up"
+
   # language: which language definitions are needed for your mission? Give them
   #           in the form name: version
   language: 

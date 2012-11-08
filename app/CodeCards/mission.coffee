@@ -3,8 +3,8 @@ Language = require 'CodeCards/language'
 module.exports = class Mission extends Backbone.View
   initialize: (name) ->
     @m = m =
-      view: '2up'
-      interpreter: 'linear'
+      view: 'fullscreen'
+      interpreter: 'text'
       continuous: no
 
     controller = App.codeCards.controller
@@ -14,8 +14,11 @@ module.exports = class Mission extends Backbone.View
     if typeof m.initialize isnt 'function'
       throw new TypeError "mission.initialize should be a function not #{typeof m.initialize}."
 
-    if typeof m.language isnt 'object'
-      throw new TypeError "mission.language should be an object not #{typeof m.language}."
+    if _.indexOf(@accepted.interpreter, m.interpreter) is -1
+      throw new RangeError "mission.interpreter should be #{@accepted.interpreter.join ' or '}, not #{m.interpreter}."
+
+    if m.interpreter is 'text' and typeof m.language isnt 'object' and typeof m.language isnt 'string'
+      throw new TypeError "mission.language should be an object or string, not #{typeof m.language}."
 
     if typeof m.reset isnt 'function'
       throw new TypeError "mission.reset should be a function not #{typeof m.reset}."
@@ -25,9 +28,6 @@ module.exports = class Mission extends Backbone.View
 
     if _.indexOf(@accepted.view, m.view) is -1
       throw new RangeError "mission.view should be #{@accepted.view.join ' or '}, not #{m.view}."
-
-    if _.indexOf(@accepted.interpreter, m.interpreter) is -1
-      throw new RangeError "mission.interpreter should be #{@accepted.interpreter.join ' or '}, not #{m.interpreter}."
 
     if typeof m.continuous isnt 'boolean'
       throw new TypeError "mission.continuous should be boolean not #{typeof m.continuous}."
@@ -64,6 +64,8 @@ module.exports = class Mission extends Backbone.View
       rc: controller.rc
       el: $('#mission')[0]
 
+    m.reset()
+
     language = @language = new Language m.language
 
   run: (data) ->
@@ -74,4 +76,4 @@ module.exports = class Mission extends Backbone.View
 
   accepted:
     view: ['2up', 'fullscreen']
-    interpreter: ['linear']
+    interpreter: ['text', 'none']

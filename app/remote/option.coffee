@@ -11,10 +11,14 @@ module.exports = class Option extends Backbone.Model
     if !@has 'group'
       @set 'group', 'General'
 
+    @on 'remove', ->
+      console.log 'remove fired!'
+
   createView: ->
     @view = UI.createFrom @toJSON()
     if @view
       @view.on 'change', (value) ->
+        @set 'value', value+'FORCECHANGE', silent: true
         @set 'value', value
       , @
       return @view

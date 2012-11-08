@@ -6,7 +6,7 @@ if (typeof window === 'undefined') {
 }
 (function(/*! Brunch !*/) {
   'use strict';
-
+  //hello
   var globals = typeof window !== 'undefined' ? window : global;
   if (typeof globals.require === 'function') return;
 
@@ -87,7 +87,7 @@ if (isWorker) {
 
 
 window.require.define({"CodeCards/CodeCards": function(exports, require, module) {
-  var CodeCards, Controller, Interpreter, Mission, Stats, codeTemplate, template,
+  var CodeCards, Controller, Interpreter, MissionControl, Stats, codeTemplate, template,
   __hasProp = {}.hasOwnProperty,
   __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
 
@@ -97,7 +97,7 @@ Controller = require('CodeCards/controller');
 
 Stats = require('lib/stats');
 
-Mission = require('CodeCards/mission');
+MissionControl = require('CodeCards/mission-control');
 
 template = require('templates/CodeCards');
 
@@ -152,7 +152,7 @@ module.exports = CodeCards = (function(_super) {
       }
     });
     this.setupController();
-    this.mission = mission = new Mission('fox');
+    this.mission = mission = new MissionControl;
     return this.on('change:play', function() {
       this.interpreter.UserMedia.paused = !this.play;
       if (!this.play) {
@@ -498,7 +498,7 @@ window.require.define({"CodeCards/language": function(exports, require, module) 
 module.exports = Language = (function() {
 
   function Language(lang, process) {
-    var key, language, words;
+    var key, l, language, words;
     if (process == null) {
       process = true;
     }
@@ -510,6 +510,11 @@ module.exports = Language = (function() {
     };
     this.replace = [];
     this.format = [];
+    if (typeof lang === 'string') {
+      l = lang;
+      lang = {};
+      lang[l] = "*";
+    }
     for (key in lang) {
       try {
         language = require('data/languages/' + key + '.lang');
@@ -716,6 +721,104 @@ module.exports = Language = (function() {
 
 }});
 
+window.require.define({"CodeCards/mission-control": function(exports, require, module) {
+  var Mission, MissionControl,
+  __hasProp = {}.hasOwnProperty,
+  __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
+
+Mission = require('CodeCards/mission');
+
+module.exports = MissionControl = (function(_super) {
+
+  __extends(MissionControl, _super);
+
+  function MissionControl() {
+    return MissionControl.__super__.constructor.apply(this, arguments);
+  }
+
+  MissionControl.prototype.initialize = function() {
+    var _ths;
+    _ths = this;
+    this.resources = {
+      missions: {},
+      languages: []
+    };
+    this.selector = new Mission('selector');
+    this.on('new-resources', function(data) {
+      var lang, name, _i, _len, _ref;
+      for (name in data.missions) {
+        Util.loadJS(data.missions[name].root + data.missions[name].source);
+      }
+      _ref = data.languages;
+      for (_i = 0, _len = _ref.length; _i < _len; _i++) {
+        lang = _ref[_i];
+        Util.loadJS(lang);
+      }
+      return this.selector.run(data.missions);
+    }, this);
+    this.on('select-mission', function(name) {
+      return this.mission = new Mission(name);
+    }, this);
+    window.define = {
+      mission: function(name, data) {
+        var def;
+        def = {};
+        def["data/missions/" + name + ".mission"] = function(exports, require, module) {
+          return module.exports = data;
+        };
+        return window.require.define(def);
+      },
+      language: function(data) {
+        var def;
+        def = {};
+        def["data/languages/" + data.name + ".lang"] = function(exports, require, module) {
+          return module.exports = data;
+        };
+        return window.require.define(def);
+      },
+      resources: function(data) {
+        var name;
+        for (name in data.missions) {
+          if (_ths.resources.missions[name]) {
+            delete data.missions[name];
+          } else {
+            data.missions[name].root = data.root;
+          }
+        }
+        data.languages = data.languages.map(function(name) {
+          return data.root + name;
+        });
+        if (data.missions) {
+          _.extend(_ths.resources.missions, data.missions);
+        }
+        if (data.languages) {
+          _ths.resources.languages.concat(data.languages);
+        }
+        return _ths.trigger('new-resources', data);
+      }
+    };
+    return this.loadResources();
+  };
+
+  MissionControl.prototype.loadResources = function() {
+    var host, _i, _len, _ref, _results;
+    _ref = this.hosts;
+    _results = [];
+    for (_i = 0, _len = _ref.length; _i < _len; _i++) {
+      host = _ref[_i];
+      _results.push(Util.loadJS(host + 'CodeCards-data.js'));
+    }
+    return _results;
+  };
+
+  MissionControl.prototype.hosts = ["http://localhost:3000/", "http://codecards.decoded.co/"];
+
+  return MissionControl;
+
+})(Backbone.Model);
+
+}});
+
 window.require.define({"CodeCards/mission": function(exports, require, module) {
   var Language, Mission,
   __hasProp = {}.hasOwnProperty,
@@ -734,8 +837,8 @@ module.exports = Mission = (function(_super) {
   Mission.prototype.initialize = function(name) {
     var controller, language, m;
     this.m = m = {
-      view: '2up',
-      interpreter: 'linear',
+      view: 'fullscreen',
+      interpreter: 'text',
       continuous: false
     };
     controller = App.codeCards.controller;
@@ -743,8 +846,11 @@ module.exports = Mission = (function(_super) {
     if (typeof m.initialize !== 'function') {
       throw new TypeError("mission.initialize should be a function not " + (typeof m.initialize) + ".");
     }
-    if (typeof m.language !== 'object') {
-      throw new TypeError("mission.language should be an object not " + (typeof m.language) + ".");
+    if (_.indexOf(this.accepted.interpreter, m.interpreter) === -1) {
+      throw new RangeError("mission.interpreter should be " + (this.accepted.interpreter.join(' or ')) + ", not " + m.interpreter + ".");
+    }
+    if (m.interpreter === 'text' && typeof m.language !== 'object' && typeof m.language !== 'string') {
+      throw new TypeError("mission.language should be an object or string, not " + (typeof m.language) + ".");
     }
     if (typeof m.reset !== 'function') {
       throw new TypeError("mission.reset should be a function not " + (typeof m.reset) + ".");
@@ -754,9 +860,6 @@ module.exports = Mission = (function(_super) {
     }
     if (_.indexOf(this.accepted.view, m.view) === -1) {
       throw new RangeError("mission.view should be " + (this.accepted.view.join(' or ')) + ", not " + m.view + ".");
-    }
-    if (_.indexOf(this.accepted.interpreter, m.interpreter) === -1) {
-      throw new RangeError("mission.interpreter should be " + (this.accepted.interpreter.join(' or ')) + ", not " + m.interpreter + ".");
     }
     if (typeof m.continuous !== 'boolean') {
       throw new TypeError("mission.continuous should be boolean not " + (typeof m.continuous) + ".");
@@ -798,6 +901,7 @@ module.exports = Mission = (function(_super) {
       rc: controller.rc,
       el: $('#mission')[0]
     });
+    m.reset();
     return language = this.language = new Language(m.language);
   };
 
@@ -811,7 +915,7 @@ module.exports = Mission = (function(_super) {
 
   Mission.prototype.accepted = {
     view: ['2up', 'fullscreen'],
-    interpreter: ['linear']
+    interpreter: ['text', 'none']
   };
 
   return Mission;
@@ -1251,6 +1355,7 @@ module.exports = {
 window.require.define({"data/missions/fox.mission": function(exports, require, module) {
   
 module.exports = {
+  view: "2up",
   language: {
     fox: 0
   },
@@ -1718,6 +1823,44 @@ module.exports = {
   },
   goblin: false,
   isMaze: true
+};
+
+}});
+
+window.require.define({"data/missions/selector.mission": function(exports, require, module) {
+  
+module.exports = {
+  view: 'fullscreen',
+  interpreter: 'none',
+  initialize: function(mission) {
+    var el;
+    el = this.el = $(mission.el);
+    this.rc = mission.rc;
+    return this.data = {};
+  },
+  reset: function() {
+    this.el.html("<span style=\"font-size: 4.5em;\" class=\"logo\" href=\"#\">\n  <h3 class=\"decoded\">Decoded</h3>\n  <h1><span>{</span>code<span>}</span>cards</h1>\n</span>");
+    window.App.codeCards.trigger('toggle-camera', false);
+    return this.rc.showGroup('Missions');
+  },
+  run: function(missions) {
+    var mission, name;
+    for (name in missions) {
+      mission = missions[name];
+      this.rc.options.add({
+        "with": window.App.codeCards.mission,
+        event: 'select-mission',
+        label: mission.name,
+        description: mission.description,
+        text: "Load " + mission.name,
+        type: "button",
+        value: name,
+        group: 'Missions'
+      });
+    }
+    window.App.codeCards.trigger('toggle-camera', false);
+    return this.rc.showGroup('Missions');
+  }
 };
 
 }});
@@ -2266,6 +2409,17 @@ util = (function(_super) {
     return false;
   };
 
+  util.prototype.loadJS = function(src) {
+    var el;
+    el = document.createElement('script');
+    el.type = 'text/javascript';
+    el.onload = function() {
+      return console.log("Loaded script: " + src);
+    };
+    el.src = src;
+    return window.document.body.appendChild(el);
+  };
+
   return util;
 
 })(Backbone.View);
@@ -2616,7 +2770,10 @@ RC = (function(_super) {
   RC.prototype.createGroup = function(name) {
     var el, li, safeName;
     safeName = name.toLowerCase().replace(' ', '-');
-    li = $('<li></li>').text(name).attr('title', safeName);
+    li = $('<li></li>').text(name).attr({
+      title: safeName,
+      "class": "RC-group-bu-" + safeName
+    });
     li.appendTo(this.$('nav ul'));
     el = $('<section></section>').attr('id', safeName);
     el.append($('<h2></h2>').text(name));
@@ -2650,6 +2807,24 @@ RC = (function(_super) {
         return pages.filter('#' + el.attr('title')).addClass('active');
       }
     });
+  };
+
+  RC.prototype.showGroup = function(name) {
+    var el, navItems, pages, safeName;
+    navItems = this.$('nav li');
+    pages = this.$('section');
+    safeName = name.toLowerCase().replace(' ', '-');
+    el = navItems.filter(".RC-group-bu-" + safeName);
+    navItems.filter('.active').removeClass('active');
+    el.addClass('active');
+    pages.filter('.active').removeClass('active');
+    return pages.filter('#' + el.attr('title')).addClass('active');
+  };
+
+  RC.prototype.clearGroup = function(name) {
+    return this.options.remove(this.options.where({
+      group: name
+    }));
   };
 
   RC.prototype.send = function() {
@@ -2783,14 +2958,20 @@ module.exports = Option = (function(_super) {
       this.set('value', this.get('with')[this.get('property')]);
     }
     if (!this.has('group')) {
-      return this.set('group', 'General');
+      this.set('group', 'General');
     }
+    return this.on('remove', function() {
+      return console.log('remove fired!');
+    });
   };
 
   Option.prototype.createView = function() {
     this.view = UI.createFrom(this.toJSON());
     if (this.view) {
       this.view.on('change', function(value) {
+        this.set('value', value + 'FORCECHANGE', {
+          silent: true
+        });
         return this.set('value', value);
       }, this);
       return this.view;
@@ -2913,7 +3094,7 @@ window.require.define({"templates/CodeCards": function(exports, require, module)
   var foundHelper, self=this;
 
 
-  return "<nav>\n  <a class=\"logo\" href=\"#\">\n    <h3 class=\"decoded\">Decoded</h3>\n    <h1><span>{</span>code<span>}</span>cards</h1>\n  </a>\n  <section class=\"pin-entry hide\"></section>\n</nav>\n<section>\n  <div id=\"camview\">\n    <div class=\"cnvs\">\n      <canvas id=\"canvas\" width=\"640\" height=\"480\"></canvas>\n    </div>\n    <a class=\"toggler\"></a>\n    <div id=\"local-RC\" class=\"remote local\"></div>\n  </div>\n  <div id=\"mainview\">\n    <div id=\"code\">\n      <h3 id=\"code-status\">Please allow your webcam...</h3>\n      <div></div>\n    </div>\n    <div id=\"mission\">\n    </div>\n  </div>\n</section>";});
+  return "<nav>\n  <a class=\"logo\" href=\"#\">\n    <h3 class=\"decoded\">Decoded</h3>\n    <h1><span>{</span>code<span>}</span>cards</h1>\n  </a>\n  <section class=\"pin-entry hide\"></section>\n</nav>\n<section>\n  <div id=\"camview\" class=\"hide-cnvs\">\n    <div class=\"cnvs\">\n      <canvas id=\"canvas\" width=\"640\" height=\"480\"></canvas>\n    </div>\n    <a class=\"toggler\"></a>\n    <div id=\"local-RC\" class=\"remote local\"></div>\n  </div>\n  <div id=\"mainview\">\n    <div id=\"code\">\n      <h3 id=\"code-status\">Please allow your webcam...</h3>\n      <div></div>\n    </div>\n    <div id=\"mission\">\n    </div>\n  </div>\n</section>";});
 }});
 
 window.require.define({"templates/home": function(exports, require, module) {
@@ -2923,6 +3104,68 @@ window.require.define({"templates/home": function(exports, require, module) {
 
 
   return "<header class=\"logo\">\n  <h3 class=\"decoded\">Decoded</h3>\n  <h1><span>{</span>code<span>}</span>cards</h1>\n</header>\n\n<a class=\"icon source\" href=\"#CodeCards\">\n  <img src=\"/svg/source-code.svg\">\n  <h3>CodeCards</h3>\n</a>\n\n<a class=\"icon remote\" href=\"#remote\">\n  <img src=\"/svg/remote.svg\">\n  <h3>Remote Control</h3>\n</a>";});
+}});
+
+window.require.define({"ui/button": function(exports, require, module) {
+  var Toggle, template,
+  __hasProp = {}.hasOwnProperty,
+  __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
+
+template = require('ui/templates/button');
+
+module.exports = Toggle = (function(_super) {
+
+  __extends(Toggle, _super);
+
+  function Toggle() {
+    return Toggle.__super__.constructor.apply(this, arguments);
+  }
+
+  Toggle.prototype.initialize = function() {
+    var el, o, _ths;
+    _ths = this;
+    o = this.options;
+    el = this.$el;
+    this.model = new Backbone.Model({
+      label: o.label || el.data('label' || 'Label'),
+      value: o.value || el.data('value' || 'value'),
+      text: o.text || el.data('text' || 'Go'),
+      description: o.description || false
+    });
+    this.o = this.model.toJSON();
+    this.model.on('change', function() {
+      _ths.update();
+      return _ths.trigger('change', _ths.o.value);
+    });
+    this.model.trigger('change');
+    return this.render();
+  };
+
+  Toggle.prototype.silentUpdate = function(val) {
+    return this.update();
+  };
+
+  Toggle.prototype.update = function() {
+    this.o = this.model.toJSON();
+    return this.$('button').text(this.o.button);
+  };
+
+  Toggle.prototype.render = function() {
+    var button, model, _ths;
+    _ths = this;
+    model = this.model.toJSON();
+    this.$el.addClass('button');
+    this.$el.html(template(model));
+    button = this.$('button');
+    return button.on('click', function() {
+      return _ths.model.trigger('change');
+    });
+  };
+
+  return Toggle;
+
+})(Backbone.View);
+
 }});
 
 window.require.define({"ui/slider": function(exports, require, module) {
@@ -3082,6 +3325,46 @@ module.exports = Slider = (function(_super) {
 
 }});
 
+window.require.define({"ui/templates/button": function(exports, require, module) {
+  module.exports = Handlebars.template(function (Handlebars,depth0,helpers,partials,data) {
+  helpers = helpers || Handlebars.helpers;
+  var buffer = "", stack1, stack2, foundHelper, tmp1, self=this, functionType="function", helperMissing=helpers.helperMissing, undef=void 0, escapeExpression=this.escapeExpression;
+
+function program1(depth0,data) {
+  
+  var buffer = "", stack1;
+  buffer += "<span>";
+  foundHelper = helpers.description;
+  stack1 = foundHelper || depth0.description;
+  if(typeof stack1 === functionType) { stack1 = stack1.call(depth0, { hash: {} }); }
+  else if(stack1=== undef) { stack1 = helperMissing.call(depth0, "description", { hash: {} }); }
+  buffer += escapeExpression(stack1) + "</span>";
+  return buffer;}
+
+  buffer += "<div class=\"label\">";
+  foundHelper = helpers.label;
+  stack1 = foundHelper || depth0.label;
+  if(typeof stack1 === functionType) { stack1 = stack1.call(depth0, { hash: {} }); }
+  else if(stack1=== undef) { stack1 = helperMissing.call(depth0, "label", { hash: {} }); }
+  buffer += escapeExpression(stack1) + "</div>\n";
+  foundHelper = helpers.description;
+  stack1 = foundHelper || depth0.description;
+  stack2 = helpers['if'];
+  tmp1 = self.program(1, program1, data);
+  tmp1.hash = {};
+  tmp1.fn = tmp1;
+  tmp1.inverse = self.noop;
+  stack1 = stack2.call(depth0, stack1, tmp1);
+  if(stack1 || stack1 === 0) { buffer += stack1; }
+  buffer += "\n<button>";
+  foundHelper = helpers.text;
+  stack1 = foundHelper || depth0.text;
+  if(typeof stack1 === functionType) { stack1 = stack1.call(depth0, { hash: {} }); }
+  else if(stack1=== undef) { stack1 = helperMissing.call(depth0, "text", { hash: {} }); }
+  buffer += escapeExpression(stack1) + "</button>\n";
+  return buffer;});
+}});
+
 window.require.define({"ui/templates/slider": function(exports, require, module) {
   module.exports = Handlebars.template(function (Handlebars,depth0,helpers,partials,data) {
   helpers = helpers || Handlebars.helpers;
@@ -3112,32 +3395,12 @@ window.require.define({"ui/templates/slider": function(exports, require, module)
   return buffer;});
 }});
 
-window.require.define({"ui/templates/toggle": function(exports, require, module) {
-  module.exports = Handlebars.template(function (Handlebars,depth0,helpers,partials,data) {
-  helpers = helpers || Handlebars.helpers;
-  var buffer = "", stack1, foundHelper, self=this, functionType="function", helperMissing=helpers.helperMissing, undef=void 0, escapeExpression=this.escapeExpression;
-
-
-  buffer += "<div class=\"label\">";
-  foundHelper = helpers.label;
-  stack1 = foundHelper || depth0.label;
-  if(typeof stack1 === functionType) { stack1 = stack1.call(depth0, { hash: {} }); }
-  else if(stack1=== undef) { stack1 = helperMissing.call(depth0, "label", { hash: {} }); }
-  buffer += escapeExpression(stack1) + "</div>\n<button>";
-  foundHelper = helpers.text;
-  stack1 = foundHelper || depth0.text;
-  if(typeof stack1 === functionType) { stack1 = stack1.call(depth0, { hash: {} }); }
-  else if(stack1=== undef) { stack1 = helperMissing.call(depth0, "text", { hash: {} }); }
-  buffer += escapeExpression(stack1) + "</button>";
-  return buffer;});
-}});
-
 window.require.define({"ui/toggle": function(exports, require, module) {
   var Toggle, template,
   __hasProp = {}.hasOwnProperty,
   __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
 
-template = require('ui/templates/toggle');
+template = require('ui/templates/button');
 
 module.exports = Toggle = (function(_super) {
 
@@ -3207,6 +3470,7 @@ window.require.define({"ui/ui": function(exports, require, module) {
 module.exports = UI = {
   Slider: require('ui/slider'),
   Toggle: require('ui/toggle'),
+  Button: require('ui/button'),
   createFrom: function(model) {
     var el;
     el = null;
@@ -3216,6 +3480,9 @@ module.exports = UI = {
         break;
       case 'toggle-button':
         el = new this.Toggle(model);
+        break;
+      case 'button':
+        el = new this.Button(model);
     }
     return el;
   }

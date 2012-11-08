@@ -61,7 +61,9 @@ class RC extends Backbone.View
   createGroup: (name) ->
     safeName = name.toLowerCase().replace ' ', '-'
 
-    li = $('<li></li>').text(name).attr 'title', safeName
+    li = $('<li></li>').text(name).attr 
+      title: safeName
+      class: "RC-group-bu-#{safeName}"
 
     li.appendTo @$ 'nav ul'
 
@@ -94,6 +96,21 @@ class RC extends Backbone.View
         el.addClass 'active'
         pages.filter('.active').removeClass 'active'
         pages.filter('#' + el.attr 'title').addClass 'active'
+
+  showGroup: (name) ->
+    navItems = @$ 'nav li'
+    pages = @$ 'section'
+
+    safeName = name.toLowerCase().replace ' ', '-'
+
+    el = navItems.filter ".RC-group-bu-#{safeName}"
+    navItems.filter('.active').removeClass 'active'
+    el.addClass 'active'
+    pages.filter('.active').removeClass 'active'
+    pages.filter('#' + el.attr 'title').addClass 'active'
+
+  clearGroup: (name) ->
+    @options.remove @options.where group: name
 
   send: -> null
 

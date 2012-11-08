@@ -58,4 +58,13 @@ class util extends Backbone.View
       node = node.parentNode
     return no
 
+  loadJS: (src) ->
+    el = document.createElement 'script'
+    el.type = 'text/javascript'
+    el.onload = ->
+      console.log "Loaded script: #{src}"
+    el.src = src 
+
+    window.document.body.appendChild el
+
 window.Util = new util

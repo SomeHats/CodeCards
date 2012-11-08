@@ -7,6 +7,11 @@ module.exports = class Language
     @replace = []
     @format = []
 
+    if typeof lang is 'string'
+      l = lang
+      lang = {}
+      lang[l] = "*"
+
     for key of lang
       # Do we have the correct language file?
       try

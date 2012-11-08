@@ -9,9 +9,9 @@ module.exports = class Toggle extends Backbone.View
 
     @model = new Backbone.Model
       label: o.label or el.data 'label' or 'Label'
-      value: if o.value or parseInt el.data 'value' or true then true else false
-      true: o.true or el.data 'true' or 'True'
-      false: o.false or el.data 'false' or 'False'
+      value: o.value or el.data 'value' or 'value'
+      text: o.text or el.data 'text' or 'Go'
+      description: o.description or false
 
     @o = @model.toJSON()
 
@@ -24,22 +24,18 @@ module.exports = class Toggle extends Backbone.View
     @render()
 
   silentUpdate: (val) ->
-    @model.set 'value', val, silent: true
     @update()
 
   update: ->
     @o = @model.toJSON()
-    @o.text = if @o.value then @o.true else @o.false
-    @$('button').text @o.text
+    @$('button').text @o.button
 
   render: ->
     _ths = @
-    model = @o
+    model = @model.toJSON()
+    @$el.addClass 'button'
     @$el.html template model
-    @$el.addClass 'toggle'
 
     button = @$ 'button'
     button.on 'click', ->
-      value = ! _ths.model.get 'value'
-      button.text _ths.model.get if value then 'true' else 'false'
-      _ths.model.set 'value', value
+      _ths.model.trigger 'change'
