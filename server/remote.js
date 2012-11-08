@@ -22,13 +22,22 @@ function handler(req, res) {
     url = '/index.html';
   }
 
+  if(url === '/mission-repo/') {
+    url = '/CodeCards-data.js'
+  }
+
   // Get file extension
   parts = url.split('.');
   ext = parts[parts.length - 1];
 
-  //log.info('HTTP: ' + url);
-  url = path.normalize(__dirname + '/../public' + url);
+  // Serve mission files if we need to
+  if (url.indexOf('/mission-repo/') !== 0) {
+    url = path.normalize(__dirname + '/../public' + url);
+  } else {
+    url = path.normalize(__dirname + '/..' + url);
+  }
 
+  log.info(url);
   fs.exists(url, function(exists) {
     if (exists) {
       fs.readFile(url, function(error, data) {
