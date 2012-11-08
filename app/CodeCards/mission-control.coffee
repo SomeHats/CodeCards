@@ -63,4 +63,4 @@ module.exports = class MissionControl extends Backbone.Model
 		for host in @hosts
 			Util.loadJS host + 'CodeCards-data.js'
 
-	hosts: ["http://localhost:3000/", "http://codecards.decoded.co/mission-repo/"]
+	hosts: ["http://localhost:3000/", "http://codecards.decoded.co/"]

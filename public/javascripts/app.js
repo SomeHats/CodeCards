@@ -811,7 +811,7 @@ module.exports = MissionControl = (function(_super) {
     return _results;
   };
 
-  MissionControl.prototype.hosts = ["http://localhost:3000/", "http://codecards.decoded.co/mission-repo/"];
+  MissionControl.prototype.hosts = ["http://localhost:3000/", "http://codecards.decoded.co/"];
 
   return MissionControl;
 
