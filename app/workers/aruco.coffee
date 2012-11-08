@@ -761,9 +761,9 @@ class AR.Detector
     CV.grayscale image, @grey
     CV.adaptiveThreshold @grey, @thres, 2, 7
     @contours = CV.findContours(@thres, @binary)
-    @candidates = @findCandidates(@contours, @minSize, 0.05, 10)
+    @candidates = @findCandidates(@contours, @minSize, 0.05, 5)
     @candidates = @clockwiseCorners(@candidates)
-    @candidates = @notTooNear(@candidates, 10)
+    @candidates = @notTooNear(@candidates, 5)
     @findMarkers @grey, @candidates, 352
 
   findCandidates: (contours, minSize, epsilon, minLength) ->
