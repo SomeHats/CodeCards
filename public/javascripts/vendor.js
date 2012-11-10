@@ -4018,8 +4018,8 @@ Animator = (function() {
       raf = true;
     }
     _ths = this;
-    this.queue = [];
     this.actors = {};
+    this.queue = {};
     this.running = false;
     if (raf) {
       window.requestAnimationFrame = window.requestAnimationFrame || window.mozRequestAnimationFrame || window.webkitRequestAnimationFrame || window.msRequestAnimationFrame;
@@ -4046,6 +4046,7 @@ Animator = (function() {
         throw "Actor '" + name + "' already exists.";
       }
       this.actors[name] = actor;
+      this.queue[name] = [];
     } else {
       throw "No draw function for actor '" + name + "' :(";
     }
@@ -4074,7 +4075,7 @@ Animator = (function() {
     item.change = change;
     item.easing = 'linear';
     item.actor = actor;
-    this.queue.push(item);
+    this.queue[actor].push(item);
     this.start();
     return this;
   };
@@ -4087,7 +4088,7 @@ Animator = (function() {
   */
 
 
-  Animator.prototype.callback = function(callback, ctx) {
+  Animator.prototype.callback = function(actor, callback, ctx) {
     var item;
     if (ctx == null) {
       ctx = this;
@@ -4097,7 +4098,7 @@ Animator = (function() {
       callback: callback,
       context: ctx
     };
-    this.queue.push(item);
+    this.queue[actor].push(item);
     this.start();
     return this;
   };
@@ -4109,13 +4110,13 @@ Animator = (function() {
   */
 
 
-  Animator.prototype.delay = function(duration) {
+  Animator.prototype.delay = function(actor, duration) {
     var item;
     item = {
       type: Animator.prototype.DELAY,
       duration: duration
     };
-    this.queue.push(item);
+    this.queue[actor].push(item);
     this.start();
     return this;
   };
@@ -4128,52 +4129,55 @@ Animator = (function() {
 
 
   Animator.prototype.tick = function() {
-    var actor, current, now, progress, property;
+    var actor, current, name, now, progress, property, queue;
     if (this.running) {
-      if (this.queue.length !== 0) {
-        current = this.queue[0];
-        now = Date.now();
-        switch (current.type) {
-          case Animator.prototype.ANIMATE:
-            actor = this.actors[current.actor];
-            if (!current.start) {
-              current.start = now;
-              current.originals = {};
-              for (property in current.change) {
-                current.originals[property] = actor[property];
+      for (name in this.queue) {
+        queue = this.queue[name];
+        if (queue.length !== 0) {
+          current = queue[0];
+          now = Date.now();
+          switch (current.type) {
+            case Animator.prototype.ANIMATE:
+              actor = this.actors[current.actor];
+              if (!current.start) {
+                current.start = now;
+                current.originals = {};
+                for (property in current.change) {
+                  current.originals[property] = actor[property];
+                }
               }
-            }
-            progress = (now - current.start) / current.duration;
-            if (progress >= 1) {
-              progress = 1;
-              current.start = null;
-              this.queue.shift();
-            }
-            for (property in current.change) {
-              actor[property] = this.easing[current.easing](current.originals[property], current.change[property], progress);
-            }
-            this.clear();
-            this.draw();
-            if (progress === 1) {
-              return this.tick();
-            }
-            break;
-          case Animator.prototype.CALLBACK:
-            current.callback.apply(current.context);
-            this.queue.shift();
-            return this.tick();
-          case Animator.prototype.DELAY:
-            if (!current.end) {
-              current.end = now + current.duration;
-            }
-            if (now >= current.end) {
-              this.queue.shift();
-              return this.tick();
-            }
+              progress = (now - current.start) / current.duration;
+              if (progress >= 1) {
+                progress = 1;
+                current.start = null;
+                queue.shift();
+              }
+              for (property in current.change) {
+                actor[property] = this.easing[current.easing](current.originals[property], current.change[property], progress);
+              }
+              if (progress === 1) {
+                this.tick();
+              }
+              break;
+            case Animator.prototype.CALLBACK:
+              current.callback.apply(current.context);
+              queue.shift();
+              this.tick();
+              break;
+            case Animator.prototype.DELAY:
+              if (!current.end) {
+                current.end = now + current.duration;
+              }
+              if (now >= current.end) {
+                queue.shift();
+                this.tick();
+              }
+          }
         }
-      } else {
-        return this.running = false;
       }
+      this.clear();
+      this.draw();
+      return this.start();
     }
   };
 
@@ -4202,11 +4206,14 @@ Animator = (function() {
 
 
   Animator.prototype.start = function() {
-    if (!this.running && this.queue.length !== 0) {
-      return this.running = true;
-    } else if (this.queue.length === 0) {
-      return this.running = false;
+    var name, run;
+    run = false;
+    for (name in this.queue) {
+      if (this.queue[name].length !== 0) {
+        run = true;
+      }
     }
+    return this.running = run;
   };
 
   /*
@@ -4218,12 +4225,11 @@ Animator = (function() {
 
 
   Animator.prototype.reset = function() {
-    while (this.queue.length) {
-      this.queue.shift();
-    }
+    this.queue = {};
     this.actors = {};
     this.clear();
     this.draw();
+    this.start();
     return this;
   };
 

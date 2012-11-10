@@ -1,8 +1,11 @@
-module.exports =
-
+define.mission "fox"
   # view: Defaults to "fullscreen". 2up is for showing the input from CodeCards
   #       next to your mission
   view: "2up"
+
+  # interpreter: How do you want the stuff on the CodeCards table to be
+  #              interpreted? Currently only "text" is available.
+  interpreter: "text"
 
   # language: which language definitions are needed for your mission? Give them
   #           in the form name: version

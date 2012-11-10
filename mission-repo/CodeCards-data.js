@@ -15,5 +15,7 @@ define.resources({
 			template: "/fox/fox.hbs"
 		}
 	},
-	languages: ["/languages/alphabet.js"]
+	languages: [
+		"/languages/alphabet.js", 
+		"/languages/fox-lang.js"]
 });
