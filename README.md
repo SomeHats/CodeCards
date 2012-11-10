@@ -1,9 +1,17 @@
 CodeCards
 =========
 
-I need to rewrite this readme
------------------------------
-CodeCards interprets the placement of physical objects to create (java|coffee)script programs.
+CodeCards is a visual programming tool that makes learning to code physical, collaborative, and fun. You play the game on a glass-topped table, and watch the result of your code onscreen. You get feedback on your code in real time, as the table teaches you core programming concepts. In a nutshell, CodeCards interprets the placement of physical objects to create (Java|Coffee)script programs.
+
+Current Status
+--------------
+CodeCards is currently in development, but we are looking forward to getting them into classrooms soon. 
+
+Open Source
+-----------
+We are inviting the wider community to work with us on CodeCards, designing games and hacking on the platform...
+
+This is the platform that’s actually a platform :) 
 
 ## Requires:
 * Node.JS
