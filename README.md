@@ -16,13 +16,13 @@ This is the platform that’s actually a platform :)
 Writing 'missions' for CodeCards
 --------------------------------
 
-## You will need:
+### You will need:
 
 * Node.JS
 * Serve
 * Some physical objects to track (try visiting http://somehats.github.com/CodeCards/markers/ on your phone to download and print markers)
 
-## A bit of background:
+### A bit of background:
 
 CodeCards missions are any type of game or activity that use data from the CodeCards interpreter as an input. 
 
@@ -42,7 +42,7 @@ Navigate to mission-repo directory and run:
 
 You should now have a server running on port 3000. CodeCards will look for missions at this URL on init. You are now ready to create your mission!
 
-## Three steps
+### Three steps
 
 There are three steps to defining a CodeCards mission:
 
