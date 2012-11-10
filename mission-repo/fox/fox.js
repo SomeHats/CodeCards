@@ -9,7 +9,7 @@ define.mission("fox", {
   initialize: function(mission) {
     var $el, getSprite, name, template, _i, _len, _ref, _ths;
     _ths = this;
-    template = require('data/missions/templates/sample');
+    template = require('data/templates/fox');
     $el = $(mission.el);
     $el.addClass('sample');
     $el.html(template());

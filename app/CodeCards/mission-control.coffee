@@ -15,6 +15,8 @@ module.exports = class MissionControl extends Backbone.Model
     @on 'new-resources', (data) ->
       for name of data.missions
         Util.loadJS data.missions[name].root + data.missions[name].source
+        if data.missions[name].template
+          Util.loadJS data.missions[name].root + data.missions[name].template
 
       for lang in data.languages
         Util.loadJS lang
@@ -48,15 +50,23 @@ module.exports = class MissionControl extends Backbone.Model
     window.define = 
       mission: (name, data) ->
         def = {}
-        def["data/missions/#{name}.mission"] = (exports, require, module) ->
+        def["data/missions/#{name}"] = (exports, require, module) ->
           module.exports = data
 
         window.require.define def
 
       language: (data) ->
         def = {}
-        def["data/languages/#{data.name}.lang"] = (exports, require, module) ->
+        def["data/languages/#{data.name}"] = (exports, require, module) ->
           module.exports = data
+
+        window.require.define def
+
+      template: (name, data) ->
+        def = {}
+        fn = Handlebars.compile data
+        def["data/templates/#{name}"] = (exports, require, module) ->
+          module.exports = fn
 
         window.require.define def
 

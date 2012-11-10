@@ -18,7 +18,7 @@ define.mission "fox"
   initialize: (mission) ->
     _ths = @
 
-    template = require 'data/missions/templates/sample'
+    template = require 'data/templates/fox'
     $el = $ mission.el
 
     $el.addClass 'sample'

@@ -10,9 +10,9 @@ define.resources({
 		"fox": {
 			name: "Fox",
 			description: "Help Fox get as much cake as possible with your awesome programming skills!",
-			source: "/fox/fox.mission.js",
+			source: "/fox/fox.js",
 			style: "/fox/fox.css",
-			template: "/fox/fox.hbs"
+			template: "/fox/template.js"
 		}
 	},
 	languages: [

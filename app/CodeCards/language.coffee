@@ -15,7 +15,7 @@ module.exports = class Language
     for key of lang
       # Do we have the correct language file?
       try
-        language = require 'data/languages/' + key + '.lang'
+        language = require 'data/languages/' + key 
       catch e
         console.log 'Language definition ' + key + ' not found :('
 

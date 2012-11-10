@@ -9,7 +9,7 @@ module.exports = class Mission extends Backbone.View
 
     controller = App.codeCards.controller
 
-    _.extend m, require "data/missions/#{name}.mission"
+    _.extend m, require "data/missions/#{name}"
 
     if typeof m.initialize isnt 'function'
       throw new TypeError "mission.initialize should be a function not #{typeof m.initialize}."

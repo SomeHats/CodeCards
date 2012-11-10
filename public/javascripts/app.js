@@ -510,7 +510,7 @@ module.exports = Language = (function() {
     }
     for (key in lang) {
       try {
-        language = require('data/languages/' + key + '.lang');
+        language = require('data/languages/' + key);
       } catch (e) {
         console.log('Language definition ' + key + ' not found :(');
       }
@@ -743,6 +743,9 @@ module.exports = MissionControl = (function(_super) {
       var lang, name, _i, _len, _ref;
       for (name in data.missions) {
         Util.loadJS(data.missions[name].root + data.missions[name].source);
+        if (data.missions[name].template) {
+          Util.loadJS(data.missions[name].root + data.missions[name].template);
+        }
       }
       _ref = data.languages;
       for (_i = 0, _len = _ref.length; _i < _len; _i++) {
@@ -776,7 +779,7 @@ module.exports = MissionControl = (function(_super) {
       mission: function(name, data) {
         var def;
         def = {};
-        def["data/missions/" + name + ".mission"] = function(exports, require, module) {
+        def["data/missions/" + name] = function(exports, require, module) {
           return module.exports = data;
         };
         return window.require.define(def);
@@ -784,8 +787,17 @@ module.exports = MissionControl = (function(_super) {
       language: function(data) {
         var def;
         def = {};
-        def["data/languages/" + data.name + ".lang"] = function(exports, require, module) {
+        def["data/languages/" + data.name] = function(exports, require, module) {
           return module.exports = data;
+        };
+        return window.require.define(def);
+      },
+      template: function(name, data) {
+        var def, fn;
+        def = {};
+        fn = Handlebars.compile(data);
+        def["data/templates/" + name] = function(exports, require, module) {
+          return module.exports = fn;
         };
         return window.require.define(def);
       },
@@ -863,7 +875,7 @@ module.exports = Mission = (function(_super) {
       continuous: false
     };
     controller = App.codeCards.controller;
-    _.extend(m, require("data/missions/" + name + ".mission"));
+    _.extend(m, require("data/missions/" + name));
     if (typeof m.initialize !== 'function') {
       throw new TypeError("mission.initialize should be a function not " + (typeof m.initialize) + ".");
     }
@@ -1008,7 +1020,7 @@ window.require.define({"CodeCards/templates/controller": function(exports, requi
   return "<div>\n  <h3>Enter your pin:</h3>\n  <input type=\"tel\" name=\"pin-number\" maxlength=\"4\" placeholder=\"****\">\n  <button class=\"go\">Connect</button>\n  <button class=\"cancel\">Cancel</button>\n</div>\n<a class=\"remote\">\n  <img src=\"/svg/remote-yellow.svg\" width=\"46\">\n</a>\n<p class=\"status\"></p>";});
 }});
 
-window.require.define({"data/languages/blank.lang": function(exports, require, module) {
+window.require.define({"data/languages/blank": function(exports, require, module) {
   
 module.exports = {
   name: "blank",
@@ -1079,89 +1091,7 @@ module.exports = {
 
 }});
 
-window.require.define({"data/languages/fox.lang": function(exports, require, module) {
-  
-module.exports = {
-  name: "fox",
-  version: 0,
-  "extends": {
-    "friendly.js": 0
-  },
-  words: {
-    500: {
-      word: "fox",
-      img: "http://i.imgur.com/mIkYE.png",
-      group: "objects"
-    },
-    501: {
-      word: ".look",
-      print: "look",
-      group: "methods",
-      follows: 500
-    },
-    504: {
-      word: ".touch",
-      print: "touch",
-      group: "methods",
-      follows: 500
-    },
-    502: {
-      word: ".move",
-      print: "move",
-      group: "methods",
-      follows: 500
-    },
-    503: {
-      word: ".turn",
-      print: "turn",
-      group: "methods",
-      follows: 500
-    },
-    510: {
-      word: "forward",
-      group: "arguments",
-      follows: "methods"
-    },
-    511: {
-      word: "back",
-      group: "arguments",
-      follows: "methods"
-    },
-    512: {
-      word: "left",
-      group: "arguments",
-      follows: "methods"
-    },
-    513: {
-      word: "right",
-      group: "arguments",
-      follows: "methods"
-    },
-    520: {
-      word: "empty",
-      group: "objects"
-    },
-    521: {
-      word: "wall",
-      img: "http://i.imgur.com/3nZae.png",
-      group: "objects"
-    },
-    522: {
-      word: "cake",
-      img: "http://i.imgur.com/uS9s8.png",
-      group: "objects"
-    },
-    525: {
-      word: "goblin",
-      img: "http://i.imgur.com/g3Mix.png",
-      group: "objects"
-    }
-  }
-};
-
-}});
-
-window.require.define({"data/languages/friendly.js.lang": function(exports, require, module) {
+window.require.define({"data/languages/friendly.js": function(exports, require, module) {
   
 module.exports = {
   name: 'friendly.js',
@@ -1204,7 +1134,7 @@ module.exports = {
 
 }});
 
-window.require.define({"data/languages/js.lang": function(exports, require, module) {
+window.require.define({"data/languages/js": function(exports, require, module) {
   
 module.exports = {
   name: 'js',
@@ -1311,7 +1241,7 @@ module.exports = {
 
 }});
 
-window.require.define({"data/languages/js.math.lang": function(exports, require, module) {
+window.require.define({"data/languages/js.math": function(exports, require, module) {
   
 module.exports = {
   name: 'js.math',
@@ -1352,7 +1282,7 @@ module.exports = {
 
 }});
 
-window.require.define({"data/languages/sample.lang": function(exports, require, module) {
+window.require.define({"data/languages/sample": function(exports, require, module) {
   
 module.exports = {
   name: 'sample',
@@ -1374,482 +1304,7 @@ module.exports = {
 
 }});
 
-window.require.define({"data/missions/fox.mission": function(exports, require, module) {
-  
-module.exports = {
-  view: "2up",
-  language: {
-    fox: 0
-  },
-  initialize: function(mission) {
-    var $el, getSprite, name, template, _i, _len, _ref, _ths;
-    _ths = this;
-    template = require('data/missions/templates/sample');
-    $el = $(mission.el);
-    $el.addClass('sample');
-    $el.html(template());
-    /*mission.rc.options.add
-      with: @
-      callback: @toggleGoblin
-      label: "Goblin"
-      type: 'toggle-button'
-      value: @goblin
-      true: "Turn off Goblin"
-      false: "Turn on Goblin"
-    */
-
-    mission.rc.options.add({
-      "with": this,
-      callback: this.toggleMap,
-      label: "Map",
-      type: 'toggle-button',
-      value: this.isMaze,
-      "true": "Cakes",
-      "false": "Maze"
-    });
-    getSprite = function(name) {
-      var el;
-      el = $el.find("." + name);
-      el.on('load', function() {
-        return _ths.reset();
-      });
-      return _ths.sprite[name].image = el[0];
-    };
-    _ref = ['player', 'cake', 'wall', 'bg', 'goblin'];
-    for (_i = 0, _len = _ref.length; _i < _len; _i++) {
-      name = _ref[_i];
-      getSprite(name);
-    }
-    this.canvas = $el.find('canvas');
-    this.ctx = this.canvas[0].getContext('2d');
-    this.width = 640;
-    this.height = 480;
-    this.size = 32;
-    this.animator.clear = function() {
-      return _ths.drawScene();
-    };
-    Util.on('animationFrame', function() {
-      return _ths.animator.tick();
-    });
-    return this.reset();
-  },
-  reset: function() {
-    this.score = 0;
-    this.remaining = 100;
-    this.updateScore();
-    this.displayMap = Util.clone(this.isMaze ? this.maze : this.map);
-    this.animator.reset();
-    if (this.isMaze) {
-      this.drawSprite({
-        x: 1,
-        y: 1,
-        rot: 1
-      }, 'player');
-    } else {
-      this.drawSprite({
-        x: 2,
-        y: 2,
-        rot: 1
-      }, 'player');
-    }
-    if (this.goblin) {
-      return this.drawSprite({
-        x: 17,
-        y: 12,
-        rot: 1
-      }, 'goblin');
-    }
-  },
-  run: function(str) {
-    var Character, animator, back, cake, characters, displayMap, empty, forward, fox, gameMap, goblin, i, left, lookGoblin, moveGoblin, player, ps, right, success, wall, _i, _ref, _results, _ths;
-    this.reset();
-    _ths = this;
-    gameMap = Util.clone(this.isMaze ? this.maze : this.map);
-    displayMap = this.displayMap = Util.clone(this.isMaze ? this.maze : this.map);
-    animator = this.animator;
-    empty = 0;
-    wall = 1;
-    cake = 2;
-    forward = 0;
-    back = 2;
-    right = 1;
-    left = 3;
-    characters = [];
-    Character = (function() {
-
-      function Character(name, pos, direction, player) {
-        this.name = name;
-        this.pos = pos;
-        this.direction = direction != null ? direction : 0;
-        this.player = player != null ? player : false;
-        characters.push(this);
-        this;
-
-      }
-
-      Character.prototype.look = function(direction) {
-        var change, char, tile, _i, _len;
-        if (direction == null) {
-          direction = forward;
-        }
-        tile = empty;
-        direction = (this.direction + direction) % 4;
-        change = {
-          x: this.pos.x,
-          y: this.pos.y
-        };
-        while (tile === empty) {
-          switch (direction) {
-            case 0:
-              change = {
-                x: change.x + 1,
-                y: change.y
-              };
-              break;
-            case 1:
-              change = {
-                x: change.x,
-                y: change.y + 1
-              };
-              break;
-            case 2:
-              change = {
-                x: change.x - 1,
-                y: change.y
-              };
-              break;
-            case 3:
-              change = {
-                x: change.x,
-                y: change.y - 1
-              };
-          }
-          tile = gameMap[change.y] === void 0 || gameMap[change.y][change.x] === void 0 ? wall : gameMap[change.y][change.x];
-          for (_i = 0, _len = characters.length; _i < _len; _i++) {
-            char = characters[_i];
-            if (change.x === char.pos.x && change.y === char.pos.y) {
-              tile = char.name;
-            }
-          }
-        }
-        return tile;
-      };
-
-      Character.prototype.move = function(direction) {
-        var change;
-        if (direction == null) {
-          direction = forward;
-        }
-        direction = (this.direction + direction) % 4;
-        change = {
-          x: this.pos.x,
-          y: this.pos.y
-        };
-        switch (direction) {
-          case 0:
-            change = {
-              x: this.pos.x + 1,
-              y: this.pos.y
-            };
-            break;
-          case 1:
-            change = {
-              x: this.pos.x,
-              y: this.pos.y + 1
-            };
-            break;
-          case 2:
-            change = {
-              x: this.pos.x - 1,
-              y: this.pos.y
-            };
-            break;
-          case 3:
-            change = {
-              x: this.pos.x,
-              y: this.pos.y - 1
-            };
-        }
-        if (gameMap[change.y] !== void 0 && gameMap[change.y][change.x] !== void 0 && gameMap[change.y][change.x] !== 1) {
-          this.pos.x = change.x;
-          this.pos.y = change.y;
-          animator.animate(this.name, 200, change);
-          if (this.player && gameMap[change.y][change.x] === cake) {
-            gameMap[change.y][change.x] = empty;
-            return animator.callback(this.name, function() {
-              displayMap[change.y][change.x] = empty;
-              _ths.score++;
-              return _ths.updateScore();
-            });
-          }
-        }
-      };
-
-      Character.prototype.touch = function(direction) {
-        var change;
-        if (direction == null) {
-          direction = forward;
-        }
-        direction = (this.direction + direction) % 4;
-        switch (direction) {
-          case 0:
-            change = {
-              x: this.pos.x + 1,
-              y: this.pos.y
-            };
-            break;
-          case 1:
-            change = {
-              x: this.pos.x,
-              y: this.pos.y + 1
-            };
-            break;
-          case 2:
-            change = {
-              x: this.pos.x - 1,
-              y: this.pos.y
-            };
-            break;
-          case 3:
-            change = {
-              x: this.pos.x,
-              y: this.pos.y - 1
-            };
-        }
-        if (gameMap[change.y] === void 0 || gameMap[change.y][change.x] === void 0) {
-          return wall;
-        } else {
-          return gameMap[change.y][change.x];
-        }
-      };
-
-      Character.prototype.turn = function(direction) {
-        direction = (this.direction + direction) % 4;
-        animator.animate(this.name, 1, {
-          rot: direction
-        });
-        return this.direction = direction;
-      };
-
-      return Character;
-
-    })();
-    ps = this.isMaze ? 1 : 2;
-    fox = player = new Character('player', {
-      x: ps,
-      y: ps
-    }, 0, true);
-    goblin = new Character('goblin', {
-      x: 17,
-      y: 2
-    }, 2);
-    animator.register('player', {
-      x: player.pos.x,
-      y: player.pos.y,
-      rot: 0,
-      draw: function(geom) {
-        return _ths.drawSprite(geom, 'player');
-      }
-    });
-    if (this.goblin) {
-      animator.register('goblin', {
-        x: 17,
-        y: 2,
-        rot: 0,
-        draw: function(geom) {
-          return _ths.drawSprite(geom, 'goblin');
-        }
-      });
-    }
-    moveGoblin = function() {
-      lookGoblin();
-      goblin.move();
-      return lookGoblin();
-    };
-    lookGoblin = function() {
-      if (goblin.look(left) === 'player') {
-        goblin.turn(left);
-      }
-      if (goblin.look(right) === 'player') {
-        goblin.turn(right);
-      }
-      if (goblin.touch() === wall) {
-        str = "" + goblin.direction + " " + (goblin.pos.x < player.pos.x) + " " + (goblin.pos.y < player.pos.y);
-        switch (str) {
-          case "0 true false":
-          case "0 false false":
-          case "1 true true":
-          case "1 true false":
-          case "2 true true":
-          case "2 false true":
-          case "3 false true":
-          case "3 false false":
-            return goblin.turn(left);
-          default:
-            return goblin.turn(right);
-        }
-      }
-    };
-    success = true;
-    try {
-      eval("var fn = function () {\n " + str + " \n}");
-    } catch (e) {
-      Util.alert('Error: ' + e.message);
-      success = false;
-    }
-    if (success) {
-      _results = [];
-      for (i = _i = 0, _ref = this.remaining; 0 <= _ref ? _i < _ref : _i > _ref; i = 0 <= _ref ? ++_i : --_i) {
-        fn();
-        if (this.goblin) {
-          moveGoblin();
-        }
-        _results.push(animator.callback('player', function() {
-          _ths.remaining--;
-          return _ths.updateScore();
-        }));
-      }
-      return _results;
-    }
-  },
-  animator: new Animator(false),
-  drawSprite: function(geom, name) {
-    var ctx, rot, size, sprite, x, y;
-    size = this.size;
-    ctx = this.ctx;
-    sprite = this.sprite[name];
-    x = geom.x;
-    y = geom.y;
-    rot = Math.round(geom.rot);
-    sprite.current = ['right', 'down', 'left', 'up'][rot % 4];
-    if ((sprite.stage += 0.2) >= sprite[sprite.current].length) {
-      sprite.stage = 0;
-    }
-    return ctx.drawImage(sprite.image, Math.floor(sprite.stage) * sprite.tile, sprite[sprite.current].row * sprite.tile, sprite.tile, sprite.tile, x * size, y * size, size, size);
-  },
-  drawScene: function() {
-    var bgSprite, cakeSprite, ctx, height, m, size, wallSprite, width, x, y, _i, _j, _k, _l, _ref, _ref1, _ref2, _ref3;
-    width = this.width;
-    height = this.height;
-    size = this.size;
-    ctx = this.ctx;
-    m = this.displayMap || this.map;
-    cakeSprite = this.sprite.cake;
-    wallSprite = this.sprite.wall;
-    bgSprite = this.sprite.bg;
-    size = this.size;
-    if ((cakeSprite.stage += 0.2) >= cakeSprite[cakeSprite.current].length) {
-      cakeSprite.stage = 0;
-    }
-    ctx.fillStyle = 'white';
-    ctx.fillRect(0, 0, width, height);
-    ctx.strokeStyle = 'rgba(0, 0, 0, 0.1)';
-    ctx.beginPath();
-    x = y = 0;
-    for (x = _i = 0, _ref = width / size; 0 <= _ref ? _i <= _ref : _i >= _ref; x = 0 <= _ref ? ++_i : --_i) {
-      ctx.moveTo(x * size + 0.5, 0);
-      ctx.lineTo(x * size + 0.5, height);
-    }
-    for (y = _j = 0, _ref1 = height / size; 0 <= _ref1 ? _j <= _ref1 : _j >= _ref1; y = 0 <= _ref1 ? ++_j : --_j) {
-      ctx.moveTo(0, y * size + 0.5);
-      ctx.lineTo(width, y * size + 0.5);
-    }
-    ctx.stroke();
-    for (y = _k = 0, _ref2 = m.length; 0 <= _ref2 ? _k < _ref2 : _k > _ref2; y = 0 <= _ref2 ? ++_k : --_k) {
-      for (x = _l = 0, _ref3 = m[y].length; 0 <= _ref3 ? _l < _ref3 : _l > _ref3; x = 0 <= _ref3 ? ++_l : --_l) {
-        ctx.drawImage(bgSprite.image, x * size, y * size);
-        if (m[y][x]) {
-          if (m[y][x] === 1) {
-            ctx.drawImage(wallSprite.image, x * size, y * size);
-          }
-          if (m[y][x] === 2) {
-            ctx.drawImage(cakeSprite.image, Math.floor(cakeSprite.stage) * cakeSprite.tile, cakeSprite[cakeSprite.current].row * cakeSprite.tile, cakeSprite.tile, cakeSprite.tile, x * size, y * size, size, size);
-          }
-        }
-      }
-    }
-    return null;
-  },
-  updateScore: function() {
-    $('#score').text("Score: " + this.score);
-    return $('#remain').text("Remaining: " + this.remaining);
-  },
-  toggleGoblin: function(val) {
-    this.goblin = val;
-    return this.reset();
-  },
-  toggleMap: function(val) {
-    this.isMaze = val;
-    return this.reset();
-  },
-  map: [[2, 2, 2, 0, 0, 0, 0, 1, 2, 2, 2, 2, 1, 0, 0, 0, 0, 2, 2, 2], [2, 2, 0, 0, 0, 0, 0, 1, 0, 2, 2, 0, 1, 0, 0, 0, 0, 0, 2, 2], [2, 0, 0, 0, 2, 0, 0, 1, 0, 2, 2, 0, 1, 0, 0, 2, 0, 0, 0, 2], [0, 0, 0, 0, 2, 2, 0, 0, 0, 0, 0, 0, 0, 0, 2, 2, 0, 0, 0, 0], [0, 0, 0, 0, 2, 2, 2, 0, 0, 0, 0, 0, 0, 2, 2, 2, 0, 0, 0, 0], [0, 0, 0, 1, 1, 1, 1, 1, 0, 0, 0, 0, 1, 1, 1, 1, 1, 0, 0, 0], [2, 2, 2, 0, 0, 0, 0, 0, 0, 2, 2, 0, 0, 0, 0, 0, 0, 2, 2, 2], [2, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2, 2], [2, 0, 0, 0, 0, 2, 2, 0, 0, 2, 2, 0, 0, 2, 2, 0, 0, 0, 0, 2], [0, 0, 0, 0, 0, 1, 0, 2, 2, 0, 0, 2, 2, 0, 1, 0, 0, 0, 0, 0], [0, 2, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 2, 0], [0, 2, 0, 2, 0, 1, 0, 0, 1, 1, 1, 1, 0, 0, 1, 0, 2, 0, 2, 0], [0, 2, 0, 2, 0, 1, 2, 0, 0, 0, 0, 0, 0, 2, 1, 0, 2, 0, 2, 0], [0, 0, 0, 2, 0, 1, 2, 2, 0, 0, 0, 0, 2, 2, 1, 0, 2, 0, 0, 0], [0, 0, 0, 0, 0, 1, 2, 2, 2, 0, 0, 2, 2, 2, 1, 0, 0, 0, 0, 0]],
-  maze: [[1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1], [1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1], [1, 1, 1, 1, 1, 0, 1, 0, 1, 0, 1, 1, 0, 1, 0, 1, 1, 1, 1, 1], [1, 0, 0, 2, 1, 0, 0, 0, 1, 2, 2, 1, 0, 0, 0, 1, 2, 0, 0, 1], [1, 0, 1, 1, 1, 0, 1, 0, 1, 1, 0, 1, 0, 1, 0, 1, 1, 1, 0, 1], [1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1], [1, 1, 1, 1, 1, 1, 1, 0, 1, 1, 1, 1, 0, 1, 1, 1, 1, 1, 1, 1], [1, 0, 2, 1, 2, 0, 1, 0, 0, 0, 0, 0, 0, 1, 0, 2, 1, 2, 0, 1], [1, 0, 1, 1, 1, 0, 1, 0, 1, 0, 1, 1, 0, 1, 0, 1, 1, 1, 0, 1], [1, 0, 1, 2, 1, 0, 1, 0, 1, 2, 2, 1, 0, 1, 0, 1, 2, 1, 0, 1], [1, 0, 1, 0, 1, 0, 1, 0, 1, 1, 1, 1, 0, 1, 0, 1, 0, 1, 0, 1], [1, 0, 0, 0, 0, 0, 0, 0, 1, 2, 2, 1, 0, 0, 0, 0, 0, 0, 0, 1], [1, 1, 0, 1, 1, 1, 1, 0, 1, 1, 0, 1, 0, 1, 1, 1, 1, 0, 1, 1], [1, 2, 0, 2, 1, 2, 0, 0, 2, 1, 0, 0, 0, 0, 2, 1, 2, 0, 2, 1], [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1]],
-  sprite: {
-    player: {
-      right: {
-        row: 0,
-        length: 4
-      },
-      left: {
-        row: 1,
-        length: 4
-      },
-      up: {
-        row: 2,
-        length: 8
-      },
-      down: {
-        row: 3,
-        length: 4
-      },
-      current: 'down',
-      stage: 0,
-      tile: 32
-    },
-    goblin: {
-      right: {
-        row: 0,
-        length: 3
-      },
-      left: {
-        row: 1,
-        length: 3
-      },
-      up: {
-        row: 2,
-        length: 4
-      },
-      down: {
-        row: 3,
-        length: 4
-      },
-      current: 'left',
-      stage: 0,
-      tile: 32
-    },
-    cake: {
-      cake: {
-        row: 0,
-        length: 3
-      },
-      current: 'cake',
-      stage: 0,
-      tile: 32
-    },
-    wall: {
-      tile: 32
-    },
-    bg: {
-      tile: 32
-    }
-  },
-  goblin: false,
-  isMaze: true
-};
-
-}});
-
-window.require.define({"data/missions/selector.mission": function(exports, require, module) {
+window.require.define({"data/missions/selector": function(exports, require, module) {
   
 module.exports = {
   view: 'fullscreen',
@@ -1885,15 +1340,6 @@ module.exports = {
   }
 };
 
-}});
-
-window.require.define({"data/missions/templates/sample": function(exports, require, module) {
-  module.exports = Handlebars.template(function (Handlebars,depth0,helpers,partials,data) {
-  helpers = helpers || Handlebars.helpers;
-  var foundHelper, self=this;
-
-
-  return "<canvas width=\"640\" height=\"480\"></canvas>\n<h3 id=\"remain\">Remaining:</h3>\n<h3 id=\"score\">Score:</h3>\n<p>Images and stuff lovingly &quot;borrowed&quot; from Mozilla's BrowserQuest.</p>\n<img class=\"player\" style=\"display: none;\" src=\"/missions/sample/ff.png\">\n<img class=\"cake\" style=\"display: none;\" src=\"/missions/sample/cake.png\">\n<img class=\"wall\" style=\"display: none;\" src=\"/missions/sample/wall.png\">\n<img class=\"bg\" style=\"display: none;\" src=\"/missions/sample/bg.png\">\n<img class=\"goblin\" style=\"display: none;\" src=\"/missions/sample/goblin.png\">";});
 }});
 
 window.require.define({"home": function(exports, require, module) {
