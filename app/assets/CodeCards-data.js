@@ -1,5 +1,5 @@
 define.resources({
-	root: "http://localhost:3000",
+	root: "http://codecards.decoded.co/mission-repo",
 	missions: {
 		"sample": {
 			name: "Sample",
