@@ -1,3 +1,6 @@
+#### /ui/Toggle
+# A toggle button. Most of this code is the same as /ui/Button
+
 template = require 'ui/templates/button'
 
 module.exports = class Toggle extends Backbone.View

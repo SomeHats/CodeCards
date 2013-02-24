@@ -1,3 +1,8 @@
+#### /CodeCards/Interpreter
+# The interpreter module is responsible for fetching the image data from
+# the UserMedia module and converting it into a string of code. Most of 
+# the heavy lifting is done within a web worker.
+
 UserMedia = require 'lib/usermedia'
 HighLighter = require 'lib/highlighter'
 
@@ -14,16 +19,18 @@ module.exports = class Interpreter extends Backbone.View
     _ths = @
 
     @render()
-
+    # Get the webcam stream
     @UserMedia = new UserMedia {el: $ '<canvas>'}
     @UserMedia.p = @
 
+    # Load the web worker
     worker = @worker = new WebWorker name: 'init'
 
     worker.on 'log', (data) -> console.log data
 
     worker.send 'start', 'workers/init'
 
+    # When there's imageData ready, send it to the worker to be processed
     @UserMedia.on 'imageData', ->
       if worker.ready
         data = 
@@ -39,6 +46,7 @@ module.exports = class Interpreter extends Backbone.View
         worker.send 'raw-image', data
     , @
 
+    # Event bindings from the worker
     worker.on 'filtered-image', (img) ->
       @imgData = img
     , @
@@ -63,9 +71,11 @@ module.exports = class Interpreter extends Backbone.View
       attribute: attribute
       value: value
 
+  # Set up the highlighter
   render: ->
     HighLighter.context = @ctx = @el.getContext '2d'
 
+  # Highlight stuff when needed
   draw: (markers) ->
     @ctx.putImageData @imgData, 0, 0
     HighLighter.drawCorners markers

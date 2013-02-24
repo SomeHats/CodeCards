@@ -1,14 +1,19 @@
+#### ui/Slider
+# A touch-friendly Slider widget
+
 template = require 'ui/templates/slider'
 
 module.exports = class Slider extends Backbone.View
   tagName: "div"
   className: "slider"
+
   initialize: ->
     _ths = @
 
     o = @options
     el = @$el
 
+    # Store all the module data in a model
     @model = new Backbone.Model
       label: if typeof o.label isnt undefined then o.label else el.data 'label' or 'Label'
       max: if typeof o.max isnt undefined then o.max else parseFloat el.data 'max' or 100

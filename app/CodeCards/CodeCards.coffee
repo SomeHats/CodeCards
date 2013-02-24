@@ -1,3 +1,6 @@
+#### /CodeCards/CodeCards
+# The main CodeCards module - controls other modules
+
 Interpreter = require 'CodeCards/interpreter'
 
 Controller = require 'CodeCards/controller'
@@ -46,6 +49,7 @@ module.exports = class CodeCards extends Backbone.View
         # Update stats
         _ths.stats.tick()
 
+        # Send the data to the mission 
         mission.trigger 'data', results
 
         # Send stats and code to the remote control
@@ -60,6 +64,7 @@ module.exports = class CodeCards extends Backbone.View
 
     @setupController()
 
+    # Get an instance of the selected mission
     @mission = mission = new MissionControl
 
     # Run the mission when needed
@@ -72,10 +77,12 @@ module.exports = class CodeCards extends Backbone.View
       else
         @mission.reset()
 
+  # Set up an interface to the remote control
   setupController: ->
     _ths = @
     controller = @controller = new Controller el: @$('.pin-entry'), CC: @
 
+  # Set up DOM interactions 
   interact: ->
     sec = @$ 'section'
     toggler = @$ '.toggler'
@@ -95,6 +102,7 @@ module.exports = class CodeCards extends Backbone.View
       camView.toggleClass 'hide-cnvs'
 
       
+  # Render and transiton the view
   render: (callback= (-> null), ctx = @) ->
     _ths = @
     @$el.html template()
@@ -117,6 +125,7 @@ module.exports = class CodeCards extends Backbone.View
       _ths.start()
     , 25
 
+  # Transition the view to its hidden state
   unrender: (callback= (-> null), ctx = @) ->
     nav = @$ 'nav'
     nav.animate {

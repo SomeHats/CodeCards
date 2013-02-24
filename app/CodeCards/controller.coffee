@@ -1,3 +1,6 @@
+#### /CodeCards/Controller
+# Bindings for the remote control and its UI elements
+
 template = require 'CodeCards/templates/controller'
 RC = require 'remote/RC'
 
@@ -54,6 +57,7 @@ module.exports = class Controller extends Backbone.View
 
     @render()
 
+  # Attach the pin entry form ot the DOM
   render: ->
     @$el.html template()
     _ths = @
@@ -76,6 +80,7 @@ module.exports = class Controller extends Backbone.View
 
     cancel.on 'click', -> _ths.$el.addClass 'hide'
 
+    # Try to connect to the RC
     submit = ->
       val = pin.val()
       if val.length is 4 and !isNaN(parseFloat(val)) and isFinite(val)

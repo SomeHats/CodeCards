@@ -1,3 +1,6 @@
+#### /lib/Stats
+# A tiny module for keeping track of the framerate of the interpreter
+
 module.exports = class Stats extends Backbone.Model
   last: 0
   fps: 20

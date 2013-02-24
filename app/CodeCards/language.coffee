@@ -1,3 +1,5 @@
+#### /CodeCards/Language
+
 module.exports = class Language
   constructor: (lang, process = yes) ->
     @words = 0:
